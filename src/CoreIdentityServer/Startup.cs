@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Npgsql;
 
 namespace CoreIdentityServer
 {
@@ -19,6 +20,7 @@ namespace CoreIdentityServer
     {
         public IWebHostEnvironment Environment { get; }
         public IConfiguration Configuration { get; }
+        private string DatabaseConnectionString = null;
 
         public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
@@ -28,10 +30,16 @@ namespace CoreIdentityServer
 
         public void ConfigureServices(IServiceCollection services)
         {
+            var dbConnectionBuilder = new NpgsqlConnectionStringBuilder(Configuration.GetConnectionString("DefaultConnection"));
+            dbConnectionBuilder["Username"] = Configuration["cisdb_username"];
+            dbConnectionBuilder["Password"] = Configuration["cisdb_password"];
+
+            DatabaseConnectionString = dbConnectionBuilder.ConnectionString;
+
             services.AddControllersWithViews();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(Configuration.GetConnectionString("DefaultConnection"), 
+                options.UseNpgsql(DatabaseConnectionString, 
                     o => o.MigrationsAssembly(typeof(Startup).Assembly.FullName)));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()

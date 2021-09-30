@@ -11,6 +11,7 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
 using System.Linq;
+using Npgsql;
 
 namespace CoreIdentityServer
 {
@@ -49,8 +50,13 @@ namespace CoreIdentityServer
                 {
                     Log.Information("Seeding database...");
                     var config = host.Services.GetRequiredService<IConfiguration>();
-                    var connectionString = config.GetConnectionString("DefaultConnection");
-                    SeedData.EnsureSeedData(connectionString);
+                    var dbConnectionBuilder = new NpgsqlConnectionStringBuilder(config.GetConnectionString("DefaultConnection"));
+                    dbConnectionBuilder["Username"] = config["cisdb_username"];
+                    dbConnectionBuilder["Password"] = config["cisdb_password"];
+
+                    var databaseConnectionString = dbConnectionBuilder.ConnectionString;
+                    SeedData.EnsureSeedData(databaseConnectionString);
+
                     Log.Information("Done seeding database.");
                     return 0;
                 }
