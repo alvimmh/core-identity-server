@@ -90,6 +90,11 @@ namespace CoreIdentityServer
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDefaultControllerRoute();
+
+                endpoints.MapControllerRoute(
+                    name: "Areas",
+                    pattern: "{area:exists}/{controller=RegisterEmail}/{action=Index}/{id?}"
+                );
             });
         }
     }
