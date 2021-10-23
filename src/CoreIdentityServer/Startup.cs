@@ -93,7 +93,7 @@ namespace CoreIdentityServer
 
                 endpoints.MapControllerRoute(
                     name: "Areas",
-                    pattern: "{area:exists}/{controller=RegisterEmail}/{action=Index}/{id?}"
+                    pattern: "{area:exists}/{controller=SignUp}/{action=Index}/{id?}"
                 );
             });
         }
