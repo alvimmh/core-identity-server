@@ -1,7 +1,15 @@
 
 @{
-    ViewData["Title"] = "Email Challenge";
+    ViewData["Title"] = "Confirm Email";
 }
 
-<h1>Email Challenge</h1>
+<p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm your email.</p>
 
+<div class="mt-4">
+    <label for="secure-code-input" class="form-label">Enter secure 6-digit code</label>
+    <input type="number" class="form-control" id="secure-code-input">
+
+    <div class="d-grid col-6 mt-3 mx-auto">
+        <button type="button" class="btn btn-secondary btn-md">Continue</button>
+    </div>
+</div>

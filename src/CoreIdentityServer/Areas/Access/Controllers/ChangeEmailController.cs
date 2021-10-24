@@ -9,11 +9,5 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         {
             return View();
         }
-
-        public IActionResult ChangeEmailSuccessful()
-        {
-            return View();
-        }
-
     }
 }

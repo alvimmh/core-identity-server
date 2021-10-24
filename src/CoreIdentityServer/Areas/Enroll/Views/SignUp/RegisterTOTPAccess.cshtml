@@ -1,0 +1,23 @@
+
+@{
+    ViewData["Title"] = "Register TOTP Access";
+}
+
+<h1>Register TOTP Access</h1>
+<p>Email confirmed.</p>
+<p>
+    Please use an authenticator app to scan the below QR code. After scanning, please enter the 6-digit code generated from the app.
+</p>
+
+<p>QR code here.</p>
+<span>Alternatively, enter this secret key in the app manually.</span>
+
+<div class="mt-4">
+    <label for="totp-code-input" class="form-label">Enter TOTP code</label>
+    <input type="number" class="form-control" id="totp-code-input">
+
+    <div class="d-grid col-6 mt-3 mx-auto">
+        <button type="button" class="btn btn-secondary btn-md">Confirm</button>
+    </div>
+</div>
+

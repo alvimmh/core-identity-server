@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
     [Area("Access")]
-    public class SignInController : Controller
+    public class ResetTOTPAccessController : Controller
     {
-        public IActionResult Index()
+        public IActionResult ResetTOTPAccessSuccessful()
         {
             return View();
         }

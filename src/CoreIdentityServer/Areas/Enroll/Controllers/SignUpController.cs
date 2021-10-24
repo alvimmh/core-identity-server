@@ -9,5 +9,15 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         {
             return View();
         }
+
+        public IActionResult RegisterTOTPAccess()
+        {
+            return View();
+        }
+
+        public IActionResult RegisterTOTPAccessSuccessful()
+        {
+            return View();
+        }
     }
 }

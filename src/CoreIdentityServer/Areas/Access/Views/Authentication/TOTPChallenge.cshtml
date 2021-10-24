@@ -3,5 +3,16 @@
     ViewData["Title"] = "TOTP Challenge";
 }
 
-<h1>TOTP Challenge</h1>
+<p>Security challenge</p>
 
+<p>To help keep your account safer, we want to make sure it is you before proceeding.</p>
+<p>Please enter the TOTP code from your authenticator app.</p>
+
+<div class="mt-4">
+    <label for="totp-code-input" class="form-label">Enter TOTP code</label>
+    <input type="number" class="form-control" id="totp-code-input">
+
+    <div class="d-grid col-6 mt-3 mx-auto">
+        <button type="button" class="btn btn-secondary btn-md">Submit</button>
+    </div>
+</div>

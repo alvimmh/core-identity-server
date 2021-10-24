@@ -9,17 +9,19 @@
     
     <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
     <link rel="shortcut icon" type="image/x-icon" href="~/favicon.ico" />
-    
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap4-glyphicons/css/bootstrap-glyphicons.min.css" />
 </head>
 <body>
     <partial name="_Nav" />
 
-    <div>
+    <div class="container-sm px-4">
         @RenderBody()
     </div>
 
     <script src="~/lib/jquery/dist/jquery.slim.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
     @RenderSection("scripts", required: false)
 </body>
