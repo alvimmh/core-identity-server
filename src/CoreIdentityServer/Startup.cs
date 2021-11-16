@@ -4,7 +4,7 @@
 
 using Duende.IdentityServer;
 using CoreIdentityServer.Data;
-using IdentityServerHost.Models;
+using CoreIdentityServer.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -89,12 +89,12 @@ namespace CoreIdentityServer
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapDefaultControllerRoute();
-
                 endpoints.MapControllerRoute(
                     name: "Areas",
                     pattern: "{area:exists}/{controller=SignUp}/{action=Index}/{id?}"
                 );
+
+                endpoints.MapDefaultControllerRoute();
             });
         }
     }

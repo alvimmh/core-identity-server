@@ -7,7 +7,7 @@ using System.Linq;
 using System.Security.Claims;
 using IdentityModel;
 using CoreIdentityServer.Data;
-using IdentityServerHost.Models;
+using CoreIdentityServer.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

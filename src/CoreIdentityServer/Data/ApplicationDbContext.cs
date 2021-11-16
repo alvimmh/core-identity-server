@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using IdentityServerHost.Models;
+using CoreIdentityServer.Models;
 
 namespace CoreIdentityServer.Data
 {
