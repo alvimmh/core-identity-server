@@ -42,8 +42,14 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             IdentityResult identityResult = await UserManager.CreateAsync(prospectiveUser);
 
             if (identityResult.Succeeded) {
+                // generate TOTP based verification code for confirming the user's email
+                string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultEmailProvider);
+
+                string emailSubject = "Please Confirm Your Email";
+                string emailBody = $"Greetings, please confirm your email by submitting this verification code: {verificationCode}";
+
                 // user account successfully created, initiate email confirmation
-                EmailService.Send("noreply@bonicinitiatives.biz", userInfo.Email, "Please Confirm Your Email", "Greetings, please confirm your email by...");
+                EmailService.Send("noreply@bonicinitiatives.biz", userInfo.Email, emailSubject, emailBody);
 
                 // cleanup
                 Dispose();
