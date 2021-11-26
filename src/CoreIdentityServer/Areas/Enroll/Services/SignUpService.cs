@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Enroll.Models;
-using CoreIdentityServer.Data;
+using CoreIdentityServer.Internals.Abstracts;
 using CoreIdentityServer.Models;
 using CoreIdentityServer.Services.EmailService;
 using Microsoft.AspNetCore.Identity;
@@ -10,19 +10,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Areas.Enroll.Services
 {
-    public class SignUpService : IDisposable
+    public class SignUpService : BaseService, IDisposable
     {
         private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
-        private readonly ApplicationDbContext DbContext;
         private EmailService EmailService;
         private bool ResourcesDisposed;
 
-        public SignUpService(IConfiguration config, UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext, EmailService emailService)
+        public SignUpService(IConfiguration config, UserManager<ApplicationUser> userManager, EmailService emailService)
         {
             Config = config;
             UserManager = userManager;
-            DbContext = dbContext;
             EmailService = emailService;
         }
 
@@ -66,21 +64,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         {
             if (ResourcesDisposed)
                 return;
-            
-            DbContext.Dispose();
+
             UserManager.Dispose();
             ResourcesDisposed = true;
-        }
-
-        private RouteValueDictionary GenerateRedirectRouteValues(string action, string controller, string area)
-        {
-            return new RouteValueDictionary(
-                new {
-                    action,
-                    controller,
-                    area
-                }
-            );
         }
     }
 }

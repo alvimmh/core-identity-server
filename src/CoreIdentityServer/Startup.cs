@@ -15,6 +15,7 @@ using Microsoft.Extensions.Hosting;
 using Npgsql;
 using CoreIdentityServer.Services.EmailService;
 using CoreIdentityServer.Areas.Enroll.Services;
+using CoreIdentityServer.Areas.Access.Services;
 
 namespace CoreIdentityServer
 {
@@ -78,6 +79,7 @@ namespace CoreIdentityServer
             // inject EmailService
             services.AddSingleton<EmailService>();
             services.AddScoped<SignUpService>();
+            services.AddScoped<AuthenticationService>();
         }
 
         public void Configure(IApplicationBuilder app)

@@ -23,9 +23,10 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
 
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel userInfo)
         {
-            RouteValueDictionary redirectionRouteValues = await SignUpService.RegisterProspectiveUser(userInfo);
+            RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(userInfo);
 
-            return RedirectToRoute(redirectionRouteValues);
+            TempData["userEmail"] = userInfo.Email;
+            return RedirectToRoute(redirectRouteValues);
         }
 
         public IActionResult RegisterTOTPAccess()

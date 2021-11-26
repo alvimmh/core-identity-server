@@ -1,15 +1,24 @@
-
+@model EmailChallengeInputModel
 @{
     ViewData["Title"] = "Confirm Email";
+    string userEmail = (string)TempData["userEmail"];
 }
 
 <p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm your email.</p>
 
-<div class="mt-4">
-    <label for="secure-code-input" class="form-label">Enter secure 6-digit code</label>
-    <input type="number" class="form-control" id="secure-code-input">
+<form
+    asp-area="Access"
+    asp-controller="Authentication"
+    asp-action="ManageEmailChallengeVerification"
+    method="post"
+>
+    <div class="mt-4">
+        <label for="verification-code-input" class="form-label">Enter secure 6-digit code</label>
+        <input type="integer" class="form-control" id="verification-code-input" asp-for="VerificationCode">
+        <input type="string" class="form-control" id="email-address-input" asp-for="Email" value="@userEmail" hidden>
 
-    <div class="d-grid col-6 mt-3 mx-auto">
-        <button type="button" class="btn btn-secondary btn-md">Continue</button>
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Continue</button>
+        </div>
     </div>
-</div>
+</form>
