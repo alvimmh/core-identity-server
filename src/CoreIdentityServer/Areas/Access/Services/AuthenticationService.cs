@@ -33,7 +33,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (tempDataExists)
             {
                 string userEmailFromTempData = tempDataValue.ToString();
-                redirectRouteValues = !string.IsNullOrWhiteSpace(userEmailFromTempData) ? redirectRouteValues : null;
+                redirectRouteValues = string.IsNullOrWhiteSpace(userEmailFromTempData) ? redirectRouteValues : null;
             }
 
             return redirectRouteValues;

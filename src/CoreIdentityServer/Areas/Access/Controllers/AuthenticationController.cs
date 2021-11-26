@@ -28,10 +28,10 @@ namespace CoreIdentityServer.Areas.Access.Controllers
 
         public IActionResult EmailChallenge()
         {
-            RouteValueDictionary redirectRoute = AuthenticationService.ManageEmailChallenge(TempData);
+            RouteValueDictionary redirectRouteValues = AuthenticationService.ManageEmailChallenge(TempData);
 
-            if (redirectRoute != null)
-                return RedirectToRoute(redirectRoute);
+            if (redirectRouteValues != null)
+                return RedirectToRoute(redirectRouteValues);
 
             return View();
         }
