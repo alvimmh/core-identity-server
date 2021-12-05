@@ -70,24 +70,26 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
         public async Task<RegisterTOTPAccessInputModel> RegisterTOTPAccess(ITempDataDictionary TempData)
         {
+            RegisterTOTPAccessInputModel result = null;
             bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
 
             string userEmail = tempDataExists ? tempDataValue.ToString() : null;
-            if (userEmail == null)
+            if (string.IsNullOrWhiteSpace(userEmail))
             {
-                return null;
+                return result;
             }
 
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmail);
             if (prospectiveUser == null || prospectiveUser.TwoFactorEnabled)
             {
-                return null;
+                return result;
             }
 
             string authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(prospectiveUser);
-            string authenticatorKeyUri = authenticatorKey != null ? GenerateQRCodeUri(userEmail, authenticatorKey) : null;
+            bool authenticatorKeyExists = !string.IsNullOrWhiteSpace(authenticatorKey);
+            string authenticatorKeyUri = authenticatorKeyExists ? GenerateQRCodeUri(userEmail, authenticatorKey) : null;
             
-            if (authenticatorKey == null)
+            if (!authenticatorKeyExists)
             {
                 IdentityResult resetAuthenticatorKey = await UserManager.ResetAuthenticatorKeyAsync(prospectiveUser);
                 if (resetAuthenticatorKey.Succeeded)
@@ -97,11 +99,11 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 }
                 else
                 {
-                    return null;
+                    return result;
                 }
             }
             
-            RegisterTOTPAccessInputModel result = new RegisterTOTPAccessInputModel()
+            result = new RegisterTOTPAccessInputModel()
             {
                 AuthenticatorKey = authenticatorKey,
                 AuthenticatorKeyUri = authenticatorKeyUri,
@@ -114,11 +116,15 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         public async Task<RouteValueDictionary> VerifyTOTPAccessRegistration(RegisterTOTPAccessInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+            
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
-            string TOTPCode = inputModel.TOTPCode;
+            if (prospectiveUser == null)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+                return redirectRouteValues;
+            }
 
             bool totpAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultAuthenticatorProvider, inputModel.TOTPCode);
-
             if (totpAccessVerified)
             {
                 IdentityResult enableTOTPLogin = await UserManager.SetTwoFactorEnabledAsync(prospectiveUser, true);

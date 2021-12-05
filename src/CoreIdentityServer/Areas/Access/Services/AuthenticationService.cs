@@ -41,11 +41,18 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues;
+            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
+            
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
-            prospectiveUser.EmailConfirmed = await VerifyEmailChallenge(prospectiveUser, inputModel);
-            IdentityResult identityResult = prospectiveUser.EmailConfirmed ? await UserManager.UpdateAsync(prospectiveUser) : null;
+            if (prospectiveUser == null)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+                return redirectRouteValues;
+            }
 
+            prospectiveUser.EmailConfirmed = await VerifyEmailChallenge(prospectiveUser, inputModel);
+
+            IdentityResult identityResult = prospectiveUser.EmailConfirmed ? await UserManager.UpdateAsync(prospectiveUser) : null;
             if (identityResult != null && identityResult.Succeeded)
             {   
                 string emailSubject = "Email Verified";
@@ -55,10 +62,6 @@ namespace CoreIdentityServer.Areas.Access.Services
                 EmailService.Send("noreply@bonicinitiatives.biz", inputModel.Email, emailSubject, emailBody);
 
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
-            }
-            else
-            {
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
             }
 
             return redirectRouteValues;
