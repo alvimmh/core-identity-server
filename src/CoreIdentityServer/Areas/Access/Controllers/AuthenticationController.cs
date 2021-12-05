@@ -36,7 +36,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View();
         }
 
-        public async Task<IActionResult> ManageEmailChallengeVerification([FromForm] EmailChallengeInputModel inputModel)
+        public async Task<IActionResult> EmailChallengeVerification([FromForm] EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
 

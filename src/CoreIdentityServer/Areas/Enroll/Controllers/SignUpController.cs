@@ -29,9 +29,21 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return RedirectToRoute(redirectRouteValues);
         }
 
-        public IActionResult RegisterTOTPAccess()
+        public async Task<IActionResult> RegisterTOTPAccess()
         {
-            return View();
+            RegisterTOTPAccessInputModel model = await SignUpService.RegisterTOTPAccess(TempData);
+            if (model == null)
+                return RedirectToRoute(SignUpService.RootRoute());
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> VerifyTOTPAccessRegistration([FromForm] RegisterTOTPAccessInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = await SignUpService.VerifyTOTPAccessRegistration(inputModel);
+
+            TempData["userEmail"] = inputModel.Email;
+            return RedirectToRoute(redirectRouteValues);
         }
 
         public IActionResult RegisterTOTPAccessSuccessful()

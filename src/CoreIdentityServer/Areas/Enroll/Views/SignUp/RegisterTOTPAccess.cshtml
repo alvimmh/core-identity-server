@@ -1,23 +1,49 @@
-
+@model RegisterTOTPAccessInputModel
 @{
     ViewData["Title"] = "Register TOTP Access";
 }
 
-<h1>Register TOTP Access</h1>
-<p>Email confirmed.</p>
-<p>
-    Please use an authenticator app to scan the below QR code. After scanning, please enter the 6-digit code generated from the app.
+<p class="lh-1">Email confirmed.</p>
+<p class="lh-1">
+    Please use an authenticator app to scan the QR code below. Later, enter the 6-digit code generated from the app.
 </p>
 
-<p>QR code here.</p>
-<span>Alternatively, enter this secret key in the app manually.</span>
+<div class="text-center"><canvas id="totp-auth-qr-code"></canvas></div>
+<a id="copy-secret-key" class="d-block text-center lh-1">Copy secret key</a>
 
-<div class="mt-4">
-    <label for="totp-code-input" class="form-label">Enter TOTP code</label>
-    <input type="number" class="form-control" id="totp-code-input">
+<form
+    asp-area="Enroll"
+    asp-controller="SignUp"
+    asp-action="VerifyTOTPAccessRegistration"
+    method="post"
+>
+    <div class="mt-4">
+        <label for="totp-code-input" class="form-label">Enter TOTP code</label>
+        <input type="number" class="form-control" id="totp-code-input" asp-for="TOTPCode">
 
-    <div class="d-grid col-6 mt-3 mx-auto">
-        <button type="button" class="btn btn-secondary btn-md">Confirm</button>
+        <input type="email" class="form-control" asp-for="Email" value="@Model.Email" hidden>
+
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Continue</button>
+        </div>
     </div>
-</div>
+</form>
 
+@section scripts {
+    <script src="~/lib/qrcode/build/qrcode.js"></script>
+    <script type="text/javascript">
+        const totpAuthQRCodeContainer = document.getElementById("totp-auth-qr-code");
+        QRCode.toCanvas(totpAuthQRCodeContainer, "@Model.AuthenticatorKeyUri", { scale: 2 }, (error) => { if (error) { console.error(error) }})
+
+        const copySecretKeyText = $("#copy-secret-key");
+        const copySecretKeyTextInitialValue = copySecretKeyText.text();
+
+        copySecretKeyText.click(() => {
+            navigator.clipboard.writeText("@Model.AuthenticatorKey")
+                .then(() => copySecretKeyText.text("Copied to clipboard"))
+                .catch(() => copySecretKeyText.text("Couldn't copy! Try again"))
+
+            setTimeout(() => copySecretKeyText.text(copySecretKeyTextInitialValue), 5000);
+        })
+    </script>
+}
