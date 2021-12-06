@@ -26,9 +26,10 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View();
         }
 
-        public IActionResult EmailChallenge()
+        [HttpGet]
+        public async Task<IActionResult> EmailChallenge()
         {
-            RouteValueDictionary redirectRouteValues = AuthenticationService.ManageEmailChallenge(TempData);
+            RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallenge(TempData);
 
             if (redirectRouteValues != null)
                 return RedirectToRoute(redirectRouteValues);
@@ -36,6 +37,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View();
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> EmailChallengeVerification([FromForm] EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallengeVerification(inputModel);

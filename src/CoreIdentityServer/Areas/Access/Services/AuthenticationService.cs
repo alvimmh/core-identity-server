@@ -25,7 +25,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             EmailService = emailService;
         }
 
-        public RouteValueDictionary ManageEmailChallenge(ITempDataDictionary TempData)
+        public async Task<RouteValueDictionary> ManageEmailChallenge(ITempDataDictionary TempData)
         {
             RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
             bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
@@ -33,7 +33,14 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (tempDataExists)
             {
                 string userEmailFromTempData = tempDataValue.ToString();
-                redirectRouteValues = string.IsNullOrWhiteSpace(userEmailFromTempData) ? redirectRouteValues : null;
+                if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
+                {
+                    ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
+                    if (prospectiveUser != null && !prospectiveUser.EmailConfirmed)
+                    {
+                        redirectRouteValues = null;
+                    }
+                }
             }
 
             return redirectRouteValues;

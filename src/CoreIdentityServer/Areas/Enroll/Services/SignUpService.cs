@@ -88,7 +88,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             string authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(prospectiveUser);
             bool authenticatorKeyExists = !string.IsNullOrWhiteSpace(authenticatorKey);
             string authenticatorKeyUri = authenticatorKeyExists ? GenerateQRCodeUri(userEmail, authenticatorKey) : null;
-            
+
             if (!authenticatorKeyExists)
             {
                 IdentityResult resetAuthenticatorKey = await UserManager.ResetAuthenticatorKeyAsync(prospectiveUser);

@@ -16,11 +16,14 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             SignUpService = signUpService;
         }
 
+        [HttpGet]
         public IActionResult Index()
         {
             return View();
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel userInfo)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(userInfo);
@@ -29,6 +32,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return RedirectToRoute(redirectRouteValues);
         }
 
+        [HttpGet]
         public async Task<IActionResult> RegisterTOTPAccess()
         {
             RegisterTOTPAccessInputModel model = await SignUpService.RegisterTOTPAccess(TempData);
@@ -38,6 +42,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> VerifyTOTPAccessRegistration([FromForm] RegisterTOTPAccessInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.VerifyTOTPAccessRegistration(inputModel);
@@ -46,6 +52,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return RedirectToRoute(redirectRouteValues);
         }
 
+        [HttpGet]
         public IActionResult RegisterTOTPAccessSuccessful()
         {
             return View();
