@@ -35,7 +35,12 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
         public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel userInfo)
         {
-            RouteValueDictionary redirectRouteValues;
+            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+
+            if (!ValidateModel(userInfo))
+            {
+                return redirectRouteValues;
+            }
 
             ApplicationUser prospectiveUser = new ApplicationUser()
             {
@@ -58,10 +63,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 EmailService.Send("noreply@bonicinitiatives.biz", userInfo.Email, emailSubject, emailBody);
 
                 redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
-            }
-            else
-            {
-                redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
             }
 
             // registration failed, redirect to SignUp page again
@@ -116,6 +117,11 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         public async Task<RouteValueDictionary> VerifyTOTPAccessRegistration(RegisterTOTPAccessInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+
+            if (!ValidateModel(inputModel))
+            {
+                return redirectRouteValues;
+            }
             
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)

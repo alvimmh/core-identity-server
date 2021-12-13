@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Routing;
 
 namespace CoreIdentityServer.Internals.Abstracts
@@ -13,6 +15,16 @@ namespace CoreIdentityServer.Internals.Abstracts
                     area
                 }
             );
+        }
+
+        private protected bool ValidateModel(object model)
+        {
+            ValidationContext validationContext = new ValidationContext(model);
+            List<ValidationResult> validationResults = new List<ValidationResult>();
+
+            bool isValid = Validator.TryValidateObject(model, validationContext, validationResults);
+
+            return isValid;
         }
     }
 }

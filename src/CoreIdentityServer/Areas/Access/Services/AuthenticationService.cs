@@ -49,6 +49,11 @@ namespace CoreIdentityServer.Areas.Access.Services
         public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
+
+            if (!ValidateModel(inputModel))
+            {
+                return redirectRouteValues;
+            }
             
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)
