@@ -17,16 +17,17 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult RegisterProspectiveUser()
         {
             return View();
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel userInfo)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(userInfo);
+            if (redirectRouteValues == null)
+                return View(userInfo);
 
             TempData["userEmail"] = userInfo.Email;
             return RedirectToRoute(redirectRouteValues);
@@ -42,11 +43,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View(model);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyTOTPAccessRegistration([FromForm] RegisterTOTPAccessInputModel inputModel)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegisterTOTPAccess([FromForm] RegisterTOTPAccessInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.VerifyTOTPAccessRegistration(inputModel);
+            if (redirectRouteValues == null)
+                return View(inputModel);
 
             TempData["userEmail"] = inputModel.Email;
             return RedirectToRoute(redirectRouteValues);

@@ -25,9 +25,9 @@ namespace CoreIdentityServer.Areas.Access.Services
             EmailService = emailService;
         }
 
-        public async Task<RouteValueDictionary> ManageEmailChallenge(ITempDataDictionary TempData)
+        public async Task<EmailChallengeInputModel> ManageEmailChallenge(ITempDataDictionary TempData)
         {
-            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+            EmailChallengeInputModel model = null;
             bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
 
             if (tempDataExists)
@@ -38,17 +38,20 @@ namespace CoreIdentityServer.Areas.Access.Services
                     ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
                     if (prospectiveUser != null && !prospectiveUser.EmailConfirmed)
                     {
-                        redirectRouteValues = null;
+                        model = new EmailChallengeInputModel
+                        {
+                            Email = userEmailFromTempData
+                        };
                     }
                 }
             }
 
-            return redirectRouteValues;
+            return model;
         }
 
         public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
+            RouteValueDictionary redirectRouteValues = null;
 
             if (!ValidateModel(inputModel))
             {
@@ -58,7 +61,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+                redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
                 return redirectRouteValues;
             }
 

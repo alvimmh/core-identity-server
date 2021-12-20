@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Access.Models;
 using CoreIdentityServer.Areas.Access.Services;
+using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
@@ -10,10 +11,12 @@ namespace CoreIdentityServer.Areas.Access.Controllers
     public class AuthenticationController : Controller
     {
         private AuthenticationService AuthenticationService;
+        private SignUpService SignUpService;
 
-        public AuthenticationController(AuthenticationService authenticationService)
+        public AuthenticationController(AuthenticationService authenticationService, SignUpService signUpService)
         {
             AuthenticationService = authenticationService;
+            SignUpService = signUpService;
         }
 
         public IActionResult TOTPChallenge()
@@ -29,19 +32,20 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpGet]
         public async Task<IActionResult> EmailChallenge()
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallenge(TempData);
+            EmailChallengeInputModel model = await AuthenticationService.ManageEmailChallenge(TempData);
+            if (model == null)
+                return RedirectToRoute(SignUpService.RootRoute());
 
-            if (redirectRouteValues != null)
-                return RedirectToRoute(redirectRouteValues);
-
-            return View();
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EmailChallengeVerification([FromForm] EmailChallengeInputModel inputModel)
+        public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
+            if (redirectRouteValues == null)
+                return View(inputModel);
 
             TempData["userEmail"] = inputModel.Email;
             return RedirectToRoute(redirectRouteValues);

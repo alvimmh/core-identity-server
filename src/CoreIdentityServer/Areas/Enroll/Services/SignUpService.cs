@@ -30,12 +30,12 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
         public RouteValueDictionary RootRoute()
         {
-            return GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+            return GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
         }
 
         public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel userInfo)
         {
-            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+            RouteValueDictionary redirectRouteValues = null;
 
             if (!ValidateModel(userInfo))
             {
@@ -116,7 +116,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
         public async Task<RouteValueDictionary> VerifyTOTPAccessRegistration(RegisterTOTPAccessInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+            RouteValueDictionary redirectRouteValues = null;
 
             if (!ValidateModel(inputModel))
             {
@@ -126,7 +126,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("Index", "SignUp", "Enroll");
+                redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
                 return redirectRouteValues;
             }
 

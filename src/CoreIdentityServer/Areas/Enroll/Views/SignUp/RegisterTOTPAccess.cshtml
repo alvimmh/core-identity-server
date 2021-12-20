@@ -14,14 +14,17 @@
 <form
     asp-area="Enroll"
     asp-controller="SignUp"
-    asp-action="VerifyTOTPAccessRegistration"
+    asp-action="RegisterTOTPAccess"
     method="post"
 >
     <div class="mt-4">
         <label for="totp-code-input" class="form-label">Enter TOTP code</label>
         <input type="number" class="form-control" id="totp-code-input" asp-for="TOTPCode">
+        <span asp-validation-for="TOTPCode" class="text-danger"></span>
 
-        <input type="email" class="form-control" asp-for="Email" value="@Model.Email" hidden>
+        <input type="email" asp-for="Email" value="@Model.Email" hidden>
+        <input type="string" asp-for="AuthenticatorKey" value="@Model.AuthenticatorKey" hidden>
+        <input type="string" asp-for="AuthenticatorKeyUri" value="@Model.AuthenticatorKeyUri" hidden>
 
         <div class="d-grid col-6 mt-3 mx-auto">
             <button type="submit" class="btn btn-secondary btn-md">Continue</button>

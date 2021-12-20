@@ -4,7 +4,10 @@ namespace CoreIdentityServer.Areas.Enroll.Models
 {
     public class RegisterTOTPAccessInputModel
     {
+        [Required]
         public string AuthenticatorKey { get; set; }
+
+        [Required]
         public string AuthenticatorKeyUri { get; set; }
 
         [Required]

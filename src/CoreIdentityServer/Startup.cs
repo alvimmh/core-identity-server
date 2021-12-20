@@ -1,4 +1,4 @@
-﻿// Copyright (c) Duende Software. All rights reserved.
+// Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
 
@@ -99,7 +99,7 @@ namespace CoreIdentityServer
             {
                 endpoints.MapControllerRoute(
                     name: "Areas",
-                    pattern: "{area:exists}/{controller=SignUp}/{action=Index}/{id?}"
+                    pattern: "{area:exists}/{controller=SignUp}/{action=RegisterProspectiveUser}/{id?}"
                 );
 
                 endpoints.MapDefaultControllerRoute();
