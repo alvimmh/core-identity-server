@@ -36,11 +36,14 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpGet]
         public async Task<IActionResult> RegisterTOTPAccess()
         {
-            RegisterTOTPAccessInputModel model = await SignUpService.RegisterTOTPAccess(TempData);
-            if (model == null)
-                return RedirectToRoute(SignUpService.RootRoute());
+            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            object[] result = await SignUpService.RegisterTOTPAccess(TempData);
 
-            return View(model);
+            // if ViewModel is null then redirect to RouteValueDictionary returned from SignUpService
+            if (result[0] == null)
+                return RedirectToRoute(result[1]);
+
+            return View(result[0]);
         }
 
         [HttpPost, ValidateAntiForgeryToken]

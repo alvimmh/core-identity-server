@@ -22,6 +22,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         private ActionContext ActionContext;
         private bool ResourcesDisposed;
         private readonly UrlEncoder UrlEncoder;
+        public RouteValueDictionary RootRoute;
 
         public SignUpService(
             IConfiguration config,
@@ -36,11 +37,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             EmailService = emailService;
             UrlEncoder = urlEncoder;
             ActionContext = actionContextAccessor.ActionContext;
-        }
-
-        public RouteValueDictionary RootRoute()
-        {
-            return GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+            RootRoute = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
         }
 
         public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel userInfo)
@@ -53,6 +50,11 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             }
 
             ApplicationUser existingUser  = await UserManager.FindByEmailAsync(userInfo.Email);
+            if (existingUser != null && existingUser.AccountRegistered)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                return redirectRouteValues;
+            }
 
             ApplicationUser prospectiveUser = existingUser ?? new ApplicationUser()
             {
@@ -87,9 +89,12 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             return redirectRouteValues;
         }
 
-        public async Task<RegisterTOTPAccessInputModel> RegisterTOTPAccess(ITempDataDictionary TempData)
+        public async Task<object[]> RegisterTOTPAccess(ITempDataDictionary TempData)
         {
-            RegisterTOTPAccessInputModel result = null;
+            RegisterTOTPAccessInputModel model = null;
+            RouteValueDictionary redirectRouteValues = RootRoute;
+            object[] result = GenerateArray(model, redirectRouteValues);
+
             bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
 
             string userEmail = tempDataExists ? tempDataValue.ToString() : null;
@@ -99,9 +104,14 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             }
 
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmail);
-            if (prospectiveUser == null || prospectiveUser.TwoFactorEnabled)
+            if (prospectiveUser == null)
             {
                 return result;
+            }
+            else if (prospectiveUser.AccountRegistered)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                return GenerateArray(model, redirectRouteValues);
             }
 
             string authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(prospectiveUser);
@@ -119,18 +129,18 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 else
                 {
                     // resetting authenticator key failed, user will be redirected to SignUp root route
-                    return result;
+                    return GenerateArray(model, redirectRouteValues);
                 }
             }
             
-            result = new RegisterTOTPAccessInputModel()
+            model = new RegisterTOTPAccessInputModel()
             {
                 AuthenticatorKey = authenticatorKey,
                 AuthenticatorKeyUri = authenticatorKeyUri,
                 Email = userEmail
             };
 
-            return result;
+            return GenerateArray(model, redirectRouteValues);
         }
 
         public async Task<RouteValueDictionary> VerifyTOTPAccessRegistration(RegisterTOTPAccessInputModel inputModel)
@@ -145,22 +155,30 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+                redirectRouteValues = RootRoute;
+                return redirectRouteValues;
+            }
+            else if (prospectiveUser.AccountRegistered)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
                 return redirectRouteValues;
             }
 
             bool totpAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultAuthenticatorProvider, inputModel.TOTPCode);
             if (totpAccessVerified)
             {
-                IdentityResult enableTOTPLogin = await UserManager.SetTwoFactorEnabledAsync(prospectiveUser, true);
-                if (enableTOTPLogin.Succeeded)
+                prospectiveUser.TwoFactorEnabled = true;
+                prospectiveUser.AccountRegistered = true;
+
+                IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
+                if (updateUser.Succeeded)
                 {
                     redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
                 }
                 else
                 {
                     // Error when enabling Two Factor Authentication, add them to ModelState
-                    foreach (IdentityError error in enableTOTPLogin.Errors)
+                    foreach (IdentityError error in updateUser.Errors)
                         ActionContext.ModelState.AddModelError(string.Empty, error.Description);
                 }
             }

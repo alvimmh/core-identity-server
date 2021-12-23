@@ -34,9 +34,10 @@ namespace CoreIdentityServer.Areas.Access.Services
             ActionContext = actionContextAccessor.ActionContext;
         }
 
-        public async Task<EmailChallengeInputModel> ManageEmailChallenge(ITempDataDictionary TempData)
+        public async Task<object[]> ManageEmailChallenge(ITempDataDictionary TempData)
         {
             EmailChallengeInputModel model = null;
+            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
             bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
 
             if (tempDataExists)
@@ -45,17 +46,21 @@ namespace CoreIdentityServer.Areas.Access.Services
                 if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
                 {
                     ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
-                    if (prospectiveUser != null)
+                    if (prospectiveUser != null && !prospectiveUser.AccountRegistered)
                     {
                         model = new EmailChallengeInputModel
                         {
                             Email = userEmailFromTempData
                         };
                     }
+                    else if (prospectiveUser != null && prospectiveUser.AccountRegistered)
+                    {
+                        redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                    }
                 }
             }
 
-            return model;
+            return GenerateArray(model, redirectRouteValues);
         }
 
         public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
@@ -71,6 +76,11 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (prospectiveUser == null)
             {
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+                return redirectRouteValues;
+            }
+            else if (prospectiveUser.AccountRegistered)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
                 return redirectRouteValues;
             }
 

@@ -6,6 +6,11 @@ namespace CoreIdentityServer.Internals.Abstracts
 {
     public abstract class BaseService
     {
+        private protected object[] GenerateArray(params object[] items)
+        {
+            return items;
+        }
+
         private protected RouteValueDictionary GenerateRedirectRouteValues(string action, string controller, string area)
         {
             return new RouteValueDictionary(

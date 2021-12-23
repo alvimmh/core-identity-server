@@ -11,12 +11,10 @@ namespace CoreIdentityServer.Areas.Access.Controllers
     public class AuthenticationController : Controller
     {
         private AuthenticationService AuthenticationService;
-        private SignUpService SignUpService;
 
-        public AuthenticationController(AuthenticationService authenticationService, SignUpService signUpService)
+        public AuthenticationController(AuthenticationService authenticationService)
         {
             AuthenticationService = authenticationService;
-            SignUpService = signUpService;
         }
 
         public IActionResult TOTPChallenge()
@@ -32,11 +30,14 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpGet]
         public async Task<IActionResult> EmailChallenge()
         {
-            EmailChallengeInputModel model = await AuthenticationService.ManageEmailChallenge(TempData);
-            if (model == null)
-                return RedirectToRoute(SignUpService.RootRoute());
+            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            object[] result = await AuthenticationService.ManageEmailChallenge(TempData);
 
-            return View(model);
+            // if ViewModel is null then redirect to RouteValueDictionary returned from AuthenticationService
+            if (result[0] == null)
+                return RedirectToRoute(result[1]);
+
+            return View(result[0]);
         }
 
         [HttpPost]
