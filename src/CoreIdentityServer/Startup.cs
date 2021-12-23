@@ -16,6 +16,7 @@ using Npgsql;
 using CoreIdentityServer.Services.EmailService;
 using CoreIdentityServer.Areas.Enroll.Services;
 using CoreIdentityServer.Areas.Access.Services;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace CoreIdentityServer
 {
@@ -76,7 +77,8 @@ namespace CoreIdentityServer
                     options.ClientSecret = "copy client secret from Google here";
                 });
 
-            // inject EmailService
+            // register services
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
             services.AddSingleton<EmailService>();
             services.AddScoped<SignUpService>();
             services.AddScoped<AuthenticationService>();

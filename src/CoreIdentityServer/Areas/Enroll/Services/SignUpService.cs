@@ -6,6 +6,8 @@ using CoreIdentityServer.Internals.Abstracts;
 using CoreIdentityServer.Models;
 using CoreIdentityServer.Services.EmailService;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
@@ -17,15 +19,23 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
+        private ActionContext ActionContext;
         private bool ResourcesDisposed;
         private readonly UrlEncoder UrlEncoder;
 
-        public SignUpService(IConfiguration config, UserManager<ApplicationUser> userManager, EmailService emailService, UrlEncoder urlEncoder)
+        public SignUpService(
+            IConfiguration config,
+            UserManager<ApplicationUser> userManager,
+            EmailService emailService,
+            UrlEncoder urlEncoder,
+            IActionContextAccessor actionContextAccessor
+        )
         {
             Config = config;
             UserManager = userManager;
             EmailService = emailService;
             UrlEncoder = urlEncoder;
+            ActionContext = actionContextAccessor.ActionContext;
         }
 
         public RouteValueDictionary RootRoute()
@@ -37,21 +47,24 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         {
             RouteValueDictionary redirectRouteValues = null;
 
-            if (!ValidateModel(userInfo))
+            if (!ActionContext.ModelState.IsValid)
             {
                 return redirectRouteValues;
             }
 
-            ApplicationUser prospectiveUser = new ApplicationUser()
+            ApplicationUser existingUser  = await UserManager.FindByEmailAsync(userInfo.Email);
+
+            ApplicationUser prospectiveUser = existingUser ?? new ApplicationUser()
             {
                 Email = userInfo.Email,
                 UserName = userInfo.Email,
             };
+            
+            // if user doesn't already exist, create new user without password
+            IdentityResult createUser = existingUser == null ? await UserManager.CreateAsync(prospectiveUser) : null;
 
-            // create user without password
-            IdentityResult identityResult = await UserManager.CreateAsync(prospectiveUser);
-
-            if (identityResult.Succeeded)
+            // if user already registered with email or user created successfully now, send verification code to confirm email
+            if (existingUser != null || createUser.Succeeded)
             {
                 // generate TOTP based verification code for confirming the user's email
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultEmailProvider);
@@ -64,8 +77,13 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
                 redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
             }
+            else if (!createUser.Succeeded)
+            {
+                // new user creation failed, adding erros to ModelState
+                foreach (IdentityError error in createUser.Errors)
+                    ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+            }
 
-            // registration failed, redirect to SignUp page again
             return redirectRouteValues;
         }
 
@@ -100,6 +118,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 }
                 else
                 {
+                    // resetting authenticator key failed, user will be redirected to SignUp root route
                     return result;
                 }
             }
@@ -118,7 +137,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         {
             RouteValueDictionary redirectRouteValues = null;
 
-            if (!ValidateModel(inputModel))
+            if (!ActionContext.ModelState.IsValid)
             {
                 return redirectRouteValues;
             }
@@ -138,6 +157,17 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 {
                     redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
                 }
+                else
+                {
+                    // Error when enabling Two Factor Authentication, add them to ModelState
+                    foreach (IdentityError error in enableTOTPLogin.Errors)
+                        ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+            else
+            {
+                // TOTP access verification failed, adding erros to ModelState
+                ActionContext.ModelState.AddModelError(string.Empty, "Invalid TOTP code");
             }
 
             return redirectRouteValues;

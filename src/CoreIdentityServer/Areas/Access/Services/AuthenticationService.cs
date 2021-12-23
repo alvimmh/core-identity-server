@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using CoreIdentityServer.Internals.Abstracts;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -16,13 +18,20 @@ namespace CoreIdentityServer.Areas.Access.Services
         private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
+        private ActionContext ActionContext;
         private bool ResourcesDisposed;
 
-        public AuthenticationService(IConfiguration config, UserManager<ApplicationUser> userManager, EmailService emailService)
+        public AuthenticationService(
+            IConfiguration config,
+            UserManager<ApplicationUser> userManager,
+            EmailService emailService,
+            IActionContextAccessor actionContextAccessor
+        )
         {
             Config = config;
             UserManager = userManager;
             EmailService = emailService;
+            ActionContext = actionContextAccessor.ActionContext;
         }
 
         public async Task<EmailChallengeInputModel> ManageEmailChallenge(ITempDataDictionary TempData)
@@ -36,7 +45,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
                 {
                     ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
-                    if (prospectiveUser != null && !prospectiveUser.EmailConfirmed)
+                    if (prospectiveUser != null)
                     {
                         model = new EmailChallengeInputModel
                         {
@@ -53,11 +62,11 @@ namespace CoreIdentityServer.Areas.Access.Services
         {
             RouteValueDictionary redirectRouteValues = null;
 
-            if (!ValidateModel(inputModel))
+            if (!ActionContext.ModelState.IsValid)
             {
                 return redirectRouteValues;
             }
-            
+
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)
             {
@@ -65,19 +74,31 @@ namespace CoreIdentityServer.Areas.Access.Services
                 return redirectRouteValues;
             }
 
-            prospectiveUser.EmailConfirmed = await VerifyEmailChallenge(prospectiveUser, inputModel);
+            bool userEmailConfirmed = await VerifyEmailChallenge(prospectiveUser, inputModel);
+            if (userEmailConfirmed)
+            {
+                prospectiveUser.EmailConfirmed = true;
 
-            IdentityResult identityResult = prospectiveUser.EmailConfirmed ? await UserManager.UpdateAsync(prospectiveUser) : null;
-            if (identityResult != null && identityResult.Succeeded)
-            {   
-                string emailSubject = "Email Verified";
-                string emailBody = $"Congratulations, Your email is now verified.";
+                IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
+                if (updateUser.Succeeded)
+                {
+                    string emailSubject = "Email Verified";
+                    string emailBody = $"Congratulations, Your email is now verified.";
 
-                // user account successfully created, initiate email confirmation
-                EmailService.Send("noreply@bonicinitiatives.biz", inputModel.Email, emailSubject, emailBody);
+                    // user account successfully created, initiate email confirmation
+                    EmailService.Send("noreply@bonicinitiatives.biz", inputModel.Email, emailSubject, emailBody);
 
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+                    redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+                }
+                else
+                {
+                    // Error when enabling Two Factor Authentication, add them to ModelState
+                    foreach (IdentityError error in updateUser.Errors)
+                        ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+                }
             }
+            else
+                ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
 
             return redirectRouteValues;
         }
