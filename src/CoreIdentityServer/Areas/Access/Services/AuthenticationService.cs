@@ -2,12 +2,12 @@ using System;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Access.Models;
 using CoreIdentityServer.Models;
-using CoreIdentityServer.Services.EmailService;
+using CoreIdentityServer.Internals.Services;
+using CoreIdentityServer.Internals.Services.EmailService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using CoreIdentityServer.Internals.Abstracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 

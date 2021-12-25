@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 
-namespace CoreIdentityServer.Services.EmailService
+namespace CoreIdentityServer.Internals.Services.EmailService
 {
     public class EmailService : IDisposable
     {

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Routing;
 
-namespace CoreIdentityServer.Internals.Abstracts
+namespace CoreIdentityServer.Internals.Services
 {
     public abstract class BaseService
     {

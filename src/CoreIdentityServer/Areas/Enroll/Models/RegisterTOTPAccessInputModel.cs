@@ -17,5 +17,9 @@ namespace CoreIdentityServer.Areas.Enroll.Models
         [Required]
         [StringLength(6)]
         public string TOTPCode { get; set; }
+
+        [Required]
+        [StringLength(6)]
+        public string SessionVerificationTOTPCode { get; set; }
     }
 }

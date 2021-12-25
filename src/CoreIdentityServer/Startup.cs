@@ -1,22 +1,15 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-
-using Duende.IdentityServer;
 using CoreIdentityServer.Data;
 using CoreIdentityServer.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Npgsql;
-using CoreIdentityServer.Services.EmailService;
-using CoreIdentityServer.Areas.Enroll.Services;
-using CoreIdentityServer.Areas.Access.Services;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
+using CoreIdentityServer.Internals.DependencyInjectionExtensions;
 
 namespace CoreIdentityServer
 {
@@ -24,7 +17,6 @@ namespace CoreIdentityServer
     {
         public IWebHostEnvironment Environment { get; }
         public IConfiguration Configuration { get; }
-        private string DatabaseConnectionString = null;
 
         public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
@@ -34,23 +26,17 @@ namespace CoreIdentityServer
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var dbConnectionBuilder = new NpgsqlConnectionStringBuilder(Configuration.GetConnectionString("DefaultConnection"));
-            dbConnectionBuilder["Username"] = Configuration["cisdb_username"];
-            dbConnectionBuilder["Password"] = Configuration["cisdb_password"];
-
-            DatabaseConnectionString = dbConnectionBuilder.ConnectionString;
-
             services.AddControllersWithViews();
 
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(DatabaseConnectionString, 
-                    o => o.MigrationsAssembly(typeof(Startup).Assembly.FullName)));
-
+            // add project databases
+            services.AddProjectDatabases(Configuration);
+ 
             services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddProjectTokenProviders();
 
-            var builder = services.AddIdentityServer(options =>
+            services.AddIdentityServer(options =>
             {
                 options.Events.RaiseErrorEvents = true;
                 options.Events.RaiseInformationEvents = true;
@@ -65,23 +51,10 @@ namespace CoreIdentityServer
                 .AddInMemoryClients(Config.Clients)
                 .AddAspNetIdentity<ApplicationUser>();
 
-            services.AddAuthentication()
-                .AddGoogle(options =>
-                {
-                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                    
-                    // register your IdentityServer with Google at https://console.developers.google.com
-                    // enable the Google+ API
-                    // set the redirect URI to https://localhost:5001/signin-google
-                    options.ClientId = "copy client ID from Google here";
-                    options.ClientSecret = "copy client secret from Google here";
-                });
+            services.AddAuthentication();
 
             // register services
-            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
-            services.AddSingleton<EmailService>();
-            services.AddScoped<SignUpService>();
-            services.AddScoped<AuthenticationService>();
+            services.AddProjectServices();
         }
 
         public void Configure(IApplicationBuilder app)
