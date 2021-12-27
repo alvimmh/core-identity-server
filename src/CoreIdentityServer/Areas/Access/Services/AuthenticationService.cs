@@ -46,7 +46,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
                 {
                     ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
-                    if (prospectiveUser != null && !prospectiveUser.AccountRegistered)
+                    if (prospectiveUser != null && !prospectiveUser.AccountRegistered && !prospectiveUser.EmailConfirmed)
                     {
                         model = new EmailChallengeInputModel
                         {
@@ -73,7 +73,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             }
 
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
-            if (prospectiveUser == null)
+            if (prospectiveUser == null || (!prospectiveUser.AccountRegistered && prospectiveUser.EmailConfirmed))
             {
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
                 return redirectRouteValues;

@@ -56,6 +56,21 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
                 return redirectRouteValues;
             }
+            else if (existingUser != null && existingUser.EmailConfirmed)
+            {
+                // since user didn't complete registration process, user needs to go through email confirmation again
+                existingUser.EmailConfirmed = false;
+
+                IdentityResult updateUserEmailConfirmationStatus = await UserManager.UpdateAsync(existingUser);
+                if (!updateUserEmailConfirmationStatus.Succeeded)
+                {
+                    // updating user's email confirmation status failed, adding erros to ModelState
+                    foreach (IdentityError error in updateUserEmailConfirmationStatus.Errors)
+                        ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+
+                    return redirectRouteValues;
+                }
+            }
 
             ApplicationUser prospectiveUser = existingUser ?? new ApplicationUser()
             {
@@ -215,8 +230,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             }
             else
             {
-                // Session verification failed, adding erros to ModelState
-                Console.WriteLine("Session verification failed, redirecting to RootRoute");
+                // Session verification failed, redirecting to RootRoute
                 redirectRouteValues = RootRoute;
             }
 
