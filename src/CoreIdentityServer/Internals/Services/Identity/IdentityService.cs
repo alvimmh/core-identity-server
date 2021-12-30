@@ -88,6 +88,37 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return SignInManager.IsSignedIn(ActionContext.HttpContext.User);
         }
 
+        public async Task<bool> VerifyTOTPCode(ApplicationUser user, string tokenProvider, string verificationCode)
+        {
+            // verify email challenge
+            bool verificationResult = await UserManager.VerifyTwoFactorTokenAsync(
+                user,
+                tokenProvider,
+                verificationCode
+            );
+
+            return verificationResult;
+        }
+
+        // user email confirmed, notify user
+        public void SendEmailConfirmedEmail(string emailFrom, string emailTo, string userName)
+        {
+            string emailSubject = "Email Confirmed";
+            string emailBody = $"Congratulations {userName}, your email is now verified.";
+
+            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
+        }
+
+        // send a verification code to user's email
+        public void SendNewSessionVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
+        {
+            string emailSubject = "Please Confirm New Session";
+            string emailBody = $"Greetings, please confirm new sign in by submitting this verification code: {verificationCode}";
+
+            // user account successfully created, initiate email confirmation
+            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
+        }
+
         // notify the user about account lockout
         public void SendAccountLockedOutEmail(string emailFrom, string emailTo, string userName)
         {
@@ -98,7 +129,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         }
 
         // notify user about new session
-        public void SendConfirmNewActiveSessionEmail(string emailFrom, string emailTo, string userName)
+        public void SendNewActiveSessionNotificationEmail(string emailFrom, string emailTo, string userName)
         {
             string emailSubject = "New Active Session Started";
             string emailBody = $"Dear {userName}, this is to notify you of a new active session.";

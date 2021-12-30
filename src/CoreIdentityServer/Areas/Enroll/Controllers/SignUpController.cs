@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using CoreIdentityServer.Areas.Access.Models;
 using CoreIdentityServer.Areas.Enroll.Models;
 using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -35,6 +36,30 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
                 return View(userInfo);
 
             TempData["userEmail"] = userInfo.Email;
+            return RedirectToRoute(redirectRouteValues);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail()
+        {
+            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            object[] result = await SignUpService.ManageEmailConfirmation(TempData);
+
+            // if ViewModel is null then redirect to RouteValueDictionary returned from AuthenticationService
+            if (result[0] == null)
+                return RedirectToRoute(result[1]);
+
+            return View(result[0]);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmEmail([FromForm] EmailChallengeInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = await SignUpService.VerifyEmailConfirmation(inputModel);
+            if (redirectRouteValues == null)
+                return View(inputModel);
+
+            TempData["userEmail"] = inputModel.Email;
             return RedirectToRoute(redirectRouteValues);
         }
 

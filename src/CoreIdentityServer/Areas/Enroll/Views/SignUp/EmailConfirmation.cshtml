@@ -1,15 +1,15 @@
 @model EmailChallengeInputModel
 @{
-    ViewData["Title"] = "Confirm New Session";
+    ViewData["Title"] = "Confirm Email";
 }
 
-<p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm this session.</p>
+<p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm your email.</p>
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 <form
-    asp-area="Access"
-    asp-controller="Authentication"
-    asp-action="EmailChallenge"
+    asp-area="Enroll"
+    asp-controller="SignUp"
+    asp-action="EmailConfirmation"
     method="post"
 >
     <div class="mt-4">

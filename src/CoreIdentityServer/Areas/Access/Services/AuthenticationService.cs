@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
+using CoreIdentityServer.Internals.Constants.TokenProvider;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -22,6 +23,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
+        public RouteValueDictionary RootRoute;
         private bool ResourcesDisposed;
 
         public AuthenticationService(
@@ -39,30 +41,41 @@ namespace CoreIdentityServer.Areas.Access.Services
             EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
+            RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
         }
 
-        public async Task<object[]> ManageEmailChallenge(ITempDataDictionary TempData)
+        public async Task<object[]> ManageEmailChallenge(ITempDataDictionary tempData)
         {
             EmailChallengeInputModel model = null;
-            RouteValueDictionary redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
-            bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
+            RouteValueDictionary redirectRouteValues = RootRoute;
+            object[] result = GenerateArray(model, redirectRouteValues);
 
+            bool tempDataExists = tempData.TryGetValue("userEmail", out object tempDataValue);
             if (tempDataExists)
             {
                 string userEmailFromTempData = tempDataValue.ToString();
                 if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
                 {
-                    ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
-                    if (prospectiveUser != null && !prospectiveUser.AccountRegistered && !prospectiveUser.EmailConfirmed)
+                    ApplicationUser user = await UserManager.FindByEmailAsync(userEmailFromTempData);
+
+                    if (user == null || !user.EmailConfirmed)
                     {
+                        // user doesn't exist, redirect to sign in page
+                        return result;
+                    }
+                    else if (user.EmailConfirmed && !user.AccountRegistered)
+                    {
+                        // user exists, send email to complete registration
+                        IdentityService.SendAccountNotRegisteredEmail("noreply@bonicinitiatives.biz", userEmailFromTempData, user.UserName);
+                        return result;
+                    }
+                    else if (user.EmailConfirmed && user.AccountRegistered)
+                    {
+                        // user exists and completed registration
                         model = new EmailChallengeInputModel
                         {
                             Email = userEmailFromTempData
                         };
-                    }
-                    else if (prospectiveUser != null && prospectiveUser.AccountRegistered)
-                    {
-                        redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
                     }
                 }
             }
@@ -70,7 +83,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             return GenerateArray(model, redirectRouteValues);
         }
 
-        public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
+        public async Task<RouteValueDictionary> VerifyEmailChallenge(EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = null;
 
@@ -79,43 +92,50 @@ namespace CoreIdentityServer.Areas.Access.Services
                 return redirectRouteValues;
             }
 
-            ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
-            if (prospectiveUser == null || (!prospectiveUser.AccountRegistered && prospectiveUser.EmailConfirmed))
+            ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
+            if (user == null || !user.EmailConfirmed)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+                // user doesn't exist, redirect to sign in page
+                redirectRouteValues = RootRoute;
                 return redirectRouteValues;
             }
-            else if (prospectiveUser.AccountRegistered)
+            else if (user.EmailConfirmed && !user.AccountRegistered)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                // user exists, send email to complete registration & redirect to sign in page
+                IdentityService.SendAccountNotRegisteredEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName);
+                redirectRouteValues = RootRoute;
+
                 return redirectRouteValues;
             }
-
-            bool userEmailConfirmed = await VerifyEmailChallenge(prospectiveUser, inputModel);
-            if (userEmailConfirmed)
+            else if (user.EmailConfirmed && user.AccountRegistered)
             {
-                prospectiveUser.EmailConfirmed = true;
-
-                IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
-                if (updateUser.Succeeded)
+                // if TOTP code verified, sign in the user
+                bool TOTPCodeVerified = await IdentityService.VerifyTOTPCode(user, CustomTokenOptions.GenericTOTPTokenProvider, inputModel.VerificationCode);
+                if (TOTPCodeVerified)
                 {
-                    string emailSubject = "Email Verified";
-                    string emailBody = $"Congratulations, Your email is now verified.";
+                    // update security stamp of the user so other active sessions are logged out on the next request
+                    IdentityResult updateSecurityStamp = await UserManager.UpdateSecurityStampAsync(user);
+                    if (updateSecurityStamp.Succeeded)
+                    {
+                        await SignInManager.SignInAsync(user, false);
 
-                    // user account successfully created, initiate email confirmation
-                    EmailService.Send("noreply@bonicinitiatives.biz", inputModel.Email, emailSubject, emailBody);
+                        // send email to user about new session
+                        IdentityService.SendNewActiveSessionNotificationEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName);
 
-                    redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+                        redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Error updating security stamp");
+                        foreach (IdentityError error in updateSecurityStamp.Errors)
+                            Console.WriteLine(error.Description);
+
+                        ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+                    }
                 }
                 else
-                {
-                    // Error when enabling Two Factor Authentication, add them to ModelState
-                    foreach (IdentityError error in updateUser.Errors)
-                        ActionContext.ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-            else
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+            }           
 
             return redirectRouteValues;
         }
@@ -164,25 +184,11 @@ namespace CoreIdentityServer.Areas.Access.Services
             {
                 await IdentityService.ResetSignInAttempts(user);
 
-                // update security stamp of the user so other active sessions are logged out on the next request
-                IdentityResult updateSecurityStamp = await UserManager.UpdateSecurityStampAsync(user);
-                if (updateSecurityStamp.Succeeded)
-                {
-                    await SignInManager.SignInAsync(user, false);
+                string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
-                    // send email to user about new session
-                    IdentityService.SendConfirmNewActiveSessionEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName);
+                IdentityService.SendNewSessionVerificationEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName, sessionVerificationCode);
 
-                    redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
-                }
-                else
-                {
-                    Console.WriteLine($"Error updating security stamp");
-                    foreach (IdentityError error in updateSecurityStamp.Errors)
-                        Console.WriteLine(error.Description);
-
-                    ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
-                }
+                redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
             }
             else
             {
@@ -192,19 +198,6 @@ namespace CoreIdentityServer.Areas.Access.Services
             }
 
             return redirectRouteValues;
-        }
-
-        private async Task<bool> VerifyEmailChallenge(ApplicationUser prospectiveUser, EmailChallengeInputModel inputModel)
-        {
-            // verify email challenge
-            bool verificationResult = await UserManager.VerifyTwoFactorTokenAsync(
-                prospectiveUser,
-                TokenOptions.DefaultEmailProvider,
-                inputModel.VerificationCode
-            );
-
-            // return verification result
-            return verificationResult;
         }
 
         // clean up to be done by DI

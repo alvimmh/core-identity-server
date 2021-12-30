@@ -1,7 +1,7 @@
 using System;
-using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using CoreIdentityServer.Areas.Access.Models;
 using CoreIdentityServer.Areas.Enroll.Models;
 using CoreIdentityServer.Internals.Constants.TokenProvider;
 using CoreIdentityServer.Internals.Services;
@@ -24,9 +24,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
-        private bool ResourcesDisposed;
         private readonly UrlEncoder UrlEncoder;
         public RouteValueDictionary RootRoute;
+        private bool ResourcesDisposed;
 
         public SignUpService(
             IConfiguration config,
@@ -106,7 +106,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 // user account successfully created, initiate email confirmation
                 EmailService.Send("noreply@bonicinitiatives.biz", userInfo.Email, emailSubject, emailBody);
 
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
+                redirectRouteValues = GenerateRedirectRouteValues("EmailConfirmation", "SignUp", "Enroll");
             }
             else if (!createUser.Succeeded)
             {
@@ -114,6 +114,81 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 foreach (IdentityError error in createUser.Errors)
                     ActionContext.ModelState.AddModelError(string.Empty, error.Description);
             }
+
+            return redirectRouteValues;
+        }
+
+        public async Task<object[]> ManageEmailConfirmation(ITempDataDictionary tempData)
+        {
+            EmailChallengeInputModel model = null;
+            RouteValueDictionary redirectRouteValues = RootRoute;
+            bool tempDataExists = tempData.TryGetValue("userEmail", out object tempDataValue);
+
+            if (tempDataExists)
+            {
+                string userEmailFromTempData = tempDataValue.ToString();
+                if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
+                {
+                    ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
+                    if (prospectiveUser != null && !prospectiveUser.AccountRegistered && !prospectiveUser.EmailConfirmed)
+                    {
+                        model = new EmailChallengeInputModel
+                        {
+                            Email = userEmailFromTempData
+                        };
+                    }
+                    else if (prospectiveUser != null && prospectiveUser.AccountRegistered)
+                    {
+                        redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                    }
+                }
+            }
+
+            return GenerateArray(model, redirectRouteValues);
+        }
+
+        public async Task<RouteValueDictionary> VerifyEmailConfirmation(EmailChallengeInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = null;
+
+            if (!ActionContext.ModelState.IsValid)
+            {
+                return redirectRouteValues;
+            }
+
+            ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
+            if (prospectiveUser == null || (!prospectiveUser.AccountRegistered && prospectiveUser.EmailConfirmed))
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+                return redirectRouteValues;
+            }
+            else if (prospectiveUser.AccountRegistered)
+            {
+                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                return redirectRouteValues;
+            }
+
+            bool userEmailConfirmed = await IdentityService.VerifyTOTPCode(prospectiveUser, TokenOptions.DefaultEmailProvider, inputModel.VerificationCode);
+            if (userEmailConfirmed)
+            {
+                prospectiveUser.EmailConfirmed = true;
+
+                IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
+                if (updateUser.Succeeded)
+                {
+                    IdentityService.SendEmailConfirmedEmail("noreply@bonicinitiatives.biz", inputModel.Email, prospectiveUser.UserName);
+
+                    redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+                }
+                else
+                {
+                    // Error when enabling Two Factor Authentication, add them to ModelState
+                    foreach (IdentityError error in updateUser.Errors)
+                        ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+            else
+                ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
 
             return redirectRouteValues;
         }
