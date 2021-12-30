@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Enroll.Models;
 using CoreIdentityServer.Areas.Enroll.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
@@ -19,6 +20,10 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpGet]
         public IActionResult RegisterProspectiveUser()
         {
+            RouteValueDictionary redirectRouteValues = SignUpService.ManageRegisterProspectiveUser();
+            if (redirectRouteValues != null)
+                return RedirectToRoute(redirectRouteValues);
+
             return View();
         }
 
@@ -57,7 +62,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return RedirectToRoute(redirectRouteValues);
         }
 
-        [HttpGet]
+        [HttpGet, Authorize]
         public IActionResult RegisterTOTPAccessSuccessful()
         {
             return View();

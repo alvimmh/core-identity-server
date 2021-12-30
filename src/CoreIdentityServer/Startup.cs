@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CoreIdentityServer.Internals.DependencyInjectionExtensions;
+using System;
 
 namespace CoreIdentityServer
 {
@@ -52,6 +53,14 @@ namespace CoreIdentityServer
                 .AddAspNetIdentity<ApplicationUser>();
 
             services.AddAuthentication();
+
+            services.Configure<SecurityStampValidatorOptions>(options => {
+                options.ValidationInterval = TimeSpan.FromSeconds(0);
+            });
+
+            services.ConfigureApplicationCookie(options => {
+                options.LoginPath = "/Access/Authentication/SignIn";
+            });
 
             // register services
             services.AddProjectServices();

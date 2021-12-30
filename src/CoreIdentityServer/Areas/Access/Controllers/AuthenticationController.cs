@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Access.Models;
 using CoreIdentityServer.Areas.Access.Services;
-using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
@@ -40,8 +39,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
@@ -52,9 +50,24 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return RedirectToRoute(redirectRouteValues);
         }
 
+        [HttpGet]
         public IActionResult SignIn()
         {
+            RouteValueDictionary redirectRouteValues = AuthenticationService.ManageSignIn();
+            if (redirectRouteValues != null)
+                return RedirectToRoute(redirectRouteValues);
+
             return View();
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> SignIn([FromForm] SignInInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = await AuthenticationService.SignIn(inputModel);
+            if (redirectRouteValues == null)
+                return View(inputModel);
+
+            return RedirectToRoute(redirectRouteValues);
         }
     }
 }

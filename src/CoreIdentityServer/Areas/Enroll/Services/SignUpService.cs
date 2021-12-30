@@ -1,10 +1,12 @@
 using System;
+using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Enroll.Models;
 using CoreIdentityServer.Internals.Constants.TokenProvider;
 using CoreIdentityServer.Internals.Services;
-using CoreIdentityServer.Internals.Services.EmailService;
+using CoreIdentityServer.Internals.Services.Email.EmailService;
+using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +22,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
+        private IdentityService IdentityService;
         private ActionContext ActionContext;
         private bool ResourcesDisposed;
         private readonly UrlEncoder UrlEncoder;
@@ -29,16 +32,28 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             IConfiguration config,
             UserManager<ApplicationUser> userManager,
             EmailService emailService,
+            IdentityService identityService,
             UrlEncoder urlEncoder,
             IActionContextAccessor actionContextAccessor
-        )
-        {
+        ) {
             Config = config;
             UserManager = userManager;
             EmailService = emailService;
+            IdentityService = identityService;
             UrlEncoder = urlEncoder;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+        }
+
+        public RouteValueDictionary ManageRegisterProspectiveUser()
+        {
+            RouteValueDictionary redirectRouteValues = null;
+
+            bool currentUserSignedIn = IdentityService.CheckActiveSession();
+            if (currentUserSignedIn)
+                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+
+            return redirectRouteValues;
         }
 
         public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel userInfo)
@@ -46,9 +61,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             RouteValueDictionary redirectRouteValues = null;
 
             if (!ActionContext.ModelState.IsValid)
-            {
                 return redirectRouteValues;
-            }
 
             ApplicationUser existingUser  = await UserManager.FindByEmailAsync(userInfo.Email);
             if (existingUser != null && existingUser.AccountRegistered)
@@ -115,9 +128,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             string userEmail = tempDataExists ? tempDataValue.ToString() : null;
             if (string.IsNullOrWhiteSpace(userEmail))
-            {
                 return redirectToRootRouteResult;
-            }
 
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmail);
             if (prospectiveUser == null)
@@ -164,9 +175,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             RouteValueDictionary redirectRouteValues = null;
 
             if (!ActionContext.ModelState.IsValid)
-            {
                 return redirectRouteValues;
-            }
             
             ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
             if (prospectiveUser == null)
@@ -188,7 +197,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             if (sessionVerified)
             {
-                bool totpAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(
+                bool TOTPAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(
                     prospectiveUser,
                     TokenOptions.DefaultAuthenticatorProvider,
                     inputModel.TOTPCode
@@ -196,7 +205,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
                 string newSessionVerificationCode = null;
 
-                if (totpAccessVerified)
+                if (TOTPAccessVerified)
                 {
                     prospectiveUser.TwoFactorEnabled = true;
                     prospectiveUser.AccountRegistered = true;

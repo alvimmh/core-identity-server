@@ -1,6 +1,7 @@
 using CoreIdentityServer.Areas.Access.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
-using CoreIdentityServer.Internals.Services.EmailService;
+using CoreIdentityServer.Internals.Services.Email.EmailService;
+using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,8 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             // project's email service
             services.AddSingleton<EmailService>();
 
+
+            services.AddScoped<IdentityService>();
             services.AddScoped<SignUpService>();
             services.AddScoped<AuthenticationService>();
 
