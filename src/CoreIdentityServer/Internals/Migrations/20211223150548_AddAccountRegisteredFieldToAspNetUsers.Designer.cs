@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-namespace CoreIdentityServer.Migrations
+namespace CoreIdentityServer.Internals.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20211223150548_AddAccountRegisteredFieldToAspNetUsers")]

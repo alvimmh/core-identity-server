@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-namespace CoreIdentityServer.Migrations
+namespace CoreIdentityServer.Internals.Migrations
 {
     public partial class InitialCreate : Migration
     {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace CoreIdentityServer.Migrations
+namespace CoreIdentityServer.Internals.Migrations
 {
     public partial class AddAccountRegisteredFieldToAspNetUsers : Migration
     {

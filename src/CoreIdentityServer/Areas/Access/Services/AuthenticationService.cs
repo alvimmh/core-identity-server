@@ -11,7 +11,8 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
-using CoreIdentityServer.Internals.Constants.TokenProvider;
+using CoreIdentityServer.Internals.Constants.Tokens;
+using CoreIdentityServer.Internals.Constants.Emails;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -66,7 +67,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                     else if (user.EmailConfirmed && !user.AccountRegistered)
                     {
                         // user exists, send email to complete registration
-                        IdentityService.SendAccountNotRegisteredEmail("noreply@bonicinitiatives.biz", userEmailFromTempData, user.UserName);
+                        IdentityService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmailFromTempData, user.UserName);
                         return result;
                     }
                     else if (user.EmailConfirmed && user.AccountRegistered)
@@ -102,7 +103,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists, send email to complete registration & redirect to sign in page
-                IdentityService.SendAccountNotRegisteredEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName);
+                IdentityService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
                 redirectRouteValues = RootRoute;
 
                 return redirectRouteValues;
@@ -120,7 +121,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                         await SignInManager.SignInAsync(user, false);
 
                         // send email to user about new session
-                        IdentityService.SendNewActiveSessionNotificationEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName);
+                        IdentityService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
 
                         redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
                     }
@@ -186,7 +187,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
-                IdentityService.SendNewSessionVerificationEmail("noreply@bonicinitiatives.biz", inputModel.Email, user.UserName, sessionVerificationCode);
+                IdentityService.SendNewSessionVerificationEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName, sessionVerificationCode);
 
                 redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
             }

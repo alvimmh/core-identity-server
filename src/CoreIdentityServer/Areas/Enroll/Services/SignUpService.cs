@@ -3,7 +3,8 @@ using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Access.Models;
 using CoreIdentityServer.Areas.Enroll.Models;
-using CoreIdentityServer.Internals.Constants.TokenProvider;
+using CoreIdentityServer.Internals.Constants.Tokens;
+using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services;
 using CoreIdentityServer.Internals.Services.Email.EmailService;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
@@ -21,6 +22,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
     {
         private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
+        private readonly SignInManager<ApplicationUser> SignInManager;
         private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
@@ -31,6 +33,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         public SignUpService(
             IConfiguration config,
             UserManager<ApplicationUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
             EmailService emailService,
             IdentityService identityService,
             UrlEncoder urlEncoder,
@@ -38,6 +41,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         ) {
             Config = config;
             UserManager = userManager;
+            SignInManager = signInManager;
             EmailService = emailService;
             IdentityService = identityService;
             UrlEncoder = urlEncoder;
@@ -56,14 +60,14 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             return redirectRouteValues;
         }
 
-        public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel userInfo)
+        public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = null;
 
             if (!ActionContext.ModelState.IsValid)
                 return redirectRouteValues;
 
-            ApplicationUser existingUser  = await UserManager.FindByEmailAsync(userInfo.Email);
+            ApplicationUser existingUser  = await UserManager.FindByEmailAsync(inputModel.Email);
             if (existingUser != null && existingUser.AccountRegistered)
             {
                 redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
@@ -87,8 +91,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             ApplicationUser prospectiveUser = existingUser ?? new ApplicationUser()
             {
-                Email = userInfo.Email,
-                UserName = userInfo.Email,
+                Email = inputModel.Email,
+                UserName = inputModel.Email,
             };
             
             // if user doesn't already exist, create new user without password
@@ -100,13 +104,10 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 // generate TOTP based verification code for confirming the user's email
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultEmailProvider);
 
-                string emailSubject = "Please Confirm Your Email";
-                string emailBody = $"Greetings, please confirm your email by submitting this verification code: {verificationCode}";
+                // user account successfully created, verify email
+                IdentityService.SendEmailConfirmationEmail(AutomatedEmails.NoReply, inputModel.Email, inputModel.Email, verificationCode);
 
-                // user account successfully created, initiate email confirmation
-                EmailService.Send("noreply@bonicinitiatives.biz", userInfo.Email, emailSubject, emailBody);
-
-                redirectRouteValues = GenerateRedirectRouteValues("EmailConfirmation", "SignUp", "Enroll");
+                redirectRouteValues = GenerateRedirectRouteValues("ConfirmEmail", "SignUp", "Enroll");
             }
             else if (!createUser.Succeeded)
             {
@@ -176,7 +177,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
                 if (updateUser.Succeeded)
                 {
-                    IdentityService.SendEmailConfirmedEmail("noreply@bonicinitiatives.biz", inputModel.Email, prospectiveUser.UserName);
+                    IdentityService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, inputModel.Email, prospectiveUser.UserName);
 
                     redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
                 }
@@ -288,6 +289,12 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                     IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
                     if (updateUser.Succeeded)
                     {
+                        // account registration complete, sign in the user
+                        await SignInManager.SignInAsync(prospectiveUser, false);
+
+                        // send email to user about new session
+                        IdentityService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, inputModel.Email, prospectiveUser.UserName);
+
                         redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
                     }
                     else

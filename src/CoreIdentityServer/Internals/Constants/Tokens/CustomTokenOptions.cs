@@ -1,4 +1,4 @@
-namespace CoreIdentityServer.Internals.Constants.TokenProvider
+namespace CoreIdentityServer.Internals.Constants.Tokens
 {
     public class CustomTokenOptions
     {

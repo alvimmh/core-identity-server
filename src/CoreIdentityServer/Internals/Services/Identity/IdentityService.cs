@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Services.Email.EmailService;
+using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +43,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             // if increasing the failed count results in account lockout, notify the user
             bool isUserLockedOut = await UserManager.IsLockedOutAsync(user);
             if (isUserLockedOut)
-                SendAccountLockedOutEmail("noreply@bonicinitiatives.biz", user.Email, user.UserName);
+                SendAccountLockedOutEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
         }
 
         public async Task ResetSignInAttempts(ApplicationUser user)
@@ -66,7 +67,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             // if user exists but did not complete registration, send email to complete registration
             if (!user.AccountRegistered)
             {
-                SendAccountNotRegisteredEmail("noreply@bonicinitiatives.biz", user.Email, user.UserName);
+                SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 return false;
             }
@@ -98,6 +99,15 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             );
 
             return verificationResult;
+        }
+
+        // send a verification code to verify user's email address
+        public void SendEmailConfirmationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
+        {
+            string emailSubject = "Please Confirm Your Email";
+            string emailBody = $"Greetings {userName}, please confirm your email by submitting this verification code: {verificationCode}";
+
+            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         // user email confirmed, notify user

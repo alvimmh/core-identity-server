@@ -1,5 +1,5 @@
 using System;
-using CoreIdentityServer.Internals.Constants.TokenProvider;
+using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.TokenProviders.GenericTOTPTokenProvider;
 using Microsoft.AspNetCore.Identity;
 
