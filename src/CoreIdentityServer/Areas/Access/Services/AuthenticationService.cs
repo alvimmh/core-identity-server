@@ -201,6 +201,29 @@ namespace CoreIdentityServer.Areas.Access.Services
             return redirectRouteValues;
         }
 
+        public async Task<RouteValueDictionary> SignOut()
+        {
+            ApplicationUser currentUser = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+            if (currentUser != null)
+            {
+                // the authentication cookie can be reset manually. So if its compromised,
+                // then someone can bypass authentication when using the application
+                // so the session needs to be explicitly invalidated by updating the security stamp
+                IdentityResult updateSecurityStamp = await UserManager.UpdateSecurityStampAsync(currentUser);
+                if (!updateSecurityStamp.Succeeded)
+                {
+                    Console.WriteLine($"Error updating security stamp during user signout");
+                    foreach (IdentityError error in updateSecurityStamp.Errors)
+                        Console.WriteLine(error.Description);
+                }
+            }
+
+            // but delete authentication cookie anyways
+            await SignInManager.SignOutAsync();
+
+            return RootRoute;
+        }
+
         // clean up to be done by DI
         public void Dispose()
         {

@@ -69,5 +69,13 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             TempData["userEmail"] = inputModel.Email;
             return RedirectToRoute(redirectRouteValues);
         }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> SignOut()
+        {
+            RouteValueDictionary redirectRouteValues = await AuthenticationService.SignOut();
+
+            return RedirectToRoute(redirectRouteValues);
+        }
     }
 }

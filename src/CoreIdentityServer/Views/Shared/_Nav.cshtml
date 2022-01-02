@@ -1,1 +1,20 @@
-<div class="mt-5 pt-5"></div>
+@{
+    bool userSignedIn = User.Identity.IsAuthenticated;
+}
+
+@if (userSignedIn) {
+    <div class="mt-1 mb-3 pt-1 pb-3">
+        <form
+            asp-area="Access"
+            asp-controller="Authentication"
+            asp-action="SignOut"
+            method="post"
+        >
+            <button type="submit" class="btn btn-secondary btn-md">Sign Out</button>
+        </form>
+    </div>
+}
+else
+{
+    <div class="mt-5 pt-5"></div>
+}
