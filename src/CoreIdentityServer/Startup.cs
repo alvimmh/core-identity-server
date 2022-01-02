@@ -1,7 +1,6 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-using CoreIdentityServer.Data;
 using CoreIdentityServer.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,13 +28,9 @@ namespace CoreIdentityServer
         {
             services.AddControllersWithViews();
 
-            // add project databases
             services.AddProjectDatabases(Configuration);
  
-            services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders()
-                .AddProjectTokenProviders();
+            services.AddProjectIdentity();
 
             services.AddIdentityServer(options =>
             {
