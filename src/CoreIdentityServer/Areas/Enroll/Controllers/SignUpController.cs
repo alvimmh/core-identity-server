@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using CoreIdentityServer.Areas.Access.Models;
-using CoreIdentityServer.Areas.Enroll.Models;
+using CoreIdentityServer.Internals.Models.InputModels;
+using CoreIdentityServer.Areas.Enroll.Models.SignUp;
 using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +22,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         public IActionResult RegisterProspectiveUser()
         {
             RouteValueDictionary redirectRouteValues = SignUpService.ManageRegisterProspectiveUser();
+
             if (redirectRouteValues != null)
                 return RedirectToRoute(redirectRouteValues);
 
@@ -32,10 +33,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel userInfo)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(userInfo);
+
             if (redirectRouteValues == null)
                 return View(userInfo);
 
             TempData["userEmail"] = userInfo.Email;
+
             return RedirectToRoute(redirectRouteValues);
         }
 
@@ -45,7 +48,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
             object[] result = await SignUpService.ManageEmailConfirmation(TempData);
 
-            // if ViewModel is null then redirect to RouteValueDictionary returned from AuthenticationService
+            // if ViewModel is null then redirect to route returned from SignUpService
             if (result[0] == null)
                 return RedirectToRoute(result[1]);
 
@@ -56,10 +59,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         public async Task<IActionResult> ConfirmEmail([FromForm] EmailChallengeInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.VerifyEmailConfirmation(inputModel);
+
             if (redirectRouteValues == null)
                 return View(inputModel);
 
             TempData["userEmail"] = inputModel.Email;
+
             return RedirectToRoute(redirectRouteValues);
         }
 
@@ -69,7 +74,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
             object[] result = await SignUpService.RegisterTOTPAccess(TempData);
 
-            // if ViewModel is null then redirect to RouteValueDictionary returned from SignUpService
+            // if ViewModel is null then redirect to route returned from SignUpService
             if (result[0] == null)
                 return RedirectToRoute(result[1]);
 
@@ -80,10 +85,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         public async Task<IActionResult> RegisterTOTPAccess([FromForm] RegisterTOTPAccessInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await SignUpService.VerifyTOTPAccessRegistration(inputModel);
+
             if (redirectRouteValues == null)
                 return View(inputModel);
 
             TempData["userEmail"] = inputModel.Email;
+
             return RedirectToRoute(redirectRouteValues);
         }
 

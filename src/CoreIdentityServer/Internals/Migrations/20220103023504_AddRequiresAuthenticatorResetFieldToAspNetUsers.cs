@@ -2,12 +2,12 @@
 
 namespace CoreIdentityServer.Internals.Migrations
 {
-    public partial class AddAccountRegisteredFieldToAspNetUsers : Migration
+    public partial class AddRequiresAuthenticatorResetFieldToAspNetUsers : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
-                name: "AccountRegistered",
+                name: "RequiresAuthenticatorReset",
                 table: "AspNetUsers",
                 nullable: false,
                 defaultValue: false
@@ -17,7 +17,7 @@ namespace CoreIdentityServer.Internals.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "AccountRegistered",
+                name: "RequiresAuthenticatorReset",
                 table: "AspNetUsers"
             );
         }

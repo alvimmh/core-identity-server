@@ -21,7 +21,7 @@
         <input type="integer" class="form-control" id="totp-code-input" asp-for="TOTPCode">
 
         <div class="mt-3">
-            <button type="button" class="btn btn-link btn-sm">Reset TOTP access</button>
+            <a asp-action="InitiateEmailChallenge" asp-controller="ResetTOTPAccess" asp-area="Access">Reset TOTP Access</a>
         </div>
 
         <span asp-validation-for="TOTPCode" class="text-danger"></span>

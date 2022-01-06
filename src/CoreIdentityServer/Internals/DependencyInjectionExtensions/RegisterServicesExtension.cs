@@ -17,10 +17,10 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             // project's email service
             services.AddSingleton<EmailService>();
 
-
             services.AddScoped<IdentityService>();
             services.AddScoped<SignUpService>();
             services.AddScoped<AuthenticationService>();
+            services.AddScoped<ResetTOTPAccessService>();
 
             return services;
         }

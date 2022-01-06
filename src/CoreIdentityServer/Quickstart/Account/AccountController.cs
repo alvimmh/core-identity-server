@@ -15,7 +15,7 @@ using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
-using CoreIdentityServer.Models;
+using CoreIdentityServer.Internals.Models.DatabaseModels;
 
 namespace IdentityServerHost.Quickstart.UI
 {

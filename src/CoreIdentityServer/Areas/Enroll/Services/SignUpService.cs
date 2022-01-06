@@ -1,50 +1,39 @@
 using System;
-using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using CoreIdentityServer.Areas.Access.Models;
-using CoreIdentityServer.Areas.Enroll.Models;
+using CoreIdentityServer.Internals.Models.InputModels;
+using CoreIdentityServer.Areas.Enroll.Models.SignUp;
 using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services;
-using CoreIdentityServer.Internals.Services.Email.EmailService;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
-using CoreIdentityServer.Models;
+using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
+using CoreIdentityServer.Internals.Constants.UserActions;
 
 namespace CoreIdentityServer.Areas.Enroll.Services
 {
     public class SignUpService : BaseService, IDisposable
     {
-        private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
         private readonly SignInManager<ApplicationUser> SignInManager;
-        private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
-        private readonly UrlEncoder UrlEncoder;
-        public RouteValueDictionary RootRoute;
+        public readonly RouteValueDictionary RootRoute;
         private bool ResourcesDisposed;
 
         public SignUpService(
-            IConfiguration config,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            EmailService emailService,
             IdentityService identityService,
-            UrlEncoder urlEncoder,
             IActionContextAccessor actionContextAccessor
         ) {
-            Config = config;
             UserManager = userManager;
             SignInManager = signInManager;
-            EmailService = emailService;
             IdentityService = identityService;
-            UrlEncoder = urlEncoder;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
         }
@@ -54,6 +43,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             RouteValueDictionary redirectRouteValues = null;
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
+
             if (currentUserSignedIn)
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
@@ -68,9 +58,11 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 return redirectRouteValues;
 
             ApplicationUser existingUser  = await UserManager.FindByEmailAsync(inputModel.Email);
+
             if (existingUser != null && existingUser.AccountRegistered)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
+                redirectRouteValues = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
+
                 return redirectRouteValues;
             }
             else if (existingUser != null && existingUser.EmailConfirmed)
@@ -79,6 +71,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 existingUser.EmailConfirmed = false;
 
                 IdentityResult updateUserEmailConfirmationStatus = await UserManager.UpdateAsync(existingUser);
+
                 if (!updateUserEmailConfirmationStatus.Succeeded)
                 {
                     // updating user's email confirmation status failed, adding erros to ModelState
@@ -121,75 +114,19 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
         public async Task<object[]> ManageEmailConfirmation(ITempDataDictionary tempData)
         {
-            EmailChallengeInputModel model = null;
-            RouteValueDictionary redirectRouteValues = RootRoute;
-            bool tempDataExists = tempData.TryGetValue("userEmail", out object tempDataValue);
+            object[] result = await IdentityService.ManageEmailChallenge(tempData, RootRoute);
 
-            if (tempDataExists)
-            {
-                string userEmailFromTempData = tempDataValue.ToString();
-                if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
-                {
-                    ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmailFromTempData);
-                    if (prospectiveUser != null && !prospectiveUser.AccountRegistered && !prospectiveUser.EmailConfirmed)
-                    {
-                        model = new EmailChallengeInputModel
-                        {
-                            Email = userEmailFromTempData
-                        };
-                    }
-                    else if (prospectiveUser != null && prospectiveUser.AccountRegistered)
-                    {
-                        redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
-                    }
-                }
-            }
-
-            return GenerateArray(model, redirectRouteValues);
+            return result;
         }
 
         public async Task<RouteValueDictionary> VerifyEmailConfirmation(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
-
-            if (!ActionContext.ModelState.IsValid)
-            {
-                return redirectRouteValues;
-            }
-
-            ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
-            if (prospectiveUser == null || (!prospectiveUser.AccountRegistered && prospectiveUser.EmailConfirmed))
-            {
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
-                return redirectRouteValues;
-            }
-            else if (prospectiveUser.AccountRegistered)
-            {
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
-                return redirectRouteValues;
-            }
-
-            bool userEmailConfirmed = await IdentityService.VerifyTOTPCode(prospectiveUser, TokenOptions.DefaultEmailProvider, inputModel.VerificationCode);
-            if (userEmailConfirmed)
-            {
-                prospectiveUser.EmailConfirmed = true;
-
-                IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
-                if (updateUser.Succeeded)
-                {
-                    IdentityService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, inputModel.Email, prospectiveUser.UserName);
-
-                    redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
-                }
-                else
-                {
-                    // Error when enabling Two Factor Authentication, add them to ModelState
-                    foreach (IdentityError error in updateUser.Errors)
-                        ActionContext.ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-            else
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+            RouteValueDictionary redirectRouteValues = await IdentityService.VerifyEmailChallenge(
+                inputModel,
+                RootRoute,
+                TokenOptions.DefaultEmailProvider,
+                UserActionContexts.ConfirmEmailChallenge
+            );
 
             return redirectRouteValues;
         }
@@ -198,52 +135,64 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         {
             RegisterTOTPAccessInputModel model = null;
             RouteValueDictionary redirectRouteValues = RootRoute;
-            object[] redirectToRootRouteResult = GenerateArray(model, redirectRouteValues);
+            object[] result = GenerateArray(model, redirectRouteValues);
 
             bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
 
             string userEmail = tempDataExists ? tempDataValue.ToString() : null;
             if (string.IsNullOrWhiteSpace(userEmail))
-                return redirectToRootRouteResult;
+                return result;
 
-            ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(userEmail);
-            if (prospectiveUser == null)
+            ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
+
+            if (user == null || !user.EmailConfirmed)
             {
-                return redirectToRootRouteResult;
+                // user does not exist or user's email was never confirmed
+                return result;
             }
-            else if (prospectiveUser.AccountRegistered)
+            else if (user.AccountRegistered && !user.RequiresAuthenticatorReset)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
-                return GenerateArray(model, redirectRouteValues);
+                // user is completely registered but does not require authenticator reset
+
+                redirectRouteValues = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
+
+                result = GenerateArray(model, redirectRouteValues);
+            }
+            else if (!user.AccountRegistered || (user.AccountRegistered && user.RequiresAuthenticatorReset))
+            {
+                // user is not completely registered yet or user is registered & needs to reset authenticator
+
+                string authenticatorKey = null;
+                string authenticatorKeyUri = null;
+
+                IdentityResult resetAuthenticatorKey = await UserManager.ResetAuthenticatorKeyAsync(user);
+
+                if (resetAuthenticatorKey.Succeeded)
+                {
+                    authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(user);
+                    authenticatorKeyUri = IdentityService.GenerateQRCodeUri(userEmail, authenticatorKey);
+                }
+                else
+                {
+                    // resetting authenticator key failed, user will be redirected to defaultRoute
+                    return result;
+                }
+
+                // create a session TOTP code valid for 3 mins - when user surpasses 3 mins to scan & submit the TOTP code, request will fail
+                string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
+
+                model = new RegisterTOTPAccessInputModel()
+                {
+                    AuthenticatorKey = authenticatorKey,
+                    AuthenticatorKeyUri = authenticatorKeyUri,
+                    Email = userEmail,
+                    SessionVerificationTOTPCode = sessionVerificationCode,
+                };
+
+                result = GenerateArray(model, redirectRouteValues);
             }
 
-            string authenticatorKey = null;
-            string authenticatorKeyUri = null;
-
-            IdentityResult resetAuthenticatorKey = await UserManager.ResetAuthenticatorKeyAsync(prospectiveUser);
-            if (resetAuthenticatorKey.Succeeded)
-            {
-                authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(prospectiveUser);
-                authenticatorKeyUri = GenerateQRCodeUri(userEmail, authenticatorKey);
-            }
-            else
-            {
-                // resetting authenticator key failed, user will be redirected to SignUp root route
-                return redirectToRootRouteResult;
-            }
-            
-            // create a session TOTP code valid for 3 mins - when user surpasses 3 mins to scan & submit the TOTP code, request will fail
-            string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, CustomTokenOptions.GenericTOTPTokenProvider);
-
-            model = new RegisterTOTPAccessInputModel()
-            {
-                AuthenticatorKey = authenticatorKey,
-                AuthenticatorKeyUri = authenticatorKeyUri,
-                Email = userEmail,
-                SessionVerificationTOTPCode = sessionVerificationCode,
-            };
-
-            return GenerateArray(model, redirectRouteValues);
+            return result;
         }
 
         public async Task<RouteValueDictionary> VerifyTOTPAccessRegistration(RegisterTOTPAccessInputModel inputModel)
@@ -253,76 +202,84 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             if (!ActionContext.ModelState.IsValid)
                 return redirectRouteValues;
             
-            ApplicationUser prospectiveUser = await UserManager.FindByEmailAsync(inputModel.Email);
-            if (prospectiveUser == null)
+            ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
+
+            if (user == null || !user.EmailConfirmed)
             {
+                // user doesn't exist, redirect to root route
                 redirectRouteValues = RootRoute;
-                return redirectRouteValues;
             }
-            else if (prospectiveUser.AccountRegistered)
+            else if (user.AccountRegistered && !user.RequiresAuthenticatorReset)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallengePrompt", "Authentication", "Access");
-                return redirectRouteValues;
+                // user exists but doesn't require to reset authenticator, redirect to reset authenticator prompt page
+                redirectRouteValues = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
             }
-
-            bool sessionVerified = await UserManager.VerifyTwoFactorTokenAsync(
-                prospectiveUser,
-                CustomTokenOptions.GenericTOTPTokenProvider,
-                inputModel.SessionVerificationTOTPCode
-            );
-
-            if (sessionVerified)
+            else if (!user.AccountRegistered || (user.AccountRegistered && user.RequiresAuthenticatorReset))
             {
-                bool TOTPAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(
-                    prospectiveUser,
-                    TokenOptions.DefaultAuthenticatorProvider,
-                    inputModel.TOTPCode
+                // user needs to register TOTP authenticator to complete account registration
+                // or
+                // user has a registered account and needs to reset TOTP authenticator
+
+                bool sessionVerified = await UserManager.VerifyTwoFactorTokenAsync(
+                    user,
+                    CustomTokenOptions.GenericTOTPTokenProvider,
+                    inputModel.SessionVerificationTOTPCode
                 );
 
-                string newSessionVerificationCode = null;
-
-                if (TOTPAccessVerified)
+                if (sessionVerified)
                 {
-                    prospectiveUser.TwoFactorEnabled = true;
-                    prospectiveUser.AccountRegistered = true;
+                    bool TOTPAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(
+                        user,
+                        TokenOptions.DefaultAuthenticatorProvider,
+                        inputModel.TOTPCode
+                    );
 
-                    IdentityResult updateUser = await UserManager.UpdateAsync(prospectiveUser);
-                    if (updateUser.Succeeded)
+                    string newSessionVerificationCode = null;
+
+                    if (TOTPAccessVerified)
                     {
-                        // account registration complete, sign in the user
-                        await SignInManager.SignInAsync(prospectiveUser, false);
+                        user.TwoFactorEnabled = true;
+                        user.AccountRegistered = true;
+                        user.RequiresAuthenticatorReset = false;
 
-                        // send email to user about new session
-                        IdentityService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, inputModel.Email, prospectiveUser.UserName);
+                        IdentityResult updateUser = await UserManager.UpdateAsync(user);
 
-                        redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                        if (updateUser.Succeeded)
+                        {
+                            // account registration complete, sign in the user
+                            redirectRouteValues = await IdentityService.SignIn(user);
+                        }
+                        else
+                        {
+                            // update user failed but session still valid, generate new session verification code
+                            newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
+
+                            Console.WriteLine("Update user failed when registering TOTP Access");
+
+                            // Error enabling Two Factor Authentication, add them to ModelState
+                            foreach (IdentityError error in updateUser.Errors)
+                                Console.WriteLine(error.Description);
+                            
+                            ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again.");
+                        }
                     }
                     else
                     {
-                        // update user failed but session still valid, generate new session verification code
-                        newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, CustomTokenOptions.GenericTOTPTokenProvider);
+                        // session still valid, generate new session verification code
+                        newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
-                        // Error when enabling Two Factor Authentication, add them to ModelState
-                        foreach (IdentityError error in updateUser.Errors)
-                            ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+                        // TOTP access verification failed, adding erros to ModelState
+                        ActionContext.ModelState.AddModelError(string.Empty, "Invalid TOTP code");
                     }
+
+                    if (newSessionVerificationCode != null)
+                        inputModel.SessionVerificationTOTPCode = newSessionVerificationCode;
                 }
                 else
                 {
-                    // session still valid, generate new session verification code
-                    newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, CustomTokenOptions.GenericTOTPTokenProvider);
-
-                    // TOTP access verification failed, adding erros to ModelState
-                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid TOTP code");
+                    // Session verification failed, redirecting to RootRoute
+                    redirectRouteValues = RootRoute;
                 }
-
-                if (newSessionVerificationCode != null)
-                    inputModel.SessionVerificationTOTPCode = newSessionVerificationCode;
-            }
-            else
-            {
-                // Session verification failed, redirecting to RootRoute
-                redirectRouteValues = RootRoute;
             }
 
             return redirectRouteValues;
@@ -336,18 +293,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             UserManager.Dispose();
             ResourcesDisposed = true;
-        }
-
-        private string GenerateQRCodeUri(string email, string authenticatorKey)
-        {
-            const string AuthenticatorKeyUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
-
-            return string.Format(
-                AuthenticatorKeyUriFormat,
-                UrlEncoder.Encode("Bonic"),
-                UrlEncoder.Encode(email),
-                authenticatorKey
-            );
         }
     }
 }

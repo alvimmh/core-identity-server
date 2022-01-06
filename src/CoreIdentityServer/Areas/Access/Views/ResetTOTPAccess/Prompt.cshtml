@@ -1,0 +1,15 @@
+
+@{
+    ViewData["Title"] = "Reset TOTP Access Prompt";
+    bool userSignedIn = User.Identity.IsAuthenticated;
+}
+
+<p>Reset TOTP access prompt</p>
+
+@{    
+    <p>Did you lose access to your TOTP authenticator?</p>
+
+    <div class="mt-3 mx-auto">
+        <a asp-action="InitiateEmailChallenge" asp-controller="ResetTOTPAccess" asp-area="Access">Reset TOTP Access</a>
+    </div>
+}

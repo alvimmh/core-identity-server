@@ -1,4 +1,4 @@
-using CoreIdentityServer.Data;
+using CoreIdentityServer.Internals.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

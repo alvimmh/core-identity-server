@@ -1,0 +1,26 @@
+@model EmailChallengeInputModel
+@{
+    ViewData["Title"] = "Reset TOTP Access Email Challenge";
+}
+
+<p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm your identity.</p>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form
+    asp-area="Access"
+    asp-controller="ResetTOTPAccess"
+    asp-action="EmailChallenge"
+    method="post"
+>
+    <div class="mt-4">
+        <label for="verification-code-input" class="form-label">Enter secure 6-digit code</label>
+        <input type="integer" class="form-control" id="verification-code-input" asp-for="VerificationCode">
+        <span asp-validation-for="VerificationCode" class="text-danger"></span>
+
+        <input type="string" id="email-address-input" asp-for="Email" value="@Model.Email" hidden>
+
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Continue</button>
+        </div>
+    </div>
+</form>

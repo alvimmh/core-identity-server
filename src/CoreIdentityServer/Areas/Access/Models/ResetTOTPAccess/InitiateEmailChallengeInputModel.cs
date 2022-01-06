@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CoreIdentityServer.Areas.Enroll.Models
+namespace CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess
 {
-    public class ProspectiveUserInputModel
+    public class InitiateEmailChallengeInputModel
     {
         [Required]
         [EmailAddress]

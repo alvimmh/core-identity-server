@@ -1,45 +1,34 @@
 using System;
 using System.Threading.Tasks;
-using CoreIdentityServer.Areas.Access.Models;
-using CoreIdentityServer.Models;
+using CoreIdentityServer.Internals.Models.InputModels;
+using CoreIdentityServer.Areas.Access.Models.Authentication;
+using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
-using CoreIdentityServer.Internals.Services.Email.EmailService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Internals.Constants.Tokens;
-using CoreIdentityServer.Internals.Constants.Emails;
+using CoreIdentityServer.Internals.Constants.UserActions;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class AuthenticationService : BaseService, IDisposable
     {
-        private IConfiguration Config;
         private readonly UserManager<ApplicationUser> UserManager;
-        private readonly SignInManager<ApplicationUser> SignInManager;
-        private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
-        public RouteValueDictionary RootRoute;
+        public readonly RouteValueDictionary RootRoute;
         private bool ResourcesDisposed;
 
         public AuthenticationService(
-            IConfiguration config,
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
-            EmailService emailService,
             IdentityService identityService,
             IActionContextAccessor actionContextAccessor
-        )
-        {
-            Config = config;
+        ) {
             UserManager = userManager;
-            SignInManager = signInManager;
-            EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
@@ -47,96 +36,19 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public async Task<object[]> ManageEmailChallenge(ITempDataDictionary tempData)
         {
-            EmailChallengeInputModel model = null;
-            RouteValueDictionary redirectRouteValues = RootRoute;
-            object[] result = GenerateArray(model, redirectRouteValues);
+            object[] result = await IdentityService.ManageEmailChallenge(tempData, RootRoute);
 
-            bool tempDataExists = tempData.TryGetValue("userEmail", out object tempDataValue);
-            if (tempDataExists)
-            {
-                string userEmailFromTempData = tempDataValue.ToString();
-                if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
-                {
-                    ApplicationUser user = await UserManager.FindByEmailAsync(userEmailFromTempData);
-
-                    if (user == null || !user.EmailConfirmed)
-                    {
-                        // user doesn't exist, redirect to sign in page
-                        return result;
-                    }
-                    else if (user.EmailConfirmed && !user.AccountRegistered)
-                    {
-                        // user exists, send email to complete registration
-                        IdentityService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmailFromTempData, user.UserName);
-                        return result;
-                    }
-                    else if (user.EmailConfirmed && user.AccountRegistered)
-                    {
-                        // user exists and completed registration
-                        model = new EmailChallengeInputModel
-                        {
-                            Email = userEmailFromTempData
-                        };
-                    }
-                }
-            }
-
-            return GenerateArray(model, redirectRouteValues);
+            return result;
         }
 
-        public async Task<RouteValueDictionary> VerifyEmailChallenge(EmailChallengeInputModel inputModel)
+        public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
-
-            if (!ActionContext.ModelState.IsValid)
-            {
-                return redirectRouteValues;
-            }
-
-            ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
-            if (user == null || !user.EmailConfirmed)
-            {
-                // user doesn't exist, redirect to sign in page
-                redirectRouteValues = RootRoute;
-                return redirectRouteValues;
-            }
-            else if (user.EmailConfirmed && !user.AccountRegistered)
-            {
-                // user exists, send email to complete registration & redirect to sign in page
-                IdentityService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
-                redirectRouteValues = RootRoute;
-
-                return redirectRouteValues;
-            }
-            else if (user.EmailConfirmed && user.AccountRegistered)
-            {
-                // if TOTP code verified, sign in the user
-                bool TOTPCodeVerified = await IdentityService.VerifyTOTPCode(user, CustomTokenOptions.GenericTOTPTokenProvider, inputModel.VerificationCode);
-                if (TOTPCodeVerified)
-                {
-                    // update security stamp of the user so other active sessions are logged out on the next request
-                    IdentityResult updateSecurityStamp = await UserManager.UpdateSecurityStampAsync(user);
-                    if (updateSecurityStamp.Succeeded)
-                    {
-                        await SignInManager.SignInAsync(user, false);
-
-                        // send email to user about new session
-                        IdentityService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
-
-                        redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Error updating security stamp");
-                        foreach (IdentityError error in updateSecurityStamp.Errors)
-                            Console.WriteLine(error.Description);
-
-                        ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
-                    }
-                }
-                else
-                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
-            }           
+            RouteValueDictionary redirectRouteValues = await IdentityService.VerifyEmailChallenge(
+                inputModel,
+                RootRoute,
+                CustomTokenOptions.GenericTOTPTokenProvider,
+                UserActionContexts.SignInEmailChallenge
+            );
 
             return redirectRouteValues;
         }
@@ -146,6 +58,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             RouteValueDictionary redirectRouteValues = null;
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
+
             if (currentUserSignedIn)
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
@@ -158,6 +71,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             
             // check if there is a current user logged in, if so redirect to an authorized page
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
+
             if (currentUserSignedIn)
             {
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
@@ -168,58 +82,21 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (!ActionContext.ModelState.IsValid)
                 return redirectRouteValues;
 
-            ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
-
-            bool userMeetsSignInPrerequisites = await IdentityService.VerifySignInPrerequisites(user);
-            if (!userMeetsSignInPrerequisites)
-            {
-                // add generic error and return ViewModel
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
-
-                return redirectRouteValues;
-            }
-
-            // verify TOTP code
-            bool TOTPAccessVerified = await UserManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, inputModel.TOTPCode);
-            if (TOTPAccessVerified)
-            {
-                await IdentityService.ResetSignInAttempts(user);
-
-                string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
-
-                IdentityService.SendNewSessionVerificationEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName, sessionVerificationCode);
-
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
-            }
-            else
-            {
-                await IdentityService.RecordUnsuccessfulSignInAttempt(user);
-
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
-            }
+            redirectRouteValues = await IdentityService.VerifyTOTPChallenge(
+                inputModel.Email,
+                inputModel.TOTPCode,
+                RootRoute,
+                TokenOptions.DefaultAuthenticatorProvider,
+                UserActionContexts.SignInTOTPChallenge
+            );
 
             return redirectRouteValues;
         }
 
         public async Task<RouteValueDictionary> SignOut()
         {
-            ApplicationUser currentUser = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
-            if (currentUser != null)
-            {
-                // the authentication cookie can be reset manually. So if its compromised,
-                // then someone can bypass authentication when using the application
-                // so the session needs to be explicitly invalidated by updating the security stamp
-                IdentityResult updateSecurityStamp = await UserManager.UpdateSecurityStampAsync(currentUser);
-                if (!updateSecurityStamp.Succeeded)
-                {
-                    Console.WriteLine($"Error updating security stamp during user signout");
-                    foreach (IdentityError error in updateSecurityStamp.Errors)
-                        Console.WriteLine(error.Description);
-                }
-            }
-
-            // but delete authentication cookie anyways
-            await SignInManager.SignOutAsync();
+            // sign out user
+            await IdentityService.SignOut();
 
             return RootRoute;
         }

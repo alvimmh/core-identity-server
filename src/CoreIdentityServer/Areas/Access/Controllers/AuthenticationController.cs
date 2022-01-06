@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
-using CoreIdentityServer.Areas.Access.Models;
+using CoreIdentityServer.Internals.Models.InputModels;
+using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -21,18 +22,13 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View();
         }
 
-        public IActionResult EmailChallengePrompt()
-        {
-            return View();
-        }
-
         [HttpGet]
         public async Task<IActionResult> EmailChallenge()
         {
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
             object[] result = await AuthenticationService.ManageEmailChallenge(TempData);
 
-            // if ViewModel is null then redirect to RouteValueDictionary returned from AuthenticationService
+            // if ViewModel is null then redirect to route returned from AuthenticationService
             if (result[0] == null)
                 return RedirectToRoute(result[1]);
 
@@ -42,7 +38,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.VerifyEmailChallenge(inputModel);
+            RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
+
             if (redirectRouteValues == null)
                 return View(inputModel);
 
@@ -53,6 +50,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         public IActionResult SignIn()
         {
             RouteValueDictionary redirectRouteValues = AuthenticationService.ManageSignIn();
+
             if (redirectRouteValues != null)
                 return RedirectToRoute(redirectRouteValues);
 
@@ -63,10 +61,12 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         public async Task<IActionResult> SignIn([FromForm] SignInInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await AuthenticationService.SignIn(inputModel);
+
             if (redirectRouteValues == null)
                 return View(inputModel);
 
             TempData["userEmail"] = inputModel.Email;
+
             return RedirectToRoute(redirectRouteValues);
         }
 

@@ -1,11 +1,11 @@
-using CoreIdentityServer.Data;
-using CoreIdentityServer.Models;
+using CoreIdentityServer.Internals.Data;
+using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
-    public static class RegisterProjectIdentity
+    public static class RegisterIdentityExtension
     {
         public static IServiceCollection AddProjectIdentity(this IServiceCollection services)
         {

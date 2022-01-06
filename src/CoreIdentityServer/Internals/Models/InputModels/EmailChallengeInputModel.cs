@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace CoreIdentityServer.Areas.Access.Models
+namespace CoreIdentityServer.Internals.Models.InputModels
 {
     public class EmailChallengeInputModel
     {
