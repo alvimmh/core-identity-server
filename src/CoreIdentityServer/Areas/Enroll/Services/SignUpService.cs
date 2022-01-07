@@ -86,8 +86,10 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             {
                 Email = inputModel.Email,
                 UserName = inputModel.Email,
+                FirstName = inputModel.FirstName,
+                LastName = inputModel.LastName
             };
-            
+
             // if user doesn't already exist, create new user without password
             IdentityResult createUser = existingUser == null ? await UserManager.CreateAsync(prospectiveUser) : null;
 

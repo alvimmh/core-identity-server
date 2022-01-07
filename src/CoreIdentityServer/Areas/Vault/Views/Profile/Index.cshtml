@@ -1,0 +1,38 @@
+@model UserProfileInputModel
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Profile Overview</h1>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form
+    asp-area="Vault"
+    asp-controller="Profile"
+    asp-action="Index"
+    method="post"
+>
+    <div class="mt-4">
+        <div>
+            <label for="email-address-input" class="form-label">Email address</label>
+            <input disabled type="email" class="form-control" id="email-address-input" asp-for="Email"> 
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mt-2">
+            <label for="first-name-input" class="form-label">First Name</label>
+            <input type="string" class="form-control" id="first-name-input" asp-for="FirstName"> 
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+
+        <div class="mt-2">
+            <label for="last-name-input" class="form-label">Last Name</label>
+            <input type="string" class="form-control" id="last-name-input" asp-for="LastName"> 
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Update</button>
+        </div>
+    </div>
+</form>

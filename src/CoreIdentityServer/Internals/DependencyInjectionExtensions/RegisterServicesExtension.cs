@@ -1,5 +1,6 @@
 using CoreIdentityServer.Areas.Access.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
+using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Services.Email.EmailService;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -21,6 +22,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<SignUpService>();
             services.AddScoped<AuthenticationService>();
             services.AddScoped<ResetTOTPAccessService>();
+            services.AddScoped<ProfileService>();
 
             return services;
         }

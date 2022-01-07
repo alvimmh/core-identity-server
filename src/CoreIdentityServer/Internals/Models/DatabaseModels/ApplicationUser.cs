@@ -14,5 +14,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
 
         // field to indicate if user needs to reset their authenticator
         public bool RequiresAuthenticatorReset { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
     }
 }

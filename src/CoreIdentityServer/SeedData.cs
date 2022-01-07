@@ -44,6 +44,8 @@ namespace CoreIdentityServer
                             UserName = "alice",
                             Email = "AliceSmith@email.com",
                             EmailConfirmed = true,
+                            FirstName = "Alice",
+                            LastName = "Smith"
                         };
                         var result = userMgr.CreateAsync(alice, "Pass123$").Result;
                         if (!result.Succeeded)
@@ -75,7 +77,9 @@ namespace CoreIdentityServer
                         {
                             UserName = "bob",
                             Email = "BobSmith@email.com",
-                            EmailConfirmed = true
+                            EmailConfirmed = true,
+                            FirstName = "Bob",
+                            LastName = "Smith"
                         };
                         var result = userMgr.CreateAsync(bob, "Pass123$").Result;
                         if (!result.Succeeded)

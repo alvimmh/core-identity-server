@@ -30,14 +30,14 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel userInfo)
+        public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(userInfo);
+            RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(inputModel);
 
             if (redirectRouteValues == null)
-                return View(userInfo);
+                return View(inputModel);
 
-            TempData["userEmail"] = userInfo.Email;
+            TempData["userEmail"] = inputModel.Email;
 
             return RedirectToRoute(redirectRouteValues);
         }
