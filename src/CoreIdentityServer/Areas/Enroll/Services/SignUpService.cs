@@ -126,6 +126,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             RouteValueDictionary redirectRouteValues = await IdentityService.VerifyEmailChallenge(
                 inputModel,
                 RootRoute,
+                null,
                 TokenOptions.DefaultEmailProvider,
                 UserActionContexts.ConfirmEmailChallenge
             );

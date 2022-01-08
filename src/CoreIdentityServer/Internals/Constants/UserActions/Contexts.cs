@@ -6,5 +6,6 @@ namespace CoreIdentityServer.Internals.Constants.UserActions
         public const string SignInTOTPChallenge = "SignInTOTPChallenge";
         public const string ResetTOTPAccessEmailChallenge = "ResetTOTPAccessEmailChallenge";
         public const string ConfirmEmailChallenge = "ConfirmEmailChallenge";
+        public const string TOTPChallenge = "TOTPChallenge";
     }
 }

@@ -6,7 +6,7 @@ using Npgsql;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
-    public static class RegisterDatabasesExtension
+    public static class RegisterDatabases
     {
         public static IServiceCollection AddProjectDatabases(this IServiceCollection services, IConfiguration config)
         {

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
-    public static class RegisterTokenProvidersExtension
+    public static class RegisterTokenProviders
     {
         public static IdentityBuilder AddProjectTokenProviders(this IdentityBuilder identityBuilder)
         {

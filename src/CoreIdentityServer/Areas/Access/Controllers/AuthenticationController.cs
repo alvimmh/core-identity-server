@@ -4,6 +4,7 @@ using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -17,9 +18,21 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             AuthenticationService = authenticationService;
         }
 
+        [HttpGet, Authorize]
         public IActionResult TOTPChallenge()
         {
             return View();
+        }
+
+        [HttpPost, Authorize, ValidateAntiForgeryToken]
+        public async Task<IActionResult> TOTPChallenge([FromForm] TOTPChallengeInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageTOTPChallengeVerification(inputModel);
+
+            if (redirectRouteValues == null)
+                return View(inputModel);
+            
+            return RedirectToRoute(redirectRouteValues);
         }
 
         [HttpGet]

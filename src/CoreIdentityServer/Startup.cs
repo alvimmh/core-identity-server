@@ -1,15 +1,12 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using CoreIdentityServer.Internals.DependencyInjectionExtensions;
-using System;
 
 namespace CoreIdentityServer
 {
@@ -32,32 +29,12 @@ namespace CoreIdentityServer
  
             services.AddProjectIdentity();
 
-            services.AddIdentityServer(options =>
-            {
-                options.Events.RaiseErrorEvents = true;
-                options.Events.RaiseInformationEvents = true;
-                options.Events.RaiseFailureEvents = true;
-                options.Events.RaiseSuccessEvents = true;
+            services.AddProjectIdentityServer();
 
-                // see https://docs.duendesoftware.com/identityserver/v5/fundamentals/resources/
-                options.EmitStaticAudienceClaim = true;
-            })
-                .AddInMemoryIdentityResources(Config.IdentityResources)
-                .AddInMemoryApiScopes(Config.ApiScopes)
-                .AddInMemoryClients(Config.Clients)
-                .AddAspNetIdentity<ApplicationUser>();
+            services.AddProjectAuthentication();
 
-            services.AddAuthentication();
+            services.AddProjectAuthorization();
 
-            services.Configure<SecurityStampValidatorOptions>(options => {
-                options.ValidationInterval = TimeSpan.FromSeconds(0);
-            });
-
-            services.ConfigureApplicationCookie(options => {
-                options.LoginPath = "/Access/Authentication/SignIn";
-            });
-
-            // register services
             services.AddProjectServices();
         }
 

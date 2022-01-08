@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
-    public static class RegisterIdentityExtension
+    public static class RegisterIdentity
     {
         public static IServiceCollection AddProjectIdentity(this IServiceCollection services)
         {

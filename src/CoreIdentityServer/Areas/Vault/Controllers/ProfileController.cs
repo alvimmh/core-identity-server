@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Vault.Models.Profile;
 using CoreIdentityServer.Areas.Vault.Services;
+using CoreIdentityServer.Internals.Constants.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -17,7 +18,7 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             ProfileService = profileService;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index()
         {
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
@@ -30,7 +31,7 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             return View(result[0]);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, Authorize(Policy = Policies.TOTPChallenge), ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([FromForm] UserProfileInputModel inputModel)
         {
             RouteValueDictionary redirectRouteValues = await ProfileService.UpdateUserProfile(inputModel);

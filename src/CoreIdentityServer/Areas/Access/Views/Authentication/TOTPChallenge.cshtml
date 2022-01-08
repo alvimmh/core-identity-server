@@ -1,4 +1,4 @@
-
+@model TOTPChallengeInputModel
 @{
     ViewData["Title"] = "TOTP Challenge";
 }
@@ -8,11 +8,20 @@
 <p>To help keep your account safer, we want to make sure it is you before proceeding.</p>
 <p>Please enter the TOTP code from your authenticator app.</p>
 
-<div class="mt-4">
-    <label for="totp-code-input" class="form-label">Enter TOTP code</label>
-    <input type="number" class="form-control" id="totp-code-input">
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+<form
+    asp-area="Access"
+    asp-controller="Authentication"
+    asp-action="TOTPChallenge"
+    method="post"
+>
+    <div class="mt-4">
+        <label for="verification-code-input" class="form-label">Enter secure 6-digit code</label>
+        <input type="integer" class="form-control" id="verification-code-input" asp-for="VerificationCode">
+        <span asp-validation-for="VerificationCode" class="text-danger"></span>
 
-    <div class="d-grid col-6 mt-3 mx-auto">
-        <button type="button" class="btn btn-secondary btn-md">Submit</button>
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Continue</button>
+        </div>
     </div>
-</div>
+</form>

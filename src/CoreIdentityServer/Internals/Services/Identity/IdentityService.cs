@@ -11,8 +11,9 @@ using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using CoreIdentityServer.Areas.Enroll.Models.SignUp;
 using System.Text.Encodings.Web;
+using System.Security.Claims;
+using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -97,19 +98,19 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return model;
         }
 
-        public async Task<RouteValueDictionary> VerifyEmailChallenge(EmailChallengeInputModel inputModel, RouteValueDictionary defaultRoute, string tokenProvider, string context)
+        public async Task<RouteValueDictionary> VerifyEmailChallenge(EmailChallengeInputModel inputModel, RouteValueDictionary defaultRoute, RouteValueDictionary targetRoute, string tokenProvider, string context)
         {
             RouteValueDictionary redirectRouteValues = null;
 
             if (!ActionContext.ModelState.IsValid)
                 return redirectRouteValues;
 
-            redirectRouteValues = await VerifyTOTPChallenge(inputModel.Email, inputModel.VerificationCode, defaultRoute, tokenProvider, context);
+            redirectRouteValues = await VerifyTOTPChallenge(inputModel.Email, inputModel.VerificationCode, defaultRoute, targetRoute, tokenProvider, context);
 
             return redirectRouteValues;
         }
 
-        public async Task<RouteValueDictionary> VerifyTOTPChallenge(string userEmail, string verificationCode, RouteValueDictionary defaultRoute, string tokenProvider, string context)
+        public async Task<RouteValueDictionary> VerifyTOTPChallenge(string userEmail, string verificationCode, RouteValueDictionary defaultRoute, RouteValueDictionary targetRoute, string tokenProvider, string context)
         {
             RouteValueDictionary redirectRouteValues = null;
 
@@ -162,6 +163,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                             break;
                         case UserActionContexts.ResetTOTPAccessEmailChallenge:
                             redirectRouteValues = await AcknowledgeResetTOTPAccessRequest(user);
+                            break;
+                        case UserActionContexts.TOTPChallenge:
+                            redirectRouteValues = await ConfirmTOTPChallenge(user, targetRoute);
                             break;
                         default:
                             ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
@@ -300,6 +304,42 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             // redirect user to Register TOTP Access page
             return GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+        }
+
+        private async Task<RouteValueDictionary> ConfirmTOTPChallenge(ApplicationUser user, RouteValueDictionary targetRoute)
+        {
+            RouteValueDictionary redirectRouteValues = null;
+            DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddMinutes(5);
+            Claim expiredClaim = ActionContext.HttpContext.User.FindFirst(
+                claim => claim.Type == Claims.TOTPAuthorizationExpiry
+            );
+            Claim newClaim = new Claim(Claims.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
+
+            IdentityResult updateUserClaims = null;
+            
+            if (expiredClaim == null)
+            {
+                updateUserClaims = await UserManager.AddClaimAsync(user, newClaim);
+            }
+            else
+            {
+                updateUserClaims = await UserManager.ReplaceClaimAsync(user, expiredClaim, newClaim);
+            }
+
+            if (!updateUserClaims.Succeeded)
+            {
+                Console.WriteLine($"Error updating user claims");
+
+                // add errors to ModelState
+                foreach (IdentityError error in updateUserClaims.Errors)
+                    Console.WriteLine(error.Description);
+
+                ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+
+                return redirectRouteValues;
+            }
+
+            return targetRoute;
         }
 
         public async Task SignOut()

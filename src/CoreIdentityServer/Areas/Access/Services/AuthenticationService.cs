@@ -46,6 +46,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             RouteValueDictionary redirectRouteValues = await IdentityService.VerifyEmailChallenge(
                 inputModel,
                 RootRoute,
+                null,
                 CustomTokenOptions.GenericTOTPTokenProvider,
                 UserActionContexts.SignInEmailChallenge
             );
@@ -86,6 +87,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 inputModel.Email,
                 inputModel.TOTPCode,
                 RootRoute,
+                null,
                 TokenOptions.DefaultAuthenticatorProvider,
                 UserActionContexts.SignInTOTPChallenge
             );
@@ -99,6 +101,42 @@ namespace CoreIdentityServer.Areas.Access.Services
             await IdentityService.SignOut();
 
             return RootRoute;
+        }
+
+        public async Task<RouteValueDictionary> ManageTOTPChallengeVerification(TOTPChallengeInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = null;
+            RouteValueDictionary targetRoute = RootRoute;
+
+            bool currentUserSignedIn = IdentityService.CheckActiveSession();
+
+            if (!currentUserSignedIn)
+            {
+                return RootRoute;
+            }
+
+            if (!ActionContext.ModelState.IsValid)
+            {
+                return redirectRouteValues;
+            }
+
+            ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+            if (user == null)
+            {
+                return RootRoute;
+            }
+
+            redirectRouteValues = await IdentityService.VerifyTOTPChallenge(
+                user.Email,
+                inputModel.VerificationCode,
+                RootRoute,
+                targetRoute,
+                TokenOptions.DefaultAuthenticatorProvider,
+                UserActionContexts.TOTPChallenge
+            );
+
+            return redirectRouteValues;
         }
 
         // clean up to be done by DI

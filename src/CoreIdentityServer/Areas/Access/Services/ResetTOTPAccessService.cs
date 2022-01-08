@@ -95,6 +95,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             RouteValueDictionary redirectRouteValues = await IdentityService.VerifyEmailChallenge(
                 inputModel,
                 RootRoute,
+                null,
                 CustomTokenOptions.GenericTOTPTokenProvider,
                 UserActionContexts.ResetTOTPAccessEmailChallenge
             );
