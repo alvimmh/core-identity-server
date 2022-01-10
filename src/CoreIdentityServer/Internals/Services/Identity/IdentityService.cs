@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Services.Email.EmailService;
+using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.AspNetCore.Identity;
@@ -76,7 +76,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 else if (user.EmailConfirmed && !user.AccountRegistered)
                 {
                     // user exists with confirmed email and unregistered account, send email to complete registration
-                    SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
+                    await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
 
                     return model;
                 }
@@ -110,8 +110,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return redirectRouteValues;
         }
 
-        public async Task<RouteValueDictionary> VerifyTOTPChallenge(string userEmail, string verificationCode, RouteValueDictionary defaultRoute, RouteValueDictionary targetRoute, string tokenProvider, string context)
-        {
+        public async Task<RouteValueDictionary> VerifyTOTPChallenge(
+            string userEmail,
+            string verificationCode,
+            RouteValueDictionary defaultRoute,
+            RouteValueDictionary targetRoute,
+            string tokenProvider,
+            string context
+        ) {
             RouteValueDictionary redirectRouteValues = null;
 
             ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
@@ -134,7 +140,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists with confirmed email and unregistered account, send email to complete registration
-                SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
+                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
                 redirectRouteValues = defaultRoute;
 
                 return redirectRouteValues;
@@ -196,7 +202,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             if (updateUser.Succeeded)
             {
-                SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
             }
@@ -230,7 +236,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
-            SendNewSessionVerificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName, sessionVerificationCode);
+            await EmailService.SendNewSessionVerificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName, sessionVerificationCode);
 
             redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
 
@@ -261,7 +267,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 await SignInManager.SignInAsync(user, false);
 
                 // send email to user about new session
-                SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                await EmailService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
             }
@@ -378,7 +384,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             // if increasing the failed count results in account lockout, notify the user
             bool isUserLockedOut = await UserManager.IsLockedOutAsync(user);
             if (isUserLockedOut)
-                SendAccountLockedOutEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                await EmailService.SendAccountLockedOutEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
         }
 
         private async Task ResetSignInAttempts(ApplicationUser user)
@@ -403,7 +409,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             // if user exists but did not complete registration, send email to complete registration
             if (!user.AccountRegistered)
             {
-                SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 return false;
             }
@@ -411,7 +417,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             // if user exists but requires authenticator reset, send email to reset
             if (user.AccountRegistered && user.RequiresAuthenticatorReset)
             {
-                SendResetTOTPAccessReminderEmail(AutomatedEmails.NoReply, user.Email, user.Email);
+                await EmailService.SendResetTOTPAccessReminderEmail(AutomatedEmails.NoReply, user.Email, user.Email);
 
                 return false;
             }
@@ -455,79 +461,6 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 UrlEncoder.Encode(email),
                 authenticatorKey
             );
-        }
-
-        // send a reminder to user to reset authenticator
-        public void SendResetTOTPAccessReminderEmail(string emailFrom, string emailTo, string userName)
-        {
-            string emailSubject = "Please Reset TOTP Access";
-            string emailBody = $"Dear {userName}, you previously tried to reset your TOTP authenticator but did not reset it completely. To keep your account secure, we have blocked your latest Sign In attempt. Please finish resetting your authenticator to Sign In.";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // send a verification code to verify user's identity before resetting TOTP access
-        public void SendResetTOTPAccessVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
-        {
-            string emailSubject = "Please Confirm Your Identity";
-            string emailBody = $"Greetings {userName}, please confirm you identity by submitting this verification code: {verificationCode}";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // send a verification code to verify user's email address
-        public void SendEmailConfirmationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
-        {
-            string emailSubject = "Please Confirm Your Email";
-            string emailBody = $"Greetings {userName}, please confirm your email by submitting this verification code: {verificationCode}";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // user email confirmed, notify user
-        public void SendEmailConfirmedEmail(string emailFrom, string emailTo, string userName)
-        {
-            string emailSubject = "Email Confirmed";
-            string emailBody = $"Congratulations {userName}, your email is now verified.";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // send a verification code to user's email
-        public void SendNewSessionVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
-        {
-            string emailSubject = "Please Confirm New Session";
-            string emailBody = $"Greetings, please confirm new sign in by submitting this verification code: {verificationCode}";
-
-            // user account successfully created, initiate email confirmation
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // notify the user about account lockout
-        public void SendAccountLockedOutEmail(string emailFrom, string emailTo, string userName)
-        {
-            string emailSubject = "Account Locked Out";
-            string emailBody = $"Dear {userName}, due to 3 unsuccessful attempts to sign in to your account, we have locked it out. You can try again in 30 minutes or click this link to reset your TOTP access.";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // notify user about new session
-        public void SendNewActiveSessionNotificationEmail(string emailFrom, string emailTo, string userName)
-        {
-            string emailSubject = "New Active Session Started";
-            string emailBody = $"Dear {userName}, this is to notify you of a new active session.";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
-        }
-
-        // notify user to complete account registration
-        public void SendAccountNotRegisteredEmail(string emailFrom, string emailTo, string userName)
-        {
-            string emailSubject = "SignIn Attempt Detected";
-            string emailBody = $"Dear {userName}, we have detected a sign in attempt for your account. To log in, you need to finish registration.";
-
-            EmailService.Send(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         public void Dispose()

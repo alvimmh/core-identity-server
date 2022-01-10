@@ -5,10 +5,11 @@ using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Authorization;
+using CoreIdentityServer.Internals.Constants.Routes;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
-    [Area("Access")]
+    [Area(AreaNames.Access)]
     public class AuthenticationController : Controller
     {
         private AuthenticationService AuthenticationService;

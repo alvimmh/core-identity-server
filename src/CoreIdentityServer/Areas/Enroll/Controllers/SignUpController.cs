@@ -5,10 +5,11 @@ using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using CoreIdentityServer.Internals.Constants.Routes;
 
 namespace CoreIdentityServer.Areas.Enroll.Controllers
 {
-    [Area("Enroll")]
+    [Area(AreaNames.Enroll)]
     public class SignUpController : Controller
     {
         private SignUpService SignUpService;

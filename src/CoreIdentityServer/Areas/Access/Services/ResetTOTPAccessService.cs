@@ -13,12 +13,14 @@ using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess;
 using CoreIdentityServer.Internals.Constants.UserActions;
+using CoreIdentityServer.Internals.Services.Email;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class ResetTOTPAccessService : BaseService, IDisposable
     {
         private readonly UserManager<ApplicationUser> UserManager;
+        private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
         public readonly RouteValueDictionary RootRoute;
@@ -26,10 +28,12 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public ResetTOTPAccessService(
             UserManager<ApplicationUser> userManager,
+            EmailService emailService,
             IdentityService identityService,
             IActionContextAccessor actionContextAccessor
         ) {
             UserManager = userManager;
+            EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
@@ -63,7 +67,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             else if (!user.AccountRegistered)
             {
                 // user exists but did not complete account registration, send email to complete registration
-                IdentityService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
+                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
 
                 return redirectRouteValues;
             }
@@ -72,7 +76,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
                 // send email with verification code & set redirectRouteValues
-                IdentityService.SendResetTOTPAccessVerificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName, verificationCode);
+                await EmailService.SendResetTOTPAccessVerificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName, verificationCode);
 
                 // set email value so controller can save this to tempdata
                 inputModel.Email = user.Email;

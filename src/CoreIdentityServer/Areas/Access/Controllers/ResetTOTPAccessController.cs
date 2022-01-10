@@ -4,10 +4,11 @@ using CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess;
 using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using CoreIdentityServer.Internals.Constants.Routes;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
-    [Area("Access")]
+    [Area(AreaNames.Access)]
     public class ResetTOTPAccessController : Controller
     {
         private ResetTOTPAccessService ResetTOTPAccessService;

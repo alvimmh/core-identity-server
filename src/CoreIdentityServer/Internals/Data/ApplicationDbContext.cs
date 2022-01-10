@@ -11,6 +11,8 @@ namespace CoreIdentityServer.Internals.Data
         {
         }
 
+        public DbSet<EmailRecord> EmailRecords { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

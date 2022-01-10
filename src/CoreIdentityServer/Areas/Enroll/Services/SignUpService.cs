@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.UserActions;
+using CoreIdentityServer.Internals.Services.Email;
 
 namespace CoreIdentityServer.Areas.Enroll.Services
 {
@@ -20,6 +21,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
     {
         private readonly UserManager<ApplicationUser> UserManager;
         private readonly SignInManager<ApplicationUser> SignInManager;
+        private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
         public readonly RouteValueDictionary RootRoute;
@@ -28,11 +30,13 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         public SignUpService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
+            EmailService emailService,
             IdentityService identityService,
             IActionContextAccessor actionContextAccessor
         ) {
             UserManager = userManager;
             SignInManager = signInManager;
+            EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
@@ -100,7 +104,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultEmailProvider);
 
                 // user account successfully created, verify email
-                IdentityService.SendEmailConfirmationEmail(AutomatedEmails.NoReply, inputModel.Email, inputModel.Email, verificationCode);
+                await EmailService.SendEmailConfirmationEmail(AutomatedEmails.NoReply, inputModel.Email, inputModel.Email, verificationCode);
 
                 redirectRouteValues = GenerateRedirectRouteValues("ConfirmEmail", "SignUp", "Enroll");
             }

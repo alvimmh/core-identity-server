@@ -2,13 +2,14 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Vault.Models.Profile;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Routes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 namespace CoreIdentityServer.Areas.Vault.Controllers
 {
-    [Area("Vault"), Authorize]
+    [Area(AreaNames.Vault), Authorize]
     public class ProfileController : Controller
     {
         private ProfileService ProfileService;
