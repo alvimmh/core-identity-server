@@ -1,4 +1,5 @@
 using CoreIdentityServer.Areas.Access.Services;
+using CoreIdentityServer.Areas.ClientServices.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Authorization.Handlers;
@@ -29,6 +30,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<AuthenticationService>();
             services.AddScoped<ResetTOTPAccessService>();
             services.AddScoped<ProfileService>();
+            services.AddScoped<CorrespondenceService>();
 
             return services;
         }

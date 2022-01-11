@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Text.Encodings.Web;
 using System.Security.Claims;
 using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -45,21 +46,27 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             EmailChallengeInputModel model = null;
             RouteValueDictionary redirectRouteValues = defaultRoute;
 
-            bool tempDataExists = tempData.TryGetValue("userEmail", out object tempDataValue);
-            if (tempDataExists)
-            {
-                string userEmailFromTempData = tempDataValue.ToString();
+            bool userEmailExists = tempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
+            bool resendEmailRecordIdExists = tempData.TryGetValue(
+                TempDataKeys.ResendEmailRecordId,
+                out object resendEmailRecordIdTempData
+            );
 
-                if (!string.IsNullOrWhiteSpace(userEmailFromTempData))
+            if (userEmailExists)
+            {
+                string userEmail = userEmailTempData.ToString();
+                string resendEmailRecordId = resendEmailRecordIdExists ? resendEmailRecordIdTempData.ToString() : null;
+
+                if (!string.IsNullOrWhiteSpace(userEmail))
                 {
-                    model = await GenerateEmailChallengeInputModel(userEmailFromTempData);
+                    model = await GenerateEmailChallengeInputModel(userEmail, resendEmailRecordId);
                 }
             }
 
             return GenerateArray(model, redirectRouteValues);
         }
 
-        private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail)
+        private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail, string resendEmailRecordId)
         {
             // return null to redirect to another page
             EmailChallengeInputModel model = null;
@@ -88,7 +95,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                     model = new EmailChallengeInputModel
                     {
-                        Email = userEmail
+                        Email = userEmail,
+                        ResendEmailRecordId = resendEmailRecordId
                     };
 
                     return model;
@@ -98,14 +106,27 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return model;
         }
 
-        public async Task<RouteValueDictionary> VerifyEmailChallenge(EmailChallengeInputModel inputModel, RouteValueDictionary defaultRoute, RouteValueDictionary targetRoute, string tokenProvider, string context)
-        {
+        public async Task<RouteValueDictionary> VerifyEmailChallenge(
+            EmailChallengeInputModel inputModel,
+            RouteValueDictionary defaultRoute,
+            RouteValueDictionary targetRoute,
+            string tokenProvider,
+            string context
+        ) {
             RouteValueDictionary redirectRouteValues = null;
 
             if (!ActionContext.ModelState.IsValid)
                 return redirectRouteValues;
 
-            redirectRouteValues = await VerifyTOTPChallenge(inputModel.Email, inputModel.VerificationCode, defaultRoute, targetRoute, tokenProvider, context);
+            redirectRouteValues = await VerifyTOTPChallenge(
+                inputModel.Email,
+                inputModel.VerificationCode,
+                defaultRoute,
+                targetRoute,
+                tokenProvider,
+                context,
+                inputModel
+            );
 
             return redirectRouteValues;
         }
@@ -116,7 +137,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             RouteValueDictionary defaultRoute,
             RouteValueDictionary targetRoute,
             string tokenProvider,
-            string context
+            string context,
+            EmailChallengeInputModel emailChallengeInputModel
         ) {
             RouteValueDictionary redirectRouteValues = null;
 
@@ -156,6 +178,11 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 if (TOTPCodeVerified)
                 {
+                    if (emailChallengeInputModel != null)
+                    {
+                        await EmailService.ArchiveEmailRecord(emailChallengeInputModel, user);
+                    }
+
                     switch (context)
                     {
                         case UserActionContexts.ConfirmEmailChallenge:
@@ -236,7 +263,17 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
-            await EmailService.SendNewSessionVerificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName, sessionVerificationCode);
+            string resendEmailRecordId = await EmailService.SendNewSessionVerificationEmail(
+                AutomatedEmails.NoReply,
+                user.Email,
+                user.UserName,
+                sessionVerificationCode
+            );
+
+            ActionContext.HttpContext.Items.Add(
+                HttpContextItemKeys.ResendEmailRecordId,
+                resendEmailRecordId
+            );
 
             redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
 

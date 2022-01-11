@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
+using CoreIdentityServer.Internals.Models.InputModels;
 using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services.Email
@@ -18,7 +19,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             SMTPService = smtpService;
         }
 
-        private async Task CreateAndSendEmail(string smtpFrom, string smtpTo, string subject, string body)
+        private async Task<string> CreateAndSendEmail(string smtpFrom, string smtpTo, string subject, string body)
         {
             EmailRecord emailRecord = new EmailRecord();
             emailRecord.SetRecordDetails(smtpFrom, smtpTo, subject, body, DateTime.UtcNow);
@@ -27,6 +28,37 @@ namespace CoreIdentityServer.Internals.Services.Email
             await DbContext.SaveChangesAsync();
 
             SMTPService.Send(smtpFrom, smtpTo, subject, body, emailRecord.Id);
+        
+            return emailRecord.Id;
+        }
+
+        public void ResendEmail(EmailRecord emailRecord)
+        {
+            SMTPService.Send(emailRecord.SentFrom, emailRecord.SentTo, emailRecord.Subject, emailRecord.Body, emailRecord.Id);
+        }
+
+        // archive an email record as it has served its purpose
+        public async Task ArchiveEmailRecord(EmailChallengeInputModel emailChallengeInputModel, ApplicationUser user)
+        {
+            EmailRecord emailRecord = await DbContext.EmailRecords.FindAsync(emailChallengeInputModel.ResendEmailRecordId);
+
+            if (emailRecord == null)
+            {
+                Console.WriteLine($"Could not find email record with id {emailChallengeInputModel.ResendEmailRecordId} to archive.");
+            }
+            else
+            {
+                if (emailRecord.SentTo == user.Email)
+                {
+                    emailRecord.ArchiveRecord();
+
+                    await DbContext.SaveChangesAsync();
+                }
+                else
+                {
+                    Console.WriteLine($"Cannot archive email record. User email doesn't match with recipient email address of email record.");
+                }
+            }
         }
 
         // send a reminder to user to reset authenticator
@@ -39,21 +71,25 @@ namespace CoreIdentityServer.Internals.Services.Email
         }
 
         // send a verification code to verify user's identity before resetting TOTP access
-        public async Task SendResetTOTPAccessVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
+        public async Task<string> SendResetTOTPAccessVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
         {
             string emailSubject = "Please Confirm Your Identity";
             string emailBody = $"Greetings {userName}, please confirm you identity by submitting this verification code: {verificationCode}";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            string emailRecordId = await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+
+            return emailRecordId;
         }
 
         // send a verification code to verify user's email address
-        public async Task SendEmailConfirmationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
+        public async Task<string> SendEmailConfirmationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
         {
             string emailSubject = "Please Confirm Your Email";
             string emailBody = $"Greetings {userName}, please confirm your email by submitting this verification code: {verificationCode}";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            string emailRecordId = await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+
+            return emailRecordId;
         }
 
         // user email confirmed, notify user
@@ -66,13 +102,15 @@ namespace CoreIdentityServer.Internals.Services.Email
         }
 
         // send a verification code to user's email
-        public async Task SendNewSessionVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
+        public async Task<string> SendNewSessionVerificationEmail(string emailFrom, string emailTo, string userName, string verificationCode)
         {
             string emailSubject = "Please Confirm New Session";
             string emailBody = $"Greetings, please confirm new sign in by submitting this verification code: {verificationCode}";
 
             // user account successfully created, initiate email confirmation
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            string emailRecordId = await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+
+            return emailRecordId;
         }
 
         // notify the user about account lockout

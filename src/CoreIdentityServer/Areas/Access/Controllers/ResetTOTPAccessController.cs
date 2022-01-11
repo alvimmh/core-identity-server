@@ -5,6 +5,7 @@ using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -33,7 +34,14 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         {
             RouteValueDictionary redirectRouteValues = await ResetTOTPAccessService.InitiateEmailChallenge(inputModel);
 
-            TempData["userEmail"] = inputModel.Email;
+            TempData[TempDataKeys.UserEmail] = inputModel.Email;
+            bool resendEmailRecordIdExists = ControllerContext.HttpContext.Items.TryGetValue(
+                HttpContextItemKeys.ResendEmailRecordId,
+                out object resendEmailRecordIdValue
+            );
+
+            if (resendEmailRecordIdExists)
+                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordIdValue.ToString();
 
             return RedirectToRoute(redirectRouteValues);
         }
@@ -59,7 +67,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             if (redirectRouteValues == null)
                 return View(inputModel);
 
-            TempData["userEmail"] = inputModel.Email;
+            TempData[TempDataKeys.UserEmail] = inputModel.Email;
 
             return RedirectToRoute(redirectRouteValues);
         }

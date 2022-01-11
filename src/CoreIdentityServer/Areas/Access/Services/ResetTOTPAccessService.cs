@@ -14,6 +14,7 @@ using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Services.Email;
+using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -76,7 +77,17 @@ namespace CoreIdentityServer.Areas.Access.Services
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
                 // send email with verification code & set redirectRouteValues
-                await EmailService.SendResetTOTPAccessVerificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName, verificationCode);
+                string resendEmailRecordId = await EmailService.SendResetTOTPAccessVerificationEmail(
+                    AutomatedEmails.NoReply,
+                    user.Email,
+                    user.UserName,
+                    verificationCode
+                );
+
+                ActionContext.HttpContext.Items.Add(
+                    HttpContextItemKeys.ResendEmailRecordId,
+                    resendEmailRecordId
+                );
 
                 // set email value so controller can save this to tempdata
                 inputModel.Email = user.Email;

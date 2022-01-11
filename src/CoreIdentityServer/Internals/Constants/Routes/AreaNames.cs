@@ -3,8 +3,9 @@ namespace CoreIdentityServer.Internals.Constants.Routes
 {
     public class AreaNames
     {
-        public const string Access = "Access";
-        public const string Enroll = "Enroll";
-        public const string Vault = "Vault";
+        public const string Access = "access";
+        public const string Enroll = "enroll";
+        public const string Vault = "vault";
+        public const string ClientServices = "clientservices";
     }
 }

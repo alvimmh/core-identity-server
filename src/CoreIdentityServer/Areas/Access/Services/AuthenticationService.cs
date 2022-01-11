@@ -89,7 +89,8 @@ namespace CoreIdentityServer.Areas.Access.Services
                 RootRoute,
                 null,
                 TokenOptions.DefaultAuthenticatorProvider,
-                UserActionContexts.SignInTOTPChallenge
+                UserActionContexts.SignInTOTPChallenge,
+                null
             );
 
             return redirectRouteValues;
@@ -133,7 +134,8 @@ namespace CoreIdentityServer.Areas.Access.Services
                 RootRoute,
                 targetRoute,
                 TokenOptions.DefaultAuthenticatorProvider,
-                UserActionContexts.TOTPChallenge
+                UserActionContexts.TOTPChallenge,
+                null
             );
 
             return redirectRouteValues;

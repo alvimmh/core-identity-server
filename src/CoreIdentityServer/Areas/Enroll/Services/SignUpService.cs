@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Services.Email;
+using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Areas.Enroll.Services
 {
@@ -104,7 +105,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(prospectiveUser, TokenOptions.DefaultEmailProvider);
 
                 // user account successfully created, verify email
-                await EmailService.SendEmailConfirmationEmail(AutomatedEmails.NoReply, inputModel.Email, inputModel.Email, verificationCode);
+                string resendEmailRecordId = await EmailService.SendEmailConfirmationEmail(AutomatedEmails.NoReply, inputModel.Email, inputModel.Email, verificationCode);
+
+                ActionContext.HttpContext.Items.Add(HttpContextItemKeys.ResendEmailRecordId, resendEmailRecordId);
 
                 redirectRouteValues = GenerateRedirectRouteValues("ConfirmEmail", "SignUp", "Enroll");
             }
@@ -144,7 +147,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             RouteValueDictionary redirectRouteValues = RootRoute;
             object[] result = GenerateArray(model, redirectRouteValues);
 
-            bool tempDataExists = TempData.TryGetValue("userEmail", out object tempDataValue);
+            bool tempDataExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object tempDataValue);
 
             string userEmail = tempDataExists ? tempDataValue.ToString() : null;
             if (string.IsNullOrWhiteSpace(userEmail))

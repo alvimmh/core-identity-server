@@ -1,6 +1,10 @@
 @model EmailChallengeInputModel
 @{
     ViewData["Title"] = "Reset TOTP Access Email Challenge";
+
+    ResendEmailInputModel partialViewModel = new ResendEmailInputModel() {
+        ResendEmailRecordId = Model.ResendEmailRecordId
+    };
 }
 
 <p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm your identity.</p>
@@ -18,6 +22,8 @@
         <span asp-validation-for="VerificationCode" class="text-danger"></span>
 
         <input type="string" id="email-address-input" asp-for="Email" value="@Model.Email" hidden>
+
+        <partial name="../../../ClientServices/Views/Correspondence/_ResendEmail.cshtml" model="@partialViewModel" />
 
         <div class="d-grid col-6 mt-3 mx-auto">
             <button type="submit" class="btn btn-secondary btn-md">Continue</button>
