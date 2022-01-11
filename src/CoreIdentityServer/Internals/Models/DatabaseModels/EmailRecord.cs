@@ -72,6 +72,13 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
 
         public bool CanResendEmail(ResendEmailInputModel inputModel)
         {
+            if (SentTo != inputModel.Email)
+            {
+                inputModel.SetErrorMessage("Could not resend email");
+
+                return false;
+            }
+
             DateTime currentDateTime = DateTime.UtcNow;
             bool emailExpired = currentDateTime - CreatedAt > TimeSpan.FromMinutes(5);
 

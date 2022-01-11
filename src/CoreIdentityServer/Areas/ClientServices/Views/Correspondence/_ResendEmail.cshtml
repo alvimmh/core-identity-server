@@ -10,8 +10,10 @@
 
     resendEmailElement.click(() => {
         const requestVerificationToken = $("input[name='__RequestVerificationToken']").val();
+        const userEmail = $("input[name='Email']").val();
 
-        const requestBody = { 
+        const requestBody = {
+            Email: userEmail,
             ResendEmailRecordId: "@Model.ResendEmailRecordId",
             __RequestVerificationToken: requestVerificationToken
         };
@@ -22,7 +24,7 @@
             data: requestBody,
             cache: false,
             success: () => {
-                resendEmailElement.text("Email resent.")
+                resendEmailElement.text("Email resent")
             },
             error: (xhr) => {
                 const responseText = xhr.responseText || "Could not resend. Please try again.";

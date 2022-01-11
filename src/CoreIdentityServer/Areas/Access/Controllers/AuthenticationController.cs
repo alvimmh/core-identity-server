@@ -81,7 +81,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
                 return View(inputModel);
 
             TempData[TempDataKeys.UserEmail] = inputModel.Email;
-            
+
             bool resendEmailRecordIdExists = ControllerContext.HttpContext.Items.TryGetValue(
                 HttpContextItemKeys.ResendEmailRecordId,
                 out object resendEmailRecordIdValue
