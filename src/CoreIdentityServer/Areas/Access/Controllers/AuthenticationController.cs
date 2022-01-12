@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Routes;
-using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -41,7 +40,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         public async Task<IActionResult> EmailChallenge()
         {
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
-            object[] result = await AuthenticationService.ManageEmailChallenge(TempData);
+            object[] result = await AuthenticationService.ManageEmailChallenge();
 
             // if ViewModel is null then redirect to route returned from AuthenticationService
             if (result[0] == null)
@@ -79,16 +78,6 @@ namespace CoreIdentityServer.Areas.Access.Controllers
 
             if (redirectRouteValues == null)
                 return View(inputModel);
-
-            TempData[TempDataKeys.UserEmail] = inputModel.Email;
-
-            bool resendEmailRecordIdExists = ControllerContext.HttpContext.Items.TryGetValue(
-                HttpContextItemKeys.ResendEmailRecordId,
-                out object resendEmailRecordIdValue
-            );
-
-            if (resendEmailRecordIdExists)
-                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordIdValue.ToString();
 
             return RedirectToRoute(redirectRouteValues);
         }

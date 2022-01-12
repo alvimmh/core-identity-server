@@ -6,7 +6,6 @@ using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
@@ -34,9 +33,9 @@ namespace CoreIdentityServer.Areas.Access.Services
             RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
         }
 
-        public async Task<object[]> ManageEmailChallenge(ITempDataDictionary tempData)
+        public async Task<object[]> ManageEmailChallenge()
         {
-            object[] result = await IdentityService.ManageEmailChallenge(tempData, RootRoute);
+            object[] result = await IdentityService.ManageEmailChallenge(RootRoute);
 
             return result;
         }

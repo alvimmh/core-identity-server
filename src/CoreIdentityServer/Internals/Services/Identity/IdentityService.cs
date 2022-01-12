@@ -25,6 +25,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         private readonly SignInManager<ApplicationUser> SignInManager;
         private EmailService EmailService;
         private ActionContext ActionContext;
+        private readonly ITempDataDictionary TempData;
         private readonly UrlEncoder UrlEncoder;
         private bool ResourcesDisposed;
 
@@ -33,28 +34,33 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             SignInManager<ApplicationUser> signInManager,
             EmailService emailService,
             IActionContextAccessor actionContextAccessor,
+            ITempDataDictionaryFactory tempDataDictionaryFactory,
             UrlEncoder urlEncoder
         ) {
             UserManager = userManager;
             SignInManager = signInManager;
             EmailService = emailService;
             ActionContext = actionContextAccessor.ActionContext;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             UrlEncoder = urlEncoder;
         }
 
-        public async Task<object[]> ManageEmailChallenge(ITempDataDictionary tempData, RouteValueDictionary defaultRoute)
+        public async Task<object[]> ManageEmailChallenge(RouteValueDictionary defaultRoute)
         {
             EmailChallengeInputModel model = null;
             RouteValueDictionary redirectRouteValues = defaultRoute;
 
-            bool userEmailExists = tempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
-            bool resendEmailRecordIdExists = tempData.TryGetValue(
+            bool userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
+            bool resendEmailRecordIdExists = TempData.TryGetValue(
                 TempDataKeys.ResendEmailRecordId,
                 out object resendEmailRecordIdTempData
             );
 
             if (userEmailExists)
             {
+                // retain TempData so page reload keeps user on the same page
+                TempData.Keep();
+
                 string userEmail = userEmailTempData.ToString();
                 string resendEmailRecordId = resendEmailRecordIdExists ? resendEmailRecordIdTempData.ToString() : null;
 
@@ -232,6 +238,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             {
                 await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
+                TempData[TempDataKeys.UserEmail] = user.Email;
+
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
             }
             else
@@ -271,10 +279,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 sessionVerificationCode
             );
 
-            ActionContext.HttpContext.Items.Add(
-                HttpContextItemKeys.ResendEmailRecordId,
-                resendEmailRecordId
-            );
+            TempData[TempDataKeys.UserEmail] = user.Email;
+            TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId.ToString();
 
             redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
 
@@ -306,6 +312,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 // send email to user about new session
                 await EmailService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+
+                // clear all unnecessary temp data
+                TempData.Clear();
 
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
             }
@@ -345,6 +354,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             // sign out user
             await SignOut();
+
+            TempData[TempDataKeys.UserEmail] = user.Email;
 
             // redirect user to Register TOTP Access page
             return GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
@@ -416,6 +427,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                         Console.WriteLine(error.Description);
                 }
             }
+
+            // delete all TempData
+            TempData.Clear();
 
             // but delete authentication cookie anyways
             await SignInManager.SignOutAsync();

@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.Routes;
-using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Areas.Enroll.Controllers
 {
@@ -39,16 +38,6 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             if (redirectRouteValues == null)
                 return View(inputModel);
 
-            TempData[TempDataKeys.UserEmail] = inputModel.Email;
-            
-            bool resendEmailRecordIdExists = ControllerContext.HttpContext.Items.TryGetValue(
-                HttpContextItemKeys.ResendEmailRecordId,
-                out object resendEmailRecordIdValue
-            );
-
-            if (resendEmailRecordIdExists)
-                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordIdValue.ToString();
-
             return RedirectToRoute(redirectRouteValues);
         }
 
@@ -56,7 +45,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         public async Task<IActionResult> ConfirmEmail()
         {
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
-            object[] result = await SignUpService.ManageEmailConfirmation(TempData);
+            object[] result = await SignUpService.ManageEmailConfirmation();
 
             // if ViewModel is null then redirect to route returned from SignUpService
             if (result[0] == null)
@@ -73,8 +62,6 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             if (redirectRouteValues == null)
                 return View(inputModel);
 
-            TempData[TempDataKeys.UserEmail] = inputModel.Email;
-
             return RedirectToRoute(redirectRouteValues);
         }
 
@@ -82,7 +69,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         public async Task<IActionResult> RegisterTOTPAccess()
         {
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
-            object[] result = await SignUpService.RegisterTOTPAccess(TempData);
+            object[] result = await SignUpService.RegisterTOTPAccess();
 
             // if ViewModel is null then redirect to route returned from SignUpService
             if (result[0] == null)
@@ -98,8 +85,6 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
 
             if (redirectRouteValues == null)
                 return View(inputModel);
-
-            TempData[TempDataKeys.UserEmail] = inputModel.Email;
 
             return RedirectToRoute(redirectRouteValues);
         }

@@ -5,7 +5,6 @@ using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
@@ -15,6 +14,7 @@ using CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -24,6 +24,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
+        private ITempDataDictionary TempData;
         public readonly RouteValueDictionary RootRoute;
         private bool ResourcesDisposed;
 
@@ -31,12 +32,14 @@ namespace CoreIdentityServer.Areas.Access.Services
             UserManager<ApplicationUser> userManager,
             EmailService emailService,
             IdentityService identityService,
-            IActionContextAccessor actionContextAccessor
+            IActionContextAccessor actionContextAccessor,
+            ITempDataDictionaryFactory tempDataDictionaryFactory 
         ) {
             UserManager = userManager;
             EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             RootRoute = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
         }
 
@@ -84,10 +87,8 @@ namespace CoreIdentityServer.Areas.Access.Services
                     verificationCode
                 );
 
-                ActionContext.HttpContext.Items.Add(
-                    HttpContextItemKeys.ResendEmailRecordId,
-                    resendEmailRecordId
-                );
+                TempData[TempDataKeys.UserEmail] = inputModel.Email;
+                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId.ToString();
 
                 // set email value so controller can save this to tempdata
                 inputModel.Email = user.Email;
@@ -98,9 +99,9 @@ namespace CoreIdentityServer.Areas.Access.Services
             return redirectRouteValues;
         }
 
-        public async Task<object[]> ManageEmailChallenge(ITempDataDictionary tempData)
+        public async Task<object[]> ManageEmailChallenge()
         {
-            object[] result = await IdentityService.ManageEmailChallenge(tempData, RootRoute);
+            object[] result = await IdentityService.ManageEmailChallenge(RootRoute);
 
             return result;
         }

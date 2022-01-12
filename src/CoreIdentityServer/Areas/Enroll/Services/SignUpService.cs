@@ -25,6 +25,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
+        private readonly ITempDataDictionary TempData;
         public readonly RouteValueDictionary RootRoute;
         private bool ResourcesDisposed;
 
@@ -33,13 +34,15 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             SignInManager<ApplicationUser> signInManager,
             EmailService emailService,
             IdentityService identityService,
-            IActionContextAccessor actionContextAccessor
+            IActionContextAccessor actionContextAccessor,
+            ITempDataDictionaryFactory tempDataDictionaryFactory
         ) {
             UserManager = userManager;
             SignInManager = signInManager;
             EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             RootRoute = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
         }
 
@@ -107,7 +110,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 // user account successfully created, verify email
                 string resendEmailRecordId = await EmailService.SendEmailConfirmationEmail(AutomatedEmails.NoReply, inputModel.Email, inputModel.Email, verificationCode);
 
-                ActionContext.HttpContext.Items.Add(HttpContextItemKeys.ResendEmailRecordId, resendEmailRecordId);
+                TempData[TempDataKeys.UserEmail] = prospectiveUser.Email;
+                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId;
 
                 redirectRouteValues = GenerateRedirectRouteValues("ConfirmEmail", "SignUp", "Enroll");
             }
@@ -121,9 +125,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             return redirectRouteValues;
         }
 
-        public async Task<object[]> ManageEmailConfirmation(ITempDataDictionary tempData)
+        public async Task<object[]> ManageEmailConfirmation()
         {
-            object[] result = await IdentityService.ManageEmailChallenge(tempData, RootRoute);
+            object[] result = await IdentityService.ManageEmailChallenge(RootRoute);
 
             return result;
         }
@@ -141,17 +145,20 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             return redirectRouteValues;
         }
 
-        public async Task<object[]> RegisterTOTPAccess(ITempDataDictionary TempData)
+        public async Task<object[]> RegisterTOTPAccess()
         {
             RegisterTOTPAccessInputModel model = null;
             RouteValueDictionary redirectRouteValues = RootRoute;
             object[] result = GenerateArray(model, redirectRouteValues);
 
-            bool tempDataExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object tempDataValue);
+            bool userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
 
-            string userEmail = tempDataExists ? tempDataValue.ToString() : null;
+            string userEmail = userEmailExists ? userEmailTempData.ToString() : null;
             if (string.IsNullOrWhiteSpace(userEmail))
                 return result;
+            
+            // retain TempData so page reload keeps user on the same page
+            TempData.Keep();
 
             ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
 
