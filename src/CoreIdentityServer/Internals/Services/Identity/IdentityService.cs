@@ -180,6 +180,15 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // or
                 // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
 
+                if (user.RequiresAuthenticatorReset)
+                {
+                    await EmailService.SendResetTOTPAccessReminderEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
+
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+
+                    return redirectRouteValues;
+                }
+
                 // if TOTP code verified, redirect to target page
                 bool TOTPCodeVerified = await VerifyTOTPCode(user, tokenProvider, verificationCode);
 
