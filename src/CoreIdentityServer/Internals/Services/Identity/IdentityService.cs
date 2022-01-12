@@ -15,6 +15,7 @@ using System.Text.Encodings.Web;
 using System.Security.Claims;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Storage;
+using System.Collections.Generic;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -353,28 +354,41 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         {
             RouteValueDictionary redirectRouteValues = null;
             DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddMinutes(5);
-            Claim expiredClaim = ActionContext.HttpContext.User.FindFirst(
-                claim => claim.Type == Claims.TOTPAuthorizationExpiry
+            bool userHasExpiredClaim = ActionContext.HttpContext.User.HasClaim(
+                claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry
             );
-            Claim newClaim = new Claim(Claims.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
-
-            IdentityResult updateUserClaims = null;
+            Claim newClaim = new Claim(ProjectClaimTypes.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
             
-            if (expiredClaim == null)
+            if (userHasExpiredClaim)
             {
-                updateUserClaims = await UserManager.AddClaimAsync(user, newClaim);
-            }
-            else
-            {
-                updateUserClaims = await UserManager.ReplaceClaimAsync(user, expiredClaim, newClaim);
+                IEnumerable<Claim> expiredClaims = ActionContext.HttpContext.User.FindAll(
+                    claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry
+                );
+
+                IdentityResult deleteExpiredClaims = await UserManager.RemoveClaimsAsync(user, expiredClaims);
+
+                if (!deleteExpiredClaims.Succeeded)
+                {
+                    Console.WriteLine("Error deleting expired user claims");
+
+                    // log errors
+                    foreach (IdentityError error in deleteExpiredClaims.Errors)
+                        Console.WriteLine(error.Description);
+
+                    ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+
+                    return redirectRouteValues;
+                }
             }
 
-            if (!updateUserClaims.Succeeded)
-            {
-                Console.WriteLine($"Error updating user claims");
+            IdentityResult addNewUserClaim = addNewUserClaim = await UserManager.AddClaimAsync(user, newClaim);
 
-                // add errors to ModelState
-                foreach (IdentityError error in updateUserClaims.Errors)
+            if (!addNewUserClaim.Succeeded)
+            {
+                Console.WriteLine($"Error adding user claim of type ${ProjectClaimTypes.TOTPAuthorizationExpiry}");
+
+                // log errors
+                foreach (IdentityError error in addNewUserClaim.Errors)
                     Console.WriteLine(error.Description);
 
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");

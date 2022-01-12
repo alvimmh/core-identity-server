@@ -1,6 +1,6 @@
 namespace CoreIdentityServer.Internals.Constants.Authorization
 {
-    public class Claims
+    public class ProjectClaimTypes
     {
         public const string TOTPAuthorizationExpiry = "TOTPAuthorizationExpiry";
     }

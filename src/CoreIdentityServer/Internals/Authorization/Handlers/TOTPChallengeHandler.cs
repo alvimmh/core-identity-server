@@ -14,7 +14,7 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
             if (authorizationHandlerContext.User.Identity.IsAuthenticated)
             {
                 // claim used to store expiry DateTime of TOTP authorization period
-                Claim TOTPAuthorizationClaim = authorizationHandlerContext.User.FindFirst(Claims.TOTPAuthorizationExpiry);
+                Claim TOTPAuthorizationClaim = authorizationHandlerContext.User.FindFirst(ProjectClaimTypes.TOTPAuthorizationExpiry);
                 bool userAuthorized = false;
 
                 if (TOTPAuthorizationClaim != null)
