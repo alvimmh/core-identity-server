@@ -50,7 +50,29 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             EmailChallengeInputModel model = null;
             RouteValueDictionary redirectRouteValues = defaultRoute;
 
-            bool userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
+            // check if user is signed in
+            bool userEmailExists = false;
+            bool currentUserSignedIn = CheckActiveSession();
+            string userEmail = null;
+
+            if (currentUserSignedIn)
+            {
+                ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+                if (user != null)
+                {
+                    userEmailExists = true;
+                    userEmail = user.Email;
+                }
+            }
+            else
+            {
+                userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
+
+                if (userEmailExists)
+                    userEmail = userEmailTempData.ToString();
+            }
+
             bool resendEmailRecordIdExists = TempData.TryGetValue(
                 TempDataKeys.ResendEmailRecordId,
                 out object resendEmailRecordIdTempData
@@ -61,7 +83,6 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // retain TempData so page reload keeps user on the same page
                 TempData.Keep();
 
-                string userEmail = userEmailTempData.ToString();
                 string resendEmailRecordId = resendEmailRecordIdExists ? resendEmailRecordIdTempData.ToString() : null;
 
                 if (!string.IsNullOrWhiteSpace(userEmail))

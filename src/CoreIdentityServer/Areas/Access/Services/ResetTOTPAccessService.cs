@@ -87,11 +87,13 @@ namespace CoreIdentityServer.Areas.Access.Services
                     verificationCode
                 );
 
-                TempData[TempDataKeys.UserEmail] = inputModel.Email;
-                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId.ToString();
+                // clear all unnecessary tempdata
+                TempData.Clear();
 
-                // set email value so controller can save this to tempdata
-                inputModel.Email = user.Email;
+                if (!currentUserSignedIn)
+                    TempData[TempDataKeys.UserEmail] = user.Email;
+
+                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId;
 
                 redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "ResetTOTPAccess", "Access");
             }
