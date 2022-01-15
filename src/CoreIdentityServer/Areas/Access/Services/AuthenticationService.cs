@@ -9,14 +9,17 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
-using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.UserActions;
+using CoreIdentityServer.Internals.Constants.Emails;
+using CoreIdentityServer.Internals.Services.Email;
+using CoreIdentityServer.Internals.Constants.Tokens;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class AuthenticationService : BaseService, IDisposable
     {
         private readonly UserManager<ApplicationUser> UserManager;
+        private EmailService EmailService;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
         public readonly RouteValueDictionary RootRoute;
@@ -24,10 +27,12 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public AuthenticationService(
             UserManager<ApplicationUser> userManager,
+            EmailService emailService,
             IdentityService identityService,
             IActionContextAccessor actionContextAccessor
         ) {
             UserManager = userManager;
+            EmailService = emailService;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
@@ -42,13 +47,53 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await IdentityService.VerifyEmailChallenge(
-                inputModel,
-                RootRoute,
-                null,
-                CustomTokenOptions.GenericTOTPTokenProvider,
-                UserActionContexts.SignInEmailChallenge
-            );
+            RouteValueDictionary redirectRouteValues = null;
+
+            if (!ActionContext.ModelState.IsValid)
+                return redirectRouteValues;
+
+            ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
+
+            if (user == null)
+            {
+                // user doesn't exist, but don't reveal to end user
+                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
+            }
+            else if (user.EmailConfirmed && !user.AccountRegistered)
+            {
+                // user exists with confirmed email and unregistered account, send email to complete registration
+                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                
+                redirectRouteValues = RootRoute;
+            }
+            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+            {
+                // user exists with unregistered account and unconfirmed email, so user is signing up
+                // or
+                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+
+                bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
+                    user,
+                    CustomTokenOptions.GenericTOTPTokenProvider,
+                    inputModel.VerificationCode
+                );
+
+                if (totpCodeVerified)
+                {
+                    redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                        user,
+                        inputModel.ResendEmailRecordId,
+                        UserActionContexts.SignInEmailChallenge,
+                        null
+                    );
+                }
+                else
+                {
+                    await IdentityService.RecordUnsuccessfulSignInAttempt(user);
+
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                }
+            }
 
             return redirectRouteValues;
         }
@@ -82,15 +127,57 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (!ActionContext.ModelState.IsValid)
                 return redirectRouteValues;
 
-            redirectRouteValues = await IdentityService.VerifyTOTPChallenge(
-                inputModel.Email,
-                inputModel.TOTPCode,
-                RootRoute,
-                null,
-                TokenOptions.DefaultAuthenticatorProvider,
-                UserActionContexts.SignInTOTPChallenge,
-                null
-            );
+            ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
+
+            if (user == null)
+            {
+                // user doesn't exist, but don't reveal to end user
+                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
+            }
+            else if (user.EmailConfirmed && !user.AccountRegistered)
+            {
+                // user exists with confirmed email and unregistered account, send email to complete registration
+                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                
+                redirectRouteValues = RootRoute;
+            }
+            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+            {
+                // user exists with unregistered account and unconfirmed email, so user is signing up
+                // or
+                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+
+                if (user.RequiresAuthenticatorReset)
+                {
+                    await EmailService.SendResetTOTPAccessReminderEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                }
+                else
+                {
+                    bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
+                        user,
+                        TokenOptions.DefaultAuthenticatorProvider,
+                        inputModel.TOTPCode
+                    );
+
+                    if (totpCodeVerified)
+                    {
+                        redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                            user,
+                            null,
+                            UserActionContexts.SignInTOTPChallenge,
+                            null
+                        );
+                    }
+                    else
+                    {
+                        await IdentityService.RecordUnsuccessfulSignInAttempt(user);
+
+                        ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                    }
+                }
+            }
 
             return redirectRouteValues;
         }
@@ -124,18 +211,42 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             if (user == null)
             {
-                return RootRoute;
+                // user doesn't exist, redirect to Root route
+                redirectRouteValues = RootRoute;
             }
+            else if (user.EmailConfirmed && !user.AccountRegistered)
+            {
+                // user exists with confirmed email and unregistered account, send email to complete registration
+                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                
+                redirectRouteValues = RootRoute;
+            }
+            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+            {
+                // user exists with unregistered account and unconfirmed email, so user is signing up
+                // or
+                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
 
-            redirectRouteValues = await IdentityService.VerifyTOTPChallenge(
-                user.Email,
-                inputModel.VerificationCode,
-                RootRoute,
-                targetRoute,
-                TokenOptions.DefaultAuthenticatorProvider,
-                UserActionContexts.TOTPChallenge,
-                null
-            );
+                bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
+                    user,
+                    TokenOptions.DefaultAuthenticatorProvider,
+                    inputModel.VerificationCode
+                );
+
+                if (totpCodeVerified)
+                {
+                    redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                        user,
+                        null,
+                        UserActionContexts.TOTPChallenge,
+                        null
+                    );
+                }
+                else
+                {
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                }
+            }
 
             return redirectRouteValues;
         }

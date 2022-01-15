@@ -38,13 +38,13 @@ namespace CoreIdentityServer.Internals.Services.Email
         }
 
         // archive an email record as it has served its purpose
-        public async Task ArchiveEmailRecord(EmailChallengeInputModel emailChallengeInputModel, ApplicationUser user)
+        public async Task ArchiveEmailRecord(string resendEmailRecordId, ApplicationUser user)
         {
-            EmailRecord emailRecord = await DbContext.EmailRecords.FindAsync(emailChallengeInputModel.ResendEmailRecordId);
+            EmailRecord emailRecord = await DbContext.EmailRecords.FindAsync(resendEmailRecordId);
 
             if (emailRecord == null)
             {
-                Console.WriteLine($"Could not find email record with id {emailChallengeInputModel.ResendEmailRecordId} to archive.");
+                Console.WriteLine($"Could not find email record with id {resendEmailRecordId} to archive.");
             }
             else
             {
