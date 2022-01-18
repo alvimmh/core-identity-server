@@ -10,9 +10,10 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
     {
         public static IServiceCollection AddProjectDatabases(this IServiceCollection services, IConfiguration config)
         {
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(config.GetConnectionString("DefaultConnection"));
-            dbConnectionBuilder["Username"] = config["cisdb_username"];
-            dbConnectionBuilder["Password"] = config["cisdb_password"];
+            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(config.GetConnectionString("MainDatabaseConnection"));
+
+            dbConnectionBuilder.Username = config["cisdb_username"];
+            dbConnectionBuilder.Password = config["cisdb_password"];
 
             string databaseConnectionString = dbConnectionBuilder.ConnectionString;
 

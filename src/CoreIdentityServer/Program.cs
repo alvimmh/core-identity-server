@@ -3,15 +3,16 @@
 
 
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
 using System.Linq;
-using Npgsql;
+using CoreIdentityServer.Internals.Data.Seeds.Main;
+using CoreIdentityServer.Internals.Data.Seeds.Auxiliary;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer
 {
@@ -49,15 +50,15 @@ namespace CoreIdentityServer
                 if (seed)
                 {
                     Log.Information("Seeding database...");
-                    var config = host.Services.GetRequiredService<IConfiguration>();
-                    var dbConnectionBuilder = new NpgsqlConnectionStringBuilder(config.GetConnectionString("DefaultConnection"));
-                    dbConnectionBuilder["Username"] = config["cisdb_username"];
-                    dbConnectionBuilder["Password"] = config["cisdb_password"];
 
-                    var databaseConnectionString = dbConnectionBuilder.ConnectionString;
-                    SeedData.EnsureSeedData(databaseConnectionString);
+                    IConfiguration config = host.Services.GetRequiredService<IConfiguration>();
+
+                    SeedMainDatabase.EnsureSeedData(config);
+                    SeedPersistedGrantDatabase.InitializeDatabase(config);
+                    SeedConfigurationDatabase.EnsureSeedData(config);
 
                     Log.Information("Done seeding database.");
+
                     return 0;
                 }
 

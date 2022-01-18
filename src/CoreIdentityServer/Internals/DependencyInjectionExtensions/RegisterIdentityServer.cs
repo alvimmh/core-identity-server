@@ -1,12 +1,25 @@
 using CoreIdentityServer.Internals.Models.DatabaseModels;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterIdentityServer
     {
-        public static IServiceCollection AddProjectIdentityServer(this IServiceCollection services)
+        public static IServiceCollection AddProjectIdentityServer(this IServiceCollection services, IConfiguration config)
         {
+            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
+                config.GetConnectionString("AuxiliaryDatabaseConnection")
+            );
+
+            dbConnectionBuilder.Username = config["cisdb_auxiliary_username"];
+            dbConnectionBuilder.Password = config["cisdb_auxiliary_password"];
+
+            string auxiliaryDbConnectionString = dbConnectionBuilder.ConnectionString;
+            string migrationsAssemblyName = typeof(Startup).Assembly.FullName;
+
             services.AddIdentityServer(options =>
             {
                 options.Events.RaiseErrorEvents = true;
@@ -17,9 +30,20 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 // see https://docs.duendesoftware.com/identityserver/v5/fundamentals/resources/
                 options.EmitStaticAudienceClaim = true;
             })
-                .AddInMemoryIdentityResources(Config.IdentityResources)
-                .AddInMemoryApiScopes(Config.ApiScopes)
-                .AddInMemoryClients(Config.Clients)
+                .AddConfigurationStore(options =>
+                {
+                    options.ConfigureDbContext = opt => opt.UseNpgsql(
+                        auxiliaryDbConnectionString,
+                        o => o.MigrationsAssembly(migrationsAssemblyName)
+                    );
+                })
+                .AddOperationalStore(options =>
+                {
+                    options.ConfigureDbContext = opt => opt.UseNpgsql(
+                        auxiliaryDbConnectionString,
+                        o => o.MigrationsAssembly(migrationsAssemblyName)
+                    );
+                })
                 .AddAspNetIdentity<ApplicationUser>();
 
             return services;

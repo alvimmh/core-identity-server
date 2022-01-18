@@ -39,9 +39,10 @@ namespace CoreIdentityServer.Internals.Services.Email
             SmtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
 
             // build ApplicationDbContext options for using statement
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(Config.GetConnectionString("DefaultConnection"));
-            dbConnectionBuilder["Username"] = Config["cisdb_username"];
-            dbConnectionBuilder["Password"] = Config["cisdb_password"];
+            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(Config.GetConnectionString("MainDatabaseConnection"));
+
+            dbConnectionBuilder.Username = Config["cisdb_username"];
+            dbConnectionBuilder.Password = Config["cisdb_password"];
 
             string databaseConnectionString = dbConnectionBuilder.ConnectionString;
 
