@@ -83,7 +83,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> SignOut()
+        public new async Task<IActionResult> SignOut()
         {
             RouteValueDictionary redirectRouteValues = await AuthenticationService.SignOut();
 

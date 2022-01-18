@@ -20,6 +20,8 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 options.UseNpgsql(databaseConnectionString, 
                     o => o.MigrationsAssembly(typeof(Startup).Assembly.FullName)));
 
+            services.AddDatabaseDeveloperPageExceptionFilter();
+
             return services;
         }
     }
