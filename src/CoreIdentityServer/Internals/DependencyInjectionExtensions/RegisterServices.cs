@@ -31,6 +31,8 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<ResetTOTPAccessService>();
             services.AddScoped<ProfileService>();
             services.AddScoped<CorrespondenceService>();
+            services.AddScoped<ConsentService>();
+            services.AddScoped<GrantsService>();
 
             return services;
         }

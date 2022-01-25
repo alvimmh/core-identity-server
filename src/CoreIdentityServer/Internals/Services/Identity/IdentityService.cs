@@ -180,7 +180,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             if (updateUser.Succeeded)
             {
-                await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                // temporarily disabling this email
+                // await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 TempData[TempDataKeys.UserEmail] = user.Email;
 
@@ -255,7 +256,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 await SignInManager.SignInAsync(user, false);
 
                 // send email to user about new session
-                await EmailService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                // temporarily disabling this email
+                // await EmailService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 // clear all unnecessary temp data
                 TempData.Clear();

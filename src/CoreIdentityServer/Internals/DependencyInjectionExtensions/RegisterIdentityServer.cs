@@ -29,6 +29,9 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
                 // see https://docs.duendesoftware.com/identityserver/v5/fundamentals/resources/
                 options.EmitStaticAudienceClaim = true;
+
+                options.UserInteraction.ConsentUrl = "/access/consent/index";
+                options.UserInteraction.ErrorUrl = "/clientservices/correspondence/error";
             })
                 .AddConfigurationStore(options =>
                 {

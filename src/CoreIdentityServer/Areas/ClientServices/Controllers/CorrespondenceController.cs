@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Areas.ClientServices.Models.Correspondence;
 using CoreIdentityServer.Areas.ClientServices.Services;
 using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Filters.ActionFilters;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoreIdentityServer.Areas.ClientServices.Controllers
@@ -10,7 +12,7 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
     public class CorrespondenceController : Controller
     {
         private CorrespondenceService CorrespondenceService;
-        
+
         public CorrespondenceController(CorrespondenceService correspondenceService)
         {
             CorrespondenceService = correspondenceService;
@@ -25,6 +27,14 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
                 return BadRequest(inputModel.ResendEmailErrorMessage);
 
             return Ok();
+        }
+
+        [SecurityHeaders, AllowAnonymous]
+        public async Task<IActionResult> Error(string errorId)
+        {
+            ErrorViewModel viewModel = await CorrespondenceService.ManageError(errorId);
+
+            return View("Error", viewModel);
         }
     }
 }

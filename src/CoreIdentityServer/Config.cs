@@ -19,49 +19,63 @@ namespace CoreIdentityServer
         public static IEnumerable<ApiScope> ApiScopes =>
             new List<ApiScope>
             {
-                new ApiScope("api1", "My API"),
+                new ApiScope("teamadha_api", "Team Adha API"),
             };
-
 
         public static IEnumerable<Client> Clients =>
             new List<Client>
             {
-                // m2m client credentials flow client
+                // Team Adha backend interactive client using code flow + pkce
                 new Client
                 {
-                    ClientId = "m2m.client",
-                    ClientName = "Client Credentials Client",
-
+                    // basic settings
+                    Enabled = true,
+                    ClientId = "teamadha_backend",
+                    RequireClientSecret = true,
                     ClientSecrets = { new Secret("secret".Sha256()) },
-                    AllowedGrantTypes = GrantTypes.ClientCredentials,
-
-                    // scopes that client has access to
-                    AllowedScopes = { "api1" }
-                },
-
-                // interactive client using code flow + pkce
-                new Client
-                {
-                    ClientId = "interactive mvc",
-                    ClientSecrets = { new Secret("secret".Sha256()) },
-
                     AllowedGrantTypes = GrantTypes.Code,
-
-                    FrontChannelLogoutUri = "https://localhost:5002/signout-oidc",
-
-                    // where to redirect to after login
-                    RedirectUris = { "https://localhost:5002/signin-oidc" },
-
-                    // where to redirect to after logout
-                    PostLogoutRedirectUris = { "https://localhost:5002/signout-callback-oidc" },
-
-                    AllowOfflineAccess = true,
+                    RequirePkce = true,
+                    AllowPlainTextPkce = false,
+                    RedirectUris = { "https://localhost:7000/signin_oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
-                        IdentityServerConstants.StandardScopes.Profile,
-                        "api1"
-                    }
+                        "teamadha_api"
+                    },
+                    AllowOfflineAccess = true,
+
+                    // authentication/session management
+                    PostLogoutRedirectUris = { "https://localhost:7000/signout_callback_oidc" },
+                    FrontChannelLogoutUri = "https://localhost:7000/signout_oidc",
+                    FrontChannelLogoutSessionRequired = true,
+                    BackChannelLogoutSessionRequired = false,
+                    EnableLocalLogin = true,
+                    IdentityProviderRestrictions = { "https://localhost:5001" },
+                    UserSsoLifetime = null,
+
+                    // token settings
+                    IdentityTokenLifetime = 180,
+                    AccessTokenLifetime = 900,
+                    AuthorizationCodeLifetime = 180,
+                    AccessTokenType = AccessTokenType.Jwt,
+                    IncludeJwtId = false,
+                    Claims = null,
+                    AlwaysSendClientClaims = false,
+                    AlwaysIncludeUserClaimsInIdToken = false,
+
+                    // refresh token settings
+                    AbsoluteRefreshTokenLifetime = 604800,
+                    RefreshTokenUsage = TokenUsage.OneTimeOnly,
+                    RefreshTokenExpiration = TokenExpiration.Absolute,
+                    UpdateAccessTokenClaimsOnRefresh = true,
+
+                    // consent screen settings
+                    RequireConsent = true,
+                    AllowRememberConsent = true,
+                    ConsentLifetime = 15552000,
+                    ClientName = "Team Adha Administrative",
+                    ClientUri = "https://localhost:7000",
+                    LogoUri = "https://localhost:7000",
                 },
             };
     }

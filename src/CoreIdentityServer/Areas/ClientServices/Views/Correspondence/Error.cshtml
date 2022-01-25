@@ -1,0 +1,40 @@
+@model ErrorViewModel
+
+@{
+    string error = Model?.Error?.Error;
+    string errorDescription = Model?.Error?.ErrorDescription;
+    string requestId = Model?.Error?.RequestId;
+}
+
+<div class="error-page">
+    <div class="lead">
+        <h1>Error</h1>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="alert alert-danger">
+                Sorry, there was an error
+
+                @if (error != null)
+                {
+                    <strong>
+                        <em>
+                            : @error
+                        </em>
+                    </strong>
+
+                    if (errorDescription != null)
+                    {
+                        <div>@errorDescription</div>
+                    }
+                }
+            </div>
+
+            @if (requestId != null)
+            {
+                <div class="request-id">Request Id: @requestId</div>
+            }
+        </div>
+    </div>
+</div>

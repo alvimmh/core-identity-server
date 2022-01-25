@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Areas.ClientServices.Models.Correspondence;
 using CoreIdentityServer.Internals.Services.Email;
+using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Services;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace CoreIdentityServer.Areas.ClientServices.Services
 {
@@ -15,16 +19,22 @@ namespace CoreIdentityServer.Areas.ClientServices.Services
         private readonly ApplicationDbContext DbContext;
         private EmailService EmailService;
         private ActionContext ActionContext;
+        private readonly IIdentityServerInteractionService InteractionService;
+        private readonly IWebHostEnvironment Environment;
         private bool ResourcesDisposed;
 
         public CorrespondenceService(
             ApplicationDbContext dbContext,
             EmailService emailService,
-            IActionContextAccessor actionContextAccessor
+            IActionContextAccessor actionContextAccessor,
+            IIdentityServerInteractionService interactionService,
+            IWebHostEnvironment environment
         ) {
             DbContext = dbContext;
             EmailService = emailService;
             ActionContext = actionContextAccessor.ActionContext;
+            InteractionService = interactionService;
+            Environment = environment;
         }
 
         public async Task<bool> ResendEmail(ResendEmailInputModel inputModel)
@@ -55,6 +65,27 @@ namespace CoreIdentityServer.Areas.ClientServices.Services
             EmailService.ResendEmail(emailRecord);
 
             return true;
+        }
+
+        public async Task<ErrorViewModel> ManageError(string errorId)
+        {
+            ErrorViewModel viewModel = new ErrorViewModel();
+
+            // retrieve error details from identityserver
+            ErrorMessage errorMessage = await InteractionService.GetErrorContextAsync(errorId);
+
+            if (errorMessage != null)
+            {
+                viewModel.Error = errorMessage;
+
+                if (!Environment.IsDevelopment())
+                {
+                    // only show in development
+                    errorMessage.ErrorDescription = null;
+                }
+            }
+
+            return viewModel;
         }
 
         // clean up to be done by DI
