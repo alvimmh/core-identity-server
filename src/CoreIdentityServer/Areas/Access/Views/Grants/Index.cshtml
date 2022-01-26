@@ -32,10 +32,14 @@
                         </div>
 
                         <div class="col-sm-2">
-                            <form asp-action="Revoke">
-                                <input type="hidden" name="clientId" value="@grant.ClientId">
-                                <button class="btn btn-danger">Revoke Access</button>
-                            </form>
+                            @{
+                                RevokeGrantInputModel inputModel = new RevokeGrantInputModel
+                                {
+                                    ClientId = grant.ClientId
+                                };
+                                
+                                <partial name="_RevokeGrant.cshtml" model="@inputModel" />
+                            }
                         </div>
                     </div>
                 </div>

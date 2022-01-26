@@ -31,9 +31,9 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Revoke(string clientId)
+        public async Task<IActionResult> Revoke([FromForm] RevokeGrantInputModel inputModel)
         {
-            await GrantsService.RevokeGrant(clientId, User);
+            await GrantsService.RevokeGrant(inputModel);
 
             return RedirectToAction("Index");
         }

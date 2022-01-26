@@ -10,6 +10,8 @@ using System.Linq;
 using Duende.IdentityServer.Events;
 using System.Security.Claims;
 using Duende.IdentityServer.Extensions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -19,18 +21,21 @@ namespace CoreIdentityServer.Areas.Access.Services
         private readonly IEventService EventService;
         private readonly IClientStore ClientStore;
         private readonly IResourceStore ResourceStore;
+        private ActionContext ActionContext;
         private bool ResourcesDisposed;
 
         public GrantsService(
             IIdentityServerInteractionService interactionService,
             IEventService eventService,
             IClientStore clientStore,
-            IResourceStore resourceStore
+            IResourceStore resourceStore,
+            IActionContextAccessor actionContextAccessor
         ) {
             InteractionService = interactionService;
             EventService = eventService;
             ClientStore = clientStore;
             ResourceStore = resourceStore;
+            ActionContext = actionContextAccessor.ActionContext;
         }
 
         public async Task<GrantsViewModel> ManageGrants()
@@ -40,10 +45,23 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
-        public async Task RevokeGrant(string clientId, ClaimsPrincipal user)
+        public async Task RevokeGrant(RevokeGrantInputModel inputModel)
         {
-            await InteractionService.RevokeUserConsentAsync(clientId);
-            await EventService.RaiseAsync(new GrantsRevokedEvent(user.GetSubjectId(), clientId));
+            if (ActionContext.ModelState.IsValid)
+            {
+                IEnumerable<Grant> grants = await InteractionService.GetAllUserGrantsAsync();
+
+                bool validGrantExists = grants.Any(grant => grant.ClientId == inputModel.ClientId);
+
+                if (validGrantExists)
+                {
+                    ClaimsPrincipal user = ActionContext.HttpContext.User;
+
+                    await InteractionService.RevokeUserConsentAsync(inputModel.ClientId);
+                    await EventService.RaiseAsync(new GrantsRevokedEvent(user.GetSubjectId(), inputModel.ClientId));
+                }
+            }
+
         }
 
         private async Task<GrantsViewModel> BuildViewModelAsync()

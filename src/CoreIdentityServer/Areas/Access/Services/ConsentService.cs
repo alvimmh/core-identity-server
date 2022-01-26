@@ -46,10 +46,10 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
-        public async Task<object[]> UpdateConsent(ConsentInputModel inputModel, ClaimsPrincipal user)
+        public async Task<object[]> UpdateConsent(ConsentInputModel inputModel)
         {
             bool nativeRedirect = false;
-            ProcessConsentResult consentResult = await ProcessConsent(inputModel, user);
+            ProcessConsentResult consentResult = await ProcessConsent(inputModel);
 
             if (consentResult.IsRedirect)
             {
@@ -71,7 +71,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             return GenerateArray(consentResult, nativeRedirect);
         }
 
-        private async Task<ProcessConsentResult> ProcessConsent(ConsentInputModel inputModel, ClaimsPrincipal user)
+        private async Task<ProcessConsentResult> ProcessConsent(ConsentInputModel inputModel)
         {
             ProcessConsentResult result = new ProcessConsentResult();
 
@@ -82,6 +82,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 return result;
 
             ConsentResponse grantedConsent = null;
+            ClaimsPrincipal user = ActionContext.HttpContext.User;
 
             // user clicked 'no' - send back the standard 'access_denied' response
             if (inputModel?.Button == "no")
@@ -205,7 +206,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                     ScopeViewModel scopeViewModel = CreateScopeViewModel(parsedScope, apiScope, viewModel.ScopesConsented.Contains(parsedScope.RawValue) || inputModel == null);
 
                     scopeViewModel.Resources = apiResources.Where(x => x.Scopes.Contains(parsedScope.ParsedName))
-                        .Select(x=> new ResourceViewModel
+                        .Select(x => new ResourceViewModel
                         {
                             Name = x.Name,
                             DisplayName = x.DisplayName ?? x.Name,
