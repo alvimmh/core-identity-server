@@ -31,7 +31,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             if (viewModel != null)
                 return View("Index", viewModel);
 
-            return View("~/Areas/ClientServices/Views/Correspondence/Error");
+            return View("~/Areas/ClientServices/Views/Correspondence/Error.cshtml");
         }
 
         [HttpPost, ValidateAntiForgeryToken]
@@ -54,7 +54,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
                 return View("Index", consentResult.ViewModel);
             }
 
-            return View("~/Areas/ClientServices/Views/Correspondence/Error");
+            return View("~/Areas/ClientServices/Views/Correspondence/Error.cshtml");
         }
     }
 }

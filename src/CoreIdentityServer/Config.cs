@@ -36,7 +36,11 @@ namespace CoreIdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { "https://localhost:7000/signin_oidc" },
+                    RedirectUris = new List<string>
+                    {
+                        "https://localhost:7000/authentication/signin_oidc",
+                        "https://localhost:7000/authentication/signed_in"
+                    },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
