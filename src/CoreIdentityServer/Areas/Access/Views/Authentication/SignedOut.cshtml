@@ -1,0 +1,29 @@
+@model SignedOutViewModel
+
+<div class="logged-out-page">
+    <h1>
+        Sign Out
+        <small>You are now signed out</small>
+    </h1>
+
+    @if (Model.PostLogoutRedirectUri != null)
+    {
+        <div>
+            Click <a class="PostLogoutRedirectUri" href="@Model.PostLogoutRedirectUri">here</a> to return to the
+            <span>@Model.ClientName</span> application.
+        </div>
+    }
+
+    @if (Model.SignOutIFrameUrl != null)
+    {
+        <iframe width="0" height="0" class="signout" src="@Model.SignOutIFrameUrl"></iframe>
+    }
+</div>
+
+@section scripts
+{
+    @if (Model.AutomaticRedirectAfterSignOut)
+    {
+        <script src="~/js/signout-redirect.js"></script>
+    }
+}

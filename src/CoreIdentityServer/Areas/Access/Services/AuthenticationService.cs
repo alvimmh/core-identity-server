@@ -13,6 +13,11 @@ using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Tokens;
+using Duende.IdentityServer.Services;
+using Duende.IdentityServer.Models;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using CoreIdentityServer.Internals.Constants.Storage;
+using Newtonsoft.Json;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -21,7 +26,9 @@ namespace CoreIdentityServer.Areas.Access.Services
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
         private IdentityService IdentityService;
+        private readonly IIdentityServerInteractionService InteractionService;
         private ActionContext ActionContext;
+        private readonly ITempDataDictionary TempData;
         public readonly RouteValueDictionary RootRoute;
         private bool ResourcesDisposed;
 
@@ -29,12 +36,16 @@ namespace CoreIdentityServer.Areas.Access.Services
             UserManager<ApplicationUser> userManager,
             EmailService emailService,
             IdentityService identityService,
-            IActionContextAccessor actionContextAccessor
+            IIdentityServerInteractionService interactionService,
+            IActionContextAccessor actionContextAccessor,
+            ITempDataDictionaryFactory tempDataDictionaryFactory
         ) {
             UserManager = userManager;
             EmailService = emailService;
             IdentityService = identityService;
+            InteractionService = interactionService;
             ActionContext = actionContextAccessor.ActionContext;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
         }
 
@@ -182,12 +193,70 @@ namespace CoreIdentityServer.Areas.Access.Services
             return redirectRouteValues;
         }
 
-        public async Task<RouteValueDictionary> SignOut()
+        public async Task<SignOutViewModel> ManageSignOut(string signOutId)
         {
+            SignOutViewModel viewModel = new SignOutViewModel { SignOutId = signOutId, ShowSignOutPrompt = true };
+
+            bool currentUserSignedIn = IdentityService.CheckActiveSession();
+
+            // user is not logged in, sign out without showing prompt
+            if (!currentUserSignedIn)
+            {
+                viewModel.ShowSignOutPrompt = false;
+
+                return viewModel;
+            }
+
+            LogoutRequest logoutContext = await InteractionService.GetLogoutContextAsync(signOutId);
+
+            if (logoutContext != null && !logoutContext.ShowSignoutPrompt)
+            {
+                viewModel.ShowSignOutPrompt = false;
+            }
+
+            return viewModel;
+        }
+
+        public async Task<RouteValueDictionary> SignOut(SignOutInputModel inputModel)
+        {
+            SignedOutViewModel viewModel = null;
+
+            LogoutRequest logoutContext = await InteractionService.GetLogoutContextAsync(inputModel.SignOutId);
+
+            if (logoutContext != null)
+            {
+                viewModel = new SignedOutViewModel
+                {
+                    AutomaticRedirectAfterSignOut = false,
+                    PostLogoutRedirectUri = logoutContext.PostLogoutRedirectUri,
+                    ClientName = string.IsNullOrWhiteSpace(logoutContext.ClientName) ? logoutContext.ClientId : logoutContext.ClientName,
+                    SignOutIFrameUrl = logoutContext.SignOutIFrameUrl,
+                    SignOutId = inputModel.SignOutId
+                };
+            }
+
             // sign out user
             await IdentityService.SignOut();
 
-            return RootRoute;
+            if (viewModel != null)
+                TempData[TempDataKeys.SignedOutViewModel] = JsonConvert.SerializeObject(viewModel);
+
+            return GenerateRedirectRouteValues("SignedOut", "Authentication", "Access");
+        }
+
+        public SignedOutViewModel ManageSignedOut()
+        {
+            SignedOutViewModel viewModel = null;
+
+            bool signedOutViewModelExists = TempData.TryGetValue(
+                TempDataKeys.SignedOutViewModel,
+                out object signedOutViewModelTempData
+            );
+
+            if (signedOutViewModelExists)
+                viewModel = JsonConvert.DeserializeObject<SignedOutViewModel>((string)signedOutViewModelTempData);
+
+            return viewModel;
         }
 
         public async Task<RouteValueDictionary> ManageTOTPChallengeVerification(TOTPChallengeInputModel inputModel)

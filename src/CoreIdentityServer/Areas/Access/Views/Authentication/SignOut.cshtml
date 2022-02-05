@@ -1,0 +1,21 @@
+@model SignOutViewModel
+
+<div class="logout-page">
+    <div class="lead">
+        <h1>Sign Out</h1>
+        <p>Would you like to sign out of Core Identity Server?</p>
+    </div>
+
+    <form
+        asp-area="Access"
+        asp-controller="Authentication"
+        asp-action="SignOut"
+        method="post"
+    >
+        <input type="hidden" asp-for="SignOutId" value="@Model.SignOutId" />
+
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Yes</button>
+        </div>
+    </form>
+</div>

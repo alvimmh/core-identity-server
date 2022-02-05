@@ -30,6 +30,9 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 // see https://docs.duendesoftware.com/identityserver/v5/fundamentals/resources/
                 options.EmitStaticAudienceClaim = true;
 
+                options.UserInteraction.LoginUrl = "/access/authentication/signin";
+                options.UserInteraction.LogoutUrl = "/access/authentication/signout";
+                options.UserInteraction.LogoutIdParameter = "signOutId";
                 options.UserInteraction.ConsentUrl = "/access/consent/index";
                 options.UserInteraction.ErrorUrl = "/clientservices/correspondence/error";
             })

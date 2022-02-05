@@ -82,12 +82,32 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return RedirectToRoute(redirectRouteValues);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public new async Task<IActionResult> SignOut()
+        [HttpGet]
+        public async Task<IActionResult> SignOut(string signOutId)
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.SignOut();
+            SignOutViewModel viewModel = await AuthenticationService.ManageSignOut(signOutId);
+
+            // check if we need to show sign out prompt
+            if (!viewModel.ShowSignOutPrompt)
+                return await SignOut(viewModel);
+
+            return View(viewModel);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> SignOut([FromForm] SignOutInputModel inputModel)
+        {
+            RouteValueDictionary redirectRouteValues = await AuthenticationService.SignOut(inputModel);
 
             return RedirectToRoute(redirectRouteValues);
+        }
+
+        [HttpGet]
+        public IActionResult SignedOut()
+        {
+            SignedOutViewModel viewModel = AuthenticationService.ManageSignedOut();
+
+            return View(viewModel);
         }
     }
 }

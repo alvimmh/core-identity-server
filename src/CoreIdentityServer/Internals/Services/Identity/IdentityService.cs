@@ -366,9 +366,11 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // then someone can bypass authentication when using the application
                 // so the session needs to be explicitly invalidated by updating the security stamp
                 IdentityResult updateSecurityStamp = await UserManager.UpdateSecurityStampAsync(currentUser);
+
                 if (!updateSecurityStamp.Succeeded)
                 {
                     Console.WriteLine($"Error updating security stamp during user signout");
+
                     foreach (IdentityError error in updateSecurityStamp.Errors)
                         Console.WriteLine(error.Description);
                 }
