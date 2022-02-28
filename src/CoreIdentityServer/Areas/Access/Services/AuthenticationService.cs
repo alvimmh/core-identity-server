@@ -13,6 +13,7 @@ using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Tokens;
+using CoreIdentityServer.Internals.Constants.Account;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -195,7 +196,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public async Task<SignOutViewModel> ManageSignOut(string signOutId)
         {
-            SignOutViewModel viewModel = new SignOutViewModel { SignOutId = signOutId, ShowSignOutPrompt = true };
+            SignOutViewModel viewModel = new SignOutViewModel { SignOutId = signOutId, ShowSignOutPrompt = AccountOptions.ShowSignOutPrompt };
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
@@ -227,7 +228,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             {
                 viewModel = new SignedOutViewModel
                 {
-                    AutomaticRedirectAfterSignOut = false,
+                    AutomaticRedirectAfterSignOut = AccountOptions.AutomaticRedirectAfterSignOut,
                     PostLogoutRedirectUri = logoutContext.PostLogoutRedirectUri,
                     ClientName = string.IsNullOrWhiteSpace(logoutContext.ClientName) ? logoutContext.ClientId : logoutContext.ClientName,
                     SignOutIFrameUrl = logoutContext.SignOutIFrameUrl,

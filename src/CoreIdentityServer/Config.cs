@@ -52,7 +52,7 @@ namespace CoreIdentityServer
                     BackChannelLogoutSessionRequired = false,
                     EnableLocalLogin = true,
                     IdentityProviderRestrictions = { "https://localhost:5001" },
-                    UserSsoLifetime = null,
+                    UserSsoLifetime = 86400,
 
                     // token settings
                     IdentityTokenLifetime = 180,

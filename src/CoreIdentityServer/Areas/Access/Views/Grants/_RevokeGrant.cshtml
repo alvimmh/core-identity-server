@@ -1,6 +1,11 @@
 @model RevokeGrantInputModel
 
-<form asp-action="Revoke">
+<form
+    asp-area="Access"
+    asp-controller="Grants"
+    asp-action="Revoke"
+    method="post"
+>
     <input type="hidden" name="clientId" value="@Model.ClientId">
     <button class="btn btn-danger">Revoke Access</button>
 </form>
