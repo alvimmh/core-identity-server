@@ -52,12 +52,12 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await ResetTOTPAccessService.ManageEmailChallengeVerification(inputModel);
+            string redirectRoute = await ResetTOTPAccessService.ManageEmailChallengeVerification(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
     }
 }

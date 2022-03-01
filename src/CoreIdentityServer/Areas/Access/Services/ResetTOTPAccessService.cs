@@ -108,13 +108,13 @@ namespace CoreIdentityServer.Areas.Access.Services
             return result;
         }
 
-        public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
+        public async Task<string> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             if (!ActionContext.ModelState.IsValid)
             {
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
@@ -122,14 +122,14 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (user == null)
             {
                 // user doesn't exist, redirect to Root route
-                redirectRouteValues = RootRoute;
+                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
             }
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRouteValues = RootRoute;
+                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -145,7 +145,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 if (totpCodeVerified)
                 {
-                    redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                    redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
                         user,
                         inputModel.ResendEmailRecordId,
                         UserActionContexts.ResetTOTPAccessEmailChallenge,
@@ -158,7 +158,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 }
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
         // clean up to be done by DI

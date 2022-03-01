@@ -14,5 +14,7 @@ namespace CoreIdentityServer.Internals.Models.InputModels
 
         [Required]
         public string ResendEmailRecordId { get; set; }
+
+        public string ReturnUrl { get; set; }
     }
 }

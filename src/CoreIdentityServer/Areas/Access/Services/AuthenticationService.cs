@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Net;
 using CoreIdentityServer.Internals.Models.InputModels;
 using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
@@ -50,19 +51,19 @@ namespace CoreIdentityServer.Areas.Access.Services
             RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
         }
 
-        public async Task<object[]> ManageEmailChallenge()
+        public async Task<object[]> ManageEmailChallenge(string returnUrl)
         {
-            object[] result = await IdentityService.ManageEmailChallenge(RootRoute);
+            object[] result = await IdentityService.ManageEmailChallenge(RootRoute, returnUrl);
 
             return result;
         }
 
-        public async Task<RouteValueDictionary> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
+        public async Task<string> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             if (!ActionContext.ModelState.IsValid)
-                return redirectRouteValues;
+                return redirectRoute;
 
             ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
 
@@ -76,7 +77,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRouteValues = RootRoute;
+                redirectRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -92,12 +93,16 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 if (totpCodeVerified)
                 {
-                    redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                    redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
                         user,
                         inputModel.ResendEmailRecordId,
                         UserActionContexts.SignInEmailChallenge,
                         null
                     );
+
+                    // signin succeeded & returnUrl present in query string, redirect to returnUrl
+                    if (redirectRoute != null && !string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
+                        redirectRoute = $"~{inputModel.ReturnUrl}";
                 }
                 else
                 {
@@ -107,10 +112,10 @@ namespace CoreIdentityServer.Areas.Access.Services
                 }
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
-        public RouteValueDictionary ManageSignIn()
+        public object[] ManageSignIn(string returnUrl)
         {
             RouteValueDictionary redirectRouteValues = null;
 
@@ -119,25 +124,34 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (currentUserSignedIn)
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
-            return redirectRouteValues;
+            SignInInputModel viewModel = string.IsNullOrWhiteSpace(returnUrl) ? null : new SignInInputModel { ReturnUrl = returnUrl };
+
+            return GenerateArray(viewModel, redirectRouteValues);
         }
 
-        public async Task<RouteValueDictionary> SignIn(SignInInputModel inputModel)
+        public async Task<string> SignIn(SignInInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
-            
+            string redirectRoute = null;
+            string redirectRouteQueryString = null;
+
+            if (!string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
+            {
+                string urlEncodedReturnUrl = WebUtility.UrlEncode(inputModel.ReturnUrl);
+                redirectRouteQueryString = $"?ReturnUrl={urlEncodedReturnUrl}";
+            }
+
             // check if there is a current user logged in, if so redirect to an authorized page
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
             if (currentUserSignedIn)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
-                return redirectRouteValues;
+                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll", redirectRouteQueryString);
+                return redirectRoute;
             }
 
-            // check if ModelState is valid, if not return ViewModel
+            // check if ModelState is valid, if not return null to return viewModel
             if (!ActionContext.ModelState.IsValid)
-                return redirectRouteValues;
+                return redirectRoute;
 
             ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
 
@@ -151,7 +165,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRouteValues = RootRoute;
+                redirectRoute = GenerateRouteUrl("Access", "Authentication", "SignIn", redirectRouteQueryString);
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -175,12 +189,15 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                     if (totpCodeVerified)
                     {
-                        redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                        redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
                             user,
                             null,
                             UserActionContexts.SignInTOTPChallenge,
                             null
                         );
+
+                        // add query string since IdentityService.ManageTOTPChallengeSuccess method doesn't share this concern
+                        redirectRoute = redirectRoute + redirectRouteQueryString;
                     }
                     else
                     {
@@ -191,7 +208,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 }
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
         public async Task<SignOutViewModel> ManageSignOut(string signOutId)
@@ -260,21 +277,21 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
-        public async Task<RouteValueDictionary> ManageTOTPChallengeVerification(TOTPChallengeInputModel inputModel)
+        public async Task<string> ManageTOTPChallengeVerification(TOTPChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
-            RouteValueDictionary targetRoute = RootRoute;
+            string redirectRoute = null;
+            string targetRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
             if (!currentUserSignedIn)
             {
-                return RootRoute;
+                return GenerateRouteUrl("SignIn", "Authentication", "Access");
             }
 
             if (!ActionContext.ModelState.IsValid)
             {
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
@@ -282,14 +299,14 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (user == null)
             {
                 // user doesn't exist, redirect to Root route
-                redirectRouteValues = RootRoute;
+                redirectRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
             }
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRouteValues = RootRoute;
+                redirectRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -305,7 +322,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 if (totpCodeVerified)
                 {
-                    redirectRouteValues = await IdentityService.ManageTOTPChallengeSuccess(
+                    redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
                         user,
                         null,
                         UserActionContexts.TOTPChallenge,
@@ -318,7 +335,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 }
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
         // clean up to be done by DI

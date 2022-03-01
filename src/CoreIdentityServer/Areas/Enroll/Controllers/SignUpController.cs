@@ -57,12 +57,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmEmail([FromForm] EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await SignUpService.VerifyEmailConfirmation(inputModel);
+            string redirectRoute = await SignUpService.VerifyEmailConfirmation(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet]
@@ -81,12 +81,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterTOTPAccess([FromForm] RegisterTOTPAccessInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await SignUpService.VerifyTOTPAccessRegistration(inputModel);
+            string redirectRoute = await SignUpService.VerifyTOTPAccessRegistration(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet, Authorize]

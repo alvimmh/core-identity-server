@@ -21,7 +21,8 @@
         <input type="integer" class="form-control" id="verification-code-input" asp-for="VerificationCode">
         <span asp-validation-for="VerificationCode" class="text-danger"></span>
 
-        <input type="string" id="email-address-input" asp-for="Email" value="@Model.Email" hidden>
+        <input id="email-address-input" asp-for="Email" value="@Model.Email" hidden>
+        <input asp-for="ReturnUrl" value="@Model.ReturnUrl" hidden>
 
         <partial name="../../../ClientServices/Views/Correspondence/_ResendEmail.cshtml" model="@partialViewModel" />
 

@@ -28,19 +28,19 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpPost, Authorize, ValidateAntiForgeryToken]
         public async Task<IActionResult> TOTPChallenge([FromForm] TOTPChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageTOTPChallengeVerification(inputModel);
+            string redirectRoute = await AuthenticationService.ManageTOTPChallengeVerification(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
             
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet]
-        public async Task<IActionResult> EmailChallenge()
+        public async Task<IActionResult> EmailChallenge([FromQuery] string returnUrl)
         {
             // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
-            object[] result = await AuthenticationService.ManageEmailChallenge();
+            object[] result = await AuthenticationService.ManageEmailChallenge(returnUrl);
 
             // if ViewModel is null then redirect to route returned from AuthenticationService
             if (result[0] == null)
@@ -52,34 +52,34 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
+            string redirectRoute = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet]
-        public IActionResult SignIn()
+        public IActionResult SignIn([FromQuery] string returnUrl)
         {
-            RouteValueDictionary redirectRouteValues = AuthenticationService.ManageSignIn();
+            object[] result = AuthenticationService.ManageSignIn(returnUrl);
 
-            if (redirectRouteValues != null)
-                return RedirectToRoute(redirectRouteValues);
+            if (result[0] == null)
+                return RedirectToRoute(result[1]);
 
-            return View();
+            return View(result[0]);
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> SignIn([FromForm] SignInInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.SignIn(inputModel);
+            string redirectRoute = await AuthenticationService.SignIn(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet]

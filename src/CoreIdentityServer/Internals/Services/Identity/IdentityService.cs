@@ -45,7 +45,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             UrlEncoder = urlEncoder;
         }
 
-        public async Task<object[]> ManageEmailChallenge(RouteValueDictionary defaultRoute)
+        public async Task<object[]> ManageEmailChallenge(RouteValueDictionary defaultRoute, string returnUrl = null)
         {
             EmailChallengeInputModel model = null;
             RouteValueDictionary redirectRouteValues = defaultRoute;
@@ -87,14 +87,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 if (!string.IsNullOrWhiteSpace(userEmail))
                 {
-                    model = await GenerateEmailChallengeInputModel(userEmail, resendEmailRecordId);
+                    model = await GenerateEmailChallengeInputModel(userEmail, resendEmailRecordId, returnUrl);
                 }
             }
 
             return GenerateArray(model, redirectRouteValues);
         }
 
-        private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail, string resendEmailRecordId)
+        private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail, string resendEmailRecordId, string returnUrl)
         {
             // return null to redirect to another page
             EmailChallengeInputModel model = null;
@@ -124,7 +124,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                     model = new EmailChallengeInputModel
                     {
                         Email = userEmail,
-                        ResendEmailRecordId = resendEmailRecordId
+                        ResendEmailRecordId = resendEmailRecordId,
+                        ReturnUrl = returnUrl
                     };
 
                     return model;
@@ -134,13 +135,13 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return model;
         }
 
-        public async Task<RouteValueDictionary> ManageTOTPChallengeSuccess(
+        public async Task<string> ManageTOTPChallengeSuccess(
             ApplicationUser user,
             string resendEmailRecordId,
             string context,
-            RouteValueDictionary targetRoute
+            string targetRoute
         ) {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             if (!string.IsNullOrWhiteSpace(resendEmailRecordId))
                 await EmailService.ArchiveEmailRecord(resendEmailRecordId, user);
@@ -148,31 +149,31 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             switch (context)
             {
                 case UserActionContexts.ConfirmEmailChallenge:
-                    redirectRouteValues = await ConfirmUserEmail(user);
+                    redirectRoute = await ConfirmUserEmail(user);
                     break;
                 case UserActionContexts.SignInTOTPChallenge:
-                    redirectRouteValues = await SignInTOTP(user);
+                    redirectRoute = await SignInTOTP(user);
                     break;
                 case UserActionContexts.SignInEmailChallenge:
-                    redirectRouteValues = await SignIn(user);
+                    redirectRoute = await SignIn(user);
                     break;
                 case UserActionContexts.ResetTOTPAccessEmailChallenge:
-                    redirectRouteValues = await AcknowledgeResetTOTPAccessRequest(user);
+                    redirectRoute = await AcknowledgeResetTOTPAccessRequest(user);
                     break;
                 case UserActionContexts.TOTPChallenge:
-                    redirectRouteValues = await ConfirmTOTPChallenge(user, targetRoute);
+                    redirectRoute = await ConfirmTOTPChallenge(user, targetRoute);
                     break;
                 default:
                     ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
                     break;
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
-        private async Task<RouteValueDictionary> ConfirmUserEmail(ApplicationUser user)
+        private async Task<string> ConfirmUserEmail(ApplicationUser user)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             user.EmailConfirmed = true;
 
@@ -185,7 +186,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 TempData[TempDataKeys.UserEmail] = user.Email;
 
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+                redirectRoute = GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");
             }
             else
             {
@@ -196,12 +197,12 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                     ActionContext.ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
-        private async Task<RouteValueDictionary> SignInTOTP(ApplicationUser user)
+        private async Task<string> SignInTOTP(ApplicationUser user)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             bool userMeetsSignInPrerequisites = await VerifySignInPrerequisites(user);
 
@@ -210,7 +211,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // add generic error and return ViewModel
                 ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             await ResetSignInAttempts(user);
@@ -227,14 +228,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             TempData[TempDataKeys.UserEmail] = user.Email;
             TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId.ToString();
 
-            redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "Authentication", "Access");
+            redirectRoute = GenerateRouteUrl("EmailChallenge", "Authentication", "Access");
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
-        public async Task<RouteValueDictionary> SignIn(ApplicationUser user)
+        public async Task<string> SignIn(ApplicationUser user)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             bool userMeetsSignInPrerequisites = await VerifySignInPrerequisites(user);
 
@@ -243,7 +244,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // add generic error and return ViewModel
                 ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             await ResetSignInAttempts(user);
@@ -262,7 +263,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // clear all unnecessary temp data
                 TempData.Clear();
 
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
             }
             else
             {
@@ -274,12 +275,12 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
-        private async Task<RouteValueDictionary> AcknowledgeResetTOTPAccessRequest(ApplicationUser user)
+        private async Task<string> AcknowledgeResetTOTPAccessRequest(ApplicationUser user)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             user.RequiresAuthenticatorReset = true;
 
@@ -295,7 +296,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
 
                 // reset TOTP access request acknowledgement failed, return ViewModel
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             // sign out user
@@ -304,12 +305,12 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             TempData[TempDataKeys.UserEmail] = user.Email;
 
             // redirect user to Register TOTP Access page
-            return GenerateRedirectRouteValues("RegisterTOTPAccess", "SignUp", "Enroll");
+            return GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");
         }
 
-        private async Task<RouteValueDictionary> ConfirmTOTPChallenge(ApplicationUser user, RouteValueDictionary targetRoute)
+        private async Task<string> ConfirmTOTPChallenge(ApplicationUser user, string targetRoute)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
             DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddMinutes(5);
             bool userHasExpiredClaim = ActionContext.HttpContext.User.HasClaim(
                 claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry
@@ -334,7 +335,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                     ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
 
-                    return redirectRouteValues;
+                    return redirectRoute;
                 }
             }
 
@@ -350,7 +351,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             return targetRoute;

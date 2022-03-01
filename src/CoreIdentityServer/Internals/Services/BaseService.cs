@@ -11,6 +11,11 @@ namespace CoreIdentityServer.Internals.Services
             return items;
         }
 
+        private protected string GenerateRouteUrl(string action, string controller, string area, string queryString = null)
+        {
+            return string.IsNullOrWhiteSpace(queryString) ? $"~/{area}/{controller}/{action}" : $"~/{area}/{controller}/{action}?{queryString}";
+        }
+
         private protected RouteValueDictionary GenerateRedirectRouteValues(string action, string controller, string area)
         {
             return new RouteValueDictionary(

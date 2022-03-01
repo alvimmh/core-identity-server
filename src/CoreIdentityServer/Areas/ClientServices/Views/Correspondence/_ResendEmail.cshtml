@@ -1,6 +1,6 @@
 @model ResendEmailInputModel
 
-<input type="string" id="resend-email-record-id" asp-for="ResendEmailRecordId" value="@Model.ResendEmailRecordId" hidden>
+<input id="resend-email-record-id" asp-for="ResendEmailRecordId" value="@Model.ResendEmailRecordId" hidden>
 <a id="trigger-resend-email" class="d-block text-start mt-2">Resend Email</a>
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>

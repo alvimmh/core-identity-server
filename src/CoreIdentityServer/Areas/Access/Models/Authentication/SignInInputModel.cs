@@ -11,5 +11,7 @@ namespace CoreIdentityServer.Areas.Access.Models.Authentication
         [Required]
         [StringLength(6)]
         public string TOTPCode { get; set; }
+
+        public string ReturnUrl { get; set; }
     }
 }
