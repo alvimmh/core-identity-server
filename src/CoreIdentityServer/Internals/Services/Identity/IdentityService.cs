@@ -316,7 +316,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry
             );
             Claim newClaim = new Claim(ProjectClaimTypes.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
-            
+
             if (userHasExpiredClaim)
             {
                 IEnumerable<Claim> expiredClaims = ActionContext.HttpContext.User.FindAll(

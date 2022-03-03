@@ -20,9 +20,11 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         }
 
         [HttpGet, Authorize]
-        public IActionResult TOTPChallenge()
+        public IActionResult TOTPChallenge([FromQuery] string returnUrl)
         {
-            return View();
+            TOTPChallengeInputModel viewModel = AuthenticationService.ManageTOTPChallenge(returnUrl);
+
+            return View(viewModel);
         }
 
         [HttpPost, Authorize, ValidateAntiForgeryToken]

@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using System.Net;
+using System.Web;
 using CoreIdentityServer.Internals.Models.InputModels;
 using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
@@ -124,7 +124,9 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (currentUserSignedIn)
                 redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
-            SignInInputModel viewModel = string.IsNullOrWhiteSpace(returnUrl) ? null : new SignInInputModel { ReturnUrl = returnUrl };
+            string signInReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? null : returnUrl;
+
+            SignInInputModel viewModel = new SignInInputModel { ReturnUrl = signInReturnUrl };
 
             return GenerateArray(viewModel, redirectRouteValues);
         }
@@ -135,10 +137,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             string redirectRouteQueryString = null;
 
             if (!string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
-            {
-                string urlEncodedReturnUrl = WebUtility.UrlEncode(inputModel.ReturnUrl);
-                redirectRouteQueryString = $"?ReturnUrl={urlEncodedReturnUrl}";
-            }
+                redirectRouteQueryString = $"ReturnUrl={HttpUtility.UrlEncode(inputModel.ReturnUrl)}";
 
             // check if there is a current user logged in, if so redirect to an authorized page
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
@@ -197,7 +196,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                         );
 
                         // add query string since IdentityService.ManageTOTPChallengeSuccess method doesn't share this concern
-                        redirectRoute = redirectRoute + redirectRouteQueryString;
+                        redirectRoute = GenerateRouteUrl(redirectRoute, redirectRouteQueryString);
                     }
                     else
                     {
@@ -277,10 +276,16 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
+        public TOTPChallengeInputModel ManageTOTPChallenge(string returnUrl)
+        {
+            string TOTPChallengeReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? null : returnUrl;
+
+            return new TOTPChallengeInputModel { ReturnUrl = TOTPChallengeReturnUrl };
+        }
+
         public async Task<string> ManageTOTPChallengeVerification(TOTPChallengeInputModel inputModel)
         {
             string redirectRoute = null;
-            string targetRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
@@ -322,11 +327,22 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 if (totpCodeVerified)
                 {
+                    string targetRoute = null;
+
+                    if (string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
+                    {
+                        targetRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
+                    }
+                    else
+                    {
+                        targetRoute = $"~{inputModel.ReturnUrl}";
+                    }
+
                     redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
                         user,
                         null,
                         UserActionContexts.TOTPChallenge,
-                        null
+                        targetRoute
                     );
                 }
                 else

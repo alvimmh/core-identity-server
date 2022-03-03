@@ -7,5 +7,7 @@ namespace CoreIdentityServer.Areas.Access.Models.Authentication
         [Required]
         [StringLength(6)]
         public string VerificationCode { get; set; }
+
+        public string ReturnUrl { get; set; }
     }
 }

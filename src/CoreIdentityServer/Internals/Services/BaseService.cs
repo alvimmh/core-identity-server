@@ -13,7 +13,14 @@ namespace CoreIdentityServer.Internals.Services
 
         private protected string GenerateRouteUrl(string action, string controller, string area, string queryString = null)
         {
-            return string.IsNullOrWhiteSpace(queryString) ? $"~/{area}/{controller}/{action}" : $"~/{area}/{controller}/{action}?{queryString}";
+            string routeUrl = $"~/{area}/{controller}/{action}";
+
+            return AddQueryString(routeUrl, queryString);
+        }
+
+        private protected string GenerateRouteUrl(string route, string queryString)
+        {
+            return AddQueryString(route, queryString);
         }
 
         private protected RouteValueDictionary GenerateRedirectRouteValues(string action, string controller, string area)
@@ -35,6 +42,14 @@ namespace CoreIdentityServer.Internals.Services
             bool isValid = Validator.TryValidateObject(model, validationContext, validationResults);
 
             return isValid;
+        }
+
+        private string AddQueryString(string routeUrl, string queryString)
+        {
+            if (!string.IsNullOrWhiteSpace(queryString))
+                return $"{routeUrl}?{queryString}";
+
+            return routeUrl;
         }
     }
 }
