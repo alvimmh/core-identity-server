@@ -4,7 +4,6 @@ using CoreIdentityServer.Internals.Models.InputModels;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
@@ -25,7 +24,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         private IdentityService IdentityService;
         private ActionContext ActionContext;
         private ITempDataDictionary TempData;
-        public readonly RouteValueDictionary RootRoute;
+        public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public ResetTOTPAccessService(
@@ -40,12 +39,12 @@ namespace CoreIdentityServer.Areas.Access.Services
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
-            RootRoute = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
+            RootRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
         }
 
-        public async Task<RouteValueDictionary> InitiateEmailChallenge(InitiateEmailChallengeInputModel inputModel)
+        public async Task<string> InitiateEmailChallenge(InitiateEmailChallengeInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = RootRoute;
+            string redirectRoute = RootRoute;
             ApplicationUser user = null;
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
@@ -54,11 +53,11 @@ namespace CoreIdentityServer.Areas.Access.Services
                 user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
 
                 if (user == null)
-                    return redirectRouteValues;
+                    return redirectRoute;
             }
             else if (!ActionContext.ModelState.IsValid)
             {
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             user = user ?? await UserManager.FindByEmailAsync(inputModel.Email);
@@ -66,20 +65,20 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (user == null || !user.EmailConfirmed)
             {
                 // user doesn't exist
-                return redirectRouteValues;
+                return redirectRoute;
             }
             else if (!user.AccountRegistered)
             {
                 // user exists but did not complete account registration, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, inputModel.Email, user.UserName);
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
             else if (user.AccountRegistered)
             {
                 string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
-                // send email with verification code & set redirectRouteValues
+                // send email with verification code & set the redirect url
                 string resendEmailRecordId = await EmailService.SendResetTOTPAccessVerificationEmail(
                     AutomatedEmails.NoReply,
                     user.Email,
@@ -95,10 +94,10 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId;
 
-                redirectRouteValues = GenerateRedirectRouteValues("EmailChallenge", "ResetTOTPAccess", "Access");
+                redirectRoute = GenerateRouteUrl("EmailChallenge", "ResetTOTPAccess", "Access");
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
         public async Task<object[]> ManageEmailChallenge()
@@ -122,14 +121,14 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (user == null)
             {
                 // user doesn't exist, redirect to Root route
-                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
+                redirectRoute = RootRoute;
             }
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
+                redirectRoute = RootRoute;
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {

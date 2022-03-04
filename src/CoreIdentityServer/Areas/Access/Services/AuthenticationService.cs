@@ -6,7 +6,6 @@ using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
@@ -31,7 +30,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         private readonly IIdentityServerInteractionService InteractionService;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
-        public readonly RouteValueDictionary RootRoute;
+        public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public AuthenticationService(
@@ -48,7 +47,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             InteractionService = interactionService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
-            RootRoute = GenerateRedirectRouteValues("SignIn", "Authentication", "Access");
+            RootRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
         }
 
         public async Task<object[]> ManageEmailChallenge(string returnUrl)
@@ -77,7 +76,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
+                redirectRoute = RootRoute;
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -117,18 +116,18 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public object[] ManageSignIn(string returnUrl)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
             if (currentUserSignedIn)
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
             string signInReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? null : returnUrl;
 
             SignInInputModel viewModel = new SignInInputModel { ReturnUrl = signInReturnUrl };
 
-            return GenerateArray(viewModel, redirectRouteValues);
+            return GenerateArray(viewModel, redirectRoute);
         }
 
         public async Task<string> SignIn(SignInInputModel inputModel)
@@ -234,7 +233,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
-        public async Task<RouteValueDictionary> SignOut(SignOutInputModel inputModel)
+        public async Task<string> SignOut(SignOutInputModel inputModel)
         {
             SignedOutViewModel viewModel = null;
 
@@ -258,7 +257,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (viewModel != null)
                 TempData[TempDataKeys.SignedOutViewModel] = JsonConvert.SerializeObject(viewModel);
 
-            return GenerateRedirectRouteValues("SignedOut", "Authentication", "Access");
+            return GenerateRouteUrl("SignedOut", "Authentication", "Access");
         }
 
         public SignedOutViewModel ManageSignedOut()
@@ -291,7 +290,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             if (!currentUserSignedIn)
             {
-                return GenerateRouteUrl("SignIn", "Authentication", "Access");
+                return RootRoute;
             }
 
             if (!ActionContext.ModelState.IsValid)
@@ -304,14 +303,14 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (user == null)
             {
                 // user doesn't exist, redirect to Root route
-                redirectRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
+                redirectRoute = RootRoute;
             }
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
+                redirectRoute = RootRoute;
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -331,7 +330,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                     if (string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
                     {
-                        targetRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
+                        targetRoute = RootRoute;
                     }
                     else
                     {

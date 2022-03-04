@@ -5,7 +5,6 @@ using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Routes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 
 namespace CoreIdentityServer.Areas.Vault.Controllers
 {
@@ -22,12 +21,12 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
         [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index()
         {
-            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            // result is an array containing the ViewModel & a redirect to url in consecutive order
             object[] result = await ProfileService.ManageUserProfile();
 
             // if ViewModel is null then redirect to route returned from SignUpService
             if (result[0] == null)
-                return RedirectToRoute(result[1]);
+                return Redirect((string)result[1]);
 
             return View(result[0]);
         }
@@ -35,12 +34,12 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
         [HttpPost, Authorize(Policy = Policies.TOTPChallenge), ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([FromForm] UserProfileInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await ProfileService.UpdateUserProfile(inputModel);
+            string redirectRoute = await ProfileService.UpdateUserProfile(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
     }
 }

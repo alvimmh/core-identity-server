@@ -45,10 +45,10 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             UrlEncoder = urlEncoder;
         }
 
-        public async Task<object[]> ManageEmailChallenge(RouteValueDictionary defaultRoute, string returnUrl = null)
+        public async Task<object[]> ManageEmailChallenge(string defaultRoute, string returnUrl = null)
         {
             EmailChallengeInputModel model = null;
-            RouteValueDictionary redirectRouteValues = defaultRoute;
+            string redirectRoute = defaultRoute;
 
             // check if user is signed in
             bool userEmailExists = false;
@@ -91,7 +91,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 }
             }
 
-            return GenerateArray(model, redirectRouteValues);
+            return GenerateArray(model, redirectRoute);
         }
 
         private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail, string resendEmailRecordId, string returnUrl)

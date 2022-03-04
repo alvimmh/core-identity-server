@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
@@ -16,7 +15,7 @@ namespace CoreIdentityServer.Areas.Vault.Services
         private readonly UserManager<ApplicationUser> UserManager;
         private IdentityService IdentityService;
         private ActionContext ActionContext;
-        public readonly RouteValueDictionary RootRoute;
+        public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public ProfileService(
@@ -27,14 +26,14 @@ namespace CoreIdentityServer.Areas.Vault.Services
             UserManager = userManager;
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
-            RootRoute = GenerateRedirectRouteValues("Index", "Profile", "Vault");
+            RootRoute = GenerateRouteUrl("Index", "Profile", "Vault");
         }
 
         public async Task<object[]> ManageUserProfile()
         {
             UserProfileInputModel model = null;
-            RouteValueDictionary redirectRouteValues = RootRoute;
-            object[] result = GenerateArray(model, redirectRouteValues);
+            string redirectRoute = RootRoute;
+            object[] result = GenerateArray(model, redirectRoute);
 
             // although ProfileController uses Authorize attribute so users won't reach here if not authorized
             // but this is a separate service which may not always be used in ProfileController
@@ -57,13 +56,13 @@ namespace CoreIdentityServer.Areas.Vault.Services
 
             model.SetEmail(user.Email);
 
-            return GenerateArray(model, redirectRouteValues);
+            return GenerateArray(model, redirectRoute);
         }
 
-        public async Task<RouteValueDictionary> UpdateUserProfile(UserProfileInputModel inputModel)
+        public async Task<string> UpdateUserProfile(UserProfileInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
-          
+            string redirectRoute = null;
+
             // although ProfileController uses Authorize attribute so users won't reach here if not authorized
             // but this is a separate service which may not always be used in ProfileController
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
@@ -80,13 +79,13 @@ namespace CoreIdentityServer.Areas.Vault.Services
                 
                 inputModel.SetEmail(currentUser.Email);
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
 
             if (user == null)
-                return redirectRouteValues;
+                return redirectRoute;
 
             user.FirstName = inputModel.FirstName;
             user.LastName = inputModel.LastName;
@@ -103,7 +102,7 @@ namespace CoreIdentityServer.Areas.Vault.Services
                 
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
 
             return RootRoute;

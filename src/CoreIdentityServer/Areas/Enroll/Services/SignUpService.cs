@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
@@ -26,7 +25,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         private IdentityService IdentityService;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
-        public readonly RouteValueDictionary RootRoute;
+        public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public SignUpService(
@@ -43,35 +42,35 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
-            RootRoute = GenerateRedirectRouteValues("RegisterProspectiveUser", "SignUp", "Enroll");
+            RootRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
         }
 
-        public RouteValueDictionary ManageRegisterProspectiveUser()
+        public string ManageRegisterProspectiveUser()
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
             if (currentUserSignedIn)
-                redirectRouteValues = GenerateRedirectRouteValues("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
-        public async Task<RouteValueDictionary> RegisterProspectiveUser(ProspectiveUserInputModel inputModel)
+        public async Task<string> RegisterProspectiveUser(ProspectiveUserInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = null;
+            string redirectRoute = null;
 
             if (!ActionContext.ModelState.IsValid)
-                return redirectRouteValues;
+                return redirectRoute;
 
             ApplicationUser existingUser  = await UserManager.FindByEmailAsync(inputModel.Email);
 
             if (existingUser != null && existingUser.AccountRegistered)
             {
-                redirectRouteValues = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
+                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
 
-                return redirectRouteValues;
+                return redirectRoute;
             }
             else if (existingUser != null && existingUser.EmailConfirmed)
             {
@@ -86,7 +85,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                     foreach (IdentityError error in updateUserEmailConfirmationStatus.Errors)
                         ActionContext.ModelState.AddModelError(string.Empty, error.Description);
 
-                    return redirectRouteValues;
+                    return redirectRoute;
                 }
             }
 
@@ -113,7 +112,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 TempData[TempDataKeys.UserEmail] = prospectiveUser.Email;
                 TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId;
 
-                redirectRouteValues = GenerateRedirectRouteValues("ConfirmEmail", "SignUp", "Enroll");
+                redirectRoute = GenerateRouteUrl("ConfirmEmail", "SignUp", "Enroll");
             }
             else if (!createUser.Succeeded)
             {
@@ -122,7 +121,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                     ActionContext.ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            return redirectRouteValues;
+            return redirectRoute;
         }
 
         public async Task<object[]> ManageEmailConfirmation()
@@ -144,14 +143,14 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             if (user == null)
             {
                 // user doesn't exist, redirect to Root route
-                redirectRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
+                redirectRoute = RootRoute;
             }
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
                 // user exists with confirmed email and unregistered account, send email to complete registration
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
                 
-                redirectRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
+                redirectRoute = RootRoute;
             }
             else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
             {
@@ -187,8 +186,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
         public async Task<object[]> RegisterTOTPAccess()
         {
             RegisterTOTPAccessInputModel model = null;
-            RouteValueDictionary redirectRouteValues = RootRoute;
-            object[] result = GenerateArray(model, redirectRouteValues);
+            string redirectRoute = RootRoute;
+            object[] result = GenerateArray(model, redirectRoute);
 
             bool userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
 
@@ -210,9 +209,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             {
                 // user is completely registered but does not require authenticator reset
 
-                redirectRouteValues = GenerateRedirectRouteValues("Prompt", "ResetTOTPAccess", "Access");
+                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
 
-                result = GenerateArray(model, redirectRouteValues);
+                result = GenerateArray(model, redirectRoute);
             }
             else if (!user.AccountRegistered || (user.AccountRegistered && user.RequiresAuthenticatorReset))
             {
@@ -245,7 +244,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                     SessionVerificationTOTPCode = sessionVerificationCode,
                 };
 
-                result = GenerateArray(model, redirectRouteValues);
+                result = GenerateArray(model, redirectRoute);
             }
 
             return result;
@@ -263,7 +262,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             if (user == null || !user.EmailConfirmed)
             {
                 // user doesn't exist, redirect to root route
-                redirectRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
+                redirectRoute = RootRoute;
             }
             else if (user.AccountRegistered && !user.RequiresAuthenticatorReset)
             {
@@ -334,7 +333,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 else
                 {
                     // Session verification failed, redirecting to RootRoute
-                    redirectRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
+                    redirectRoute = RootRoute;
                 }
             }
 

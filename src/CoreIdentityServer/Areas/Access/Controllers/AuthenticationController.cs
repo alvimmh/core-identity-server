@@ -3,7 +3,6 @@ using CoreIdentityServer.Internals.Models.InputModels;
 using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Routes;
 
@@ -41,12 +40,12 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpGet]
         public async Task<IActionResult> EmailChallenge([FromQuery] string returnUrl)
         {
-            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            // result is an array containing the ViewModel & a redirect url in consecutive order
             object[] result = await AuthenticationService.ManageEmailChallenge(returnUrl);
 
             // if ViewModel is null then redirect to route returned from AuthenticationService
             if (result[0] == null)
-                return RedirectToRoute(result[1]);
+                return Redirect((string)result[1]);
 
             return View(result[0]);
         }
@@ -68,7 +67,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             object[] result = AuthenticationService.ManageSignIn(returnUrl);
 
             if (result[0] == null)
-                return RedirectToRoute(result[1]);
+                return Redirect((string)result[1]);
 
             return View(result[0]);
         }
@@ -99,9 +98,9 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> SignOut([FromForm] SignOutInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await AuthenticationService.SignOut(inputModel);
+            string redirectRoute = await AuthenticationService.SignOut(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet]

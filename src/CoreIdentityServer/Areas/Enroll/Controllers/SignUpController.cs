@@ -4,7 +4,6 @@ using CoreIdentityServer.Areas.Enroll.Models.SignUp;
 using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.Routes;
 
 namespace CoreIdentityServer.Areas.Enroll.Controllers
@@ -22,10 +21,10 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpGet]
         public IActionResult RegisterProspectiveUser()
         {
-            RouteValueDictionary redirectRouteValues = SignUpService.ManageRegisterProspectiveUser();
+            string redirectRoute = SignUpService.ManageRegisterProspectiveUser();
 
-            if (redirectRouteValues != null)
-                return RedirectToRoute(redirectRouteValues);
+            if (redirectRoute != null)
+                return Redirect(redirectRoute);
 
             return View();
         }
@@ -33,23 +32,23 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel inputModel)
         {
-            RouteValueDictionary redirectRouteValues = await SignUpService.RegisterProspectiveUser(inputModel);
+            string redirectRoute = await SignUpService.RegisterProspectiveUser(inputModel);
 
-            if (redirectRouteValues == null)
+            if (redirectRoute == null)
                 return View(inputModel);
 
-            return RedirectToRoute(redirectRouteValues);
+            return Redirect(redirectRoute);
         }
 
         [HttpGet]
         public async Task<IActionResult> ConfirmEmail()
         {
-            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            // result is an array containing the ViewModel & a redirect url in consecutive order
             object[] result = await SignUpService.ManageEmailConfirmation();
 
             // if ViewModel is null then redirect to route returned from SignUpService
             if (result[0] == null)
-                return RedirectToRoute(result[1]);
+                return Redirect((string)result[1]);
 
             return View(result[0]);
         }
@@ -68,12 +67,12 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpGet]
         public async Task<IActionResult> RegisterTOTPAccess()
         {
-            // result is an array containing the ViewModel & a RouteValueDictionary in consecutive order
+            // result is an array containing the ViewModel & a redirect url in consecutive order
             object[] result = await SignUpService.RegisterTOTPAccess();
 
-            // if ViewModel is null then redirect to route returned from SignUpService
+            // if ViewModel is null then redirect to url returned from SignUpService
             if (result[0] == null)
-                return RedirectToRoute(result[1]);
+                return Redirect((string)result[1]);
 
             return View(result[0]);
         }
