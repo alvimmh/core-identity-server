@@ -1,21 +1,21 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Services.Email;
-using CoreIdentityServer.Internals.Constants.Emails;
-using CoreIdentityServer.Internals.Models.DatabaseModels;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using CoreIdentityServer.Internals.Services.Email;
+using CoreIdentityServer.Internals.Constants.Emails;
+using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Models.InputModels;
-using Microsoft.AspNetCore.Routing;
 using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.UserActions;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using System.Text.Encodings.Web;
-using System.Security.Claims;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Storage;
-using System.Collections.Generic;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -254,16 +254,51 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             if (updateSecurityStamp.Succeeded)
             {
-                await SignInManager.SignInAsync(user, false);
+                bool expiredUserClaimsRemoved = await RemoveExpiredUserClaimsAsync(user);
 
-                // send email to user about new session
-                // temporarily disabling this email
-                // await EmailService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+                if (expiredUserClaimsRemoved)
+                {
+                    Claim TOTPAuthorizationExpiryClaim = GenerateTOTPAutorizationExpiryClaim();
 
-                // clear all unnecessary temp data
-                TempData.Clear();
+                    IList<Claim> additionalClaims = new List<Claim> { TOTPAuthorizationExpiryClaim };
 
-                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                    await SignInManager.SignInWithClaimsAsync(user, false, additionalClaims);
+                }
+                else
+                {
+                    await SignInManager.SignInAsync(user, false);
+                }
+
+                user.SetSignInTimeStamps();
+
+                // record sign in timestamps
+                IdentityResult updateUser = await UserManager.UpdateAsync(user);
+
+                if (!updateUser.Succeeded)
+                {
+                    Console.WriteLine("Error updating user");
+
+                    foreach (IdentityError error in updateUser.Errors)
+                        Console.WriteLine(error.Description);
+                    
+                    ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+
+                    // could not update user information, so signout user and redirect to sign in page
+                    await SignOut();
+
+                    return redirectRoute;
+                }
+                else
+                {
+                    // send email to user about new session
+                    // temporarily disabling this email
+                    // await EmailService.SendNewActiveSessionNotificationEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+
+                    // clear all unnecessary temp data
+                    TempData.Clear();
+
+                    redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                }
             }
             else
             {
@@ -288,7 +323,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             if (!updateUser.Succeeded)
             {
-                Console.WriteLine($"Error updating user");
+                Console.WriteLine("Error updating user");
 
                 foreach (IdentityError error in updateUser.Errors)
                     Console.WriteLine(error.Description);
@@ -311,11 +346,10 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         private async Task<string> ConfirmTOTPChallenge(ApplicationUser user, string targetRoute)
         {
             string redirectRoute = null;
-            DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddMinutes(5);
             bool userHasExpiredClaim = ActionContext.HttpContext.User.HasClaim(
                 claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry
             );
-            Claim newClaim = new Claim(ProjectClaimTypes.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
+            Claim newClaim = GenerateTOTPAutorizationExpiryClaim();
 
             if (userHasExpiredClaim)
             {
@@ -339,11 +373,11 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 }
             }
 
-            IdentityResult addNewUserClaim = addNewUserClaim = await UserManager.AddClaimAsync(user, newClaim);
+            IdentityResult addNewUserClaim = await UserManager.AddClaimAsync(user, newClaim);
 
             if (!addNewUserClaim.Succeeded)
             {
-                Console.WriteLine($"Error adding user claim of type ${ProjectClaimTypes.TOTPAuthorizationExpiry}");
+                Console.WriteLine($"Error adding user claim of type {ProjectClaimTypes.TOTPAuthorizationExpiry}");
 
                 // log errors
                 foreach (IdentityError error in addNewUserClaim.Errors)
@@ -353,6 +387,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 return redirectRoute;
             }
+
+            // refreshing user sign in so the claim updates take effect immediately
+            await SignInManager.RefreshSignInAsync(user);
 
             return targetRoute;
         }
@@ -370,7 +407,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 if (!updateSecurityStamp.Succeeded)
                 {
-                    Console.WriteLine($"Error updating security stamp during user signout");
+                    Console.WriteLine("Error updating security stamp during user signout");
 
                     foreach (IdentityError error in updateSecurityStamp.Errors)
                         Console.WriteLine(error.Description);
@@ -399,6 +436,37 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             bool isUserLockedOut = await UserManager.IsLockedOutAsync(user);
             if (isUserLockedOut)
                 await EmailService.SendAccountLockedOutEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
+        }
+
+        private async Task<bool> RemoveExpiredUserClaimsAsync(ApplicationUser user)
+        {
+            IList<Claim> userClaims = await UserManager.GetClaimsAsync(user);
+            IList<Claim> expiredUserClaims = userClaims.Where(claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry).ToList();
+            bool expiredClaimsExist = expiredUserClaims.Any();
+
+            if (expiredClaimsExist)
+            {
+                IdentityResult removeExpiredClaims = await UserManager.RemoveClaimsAsync(user, expiredUserClaims);
+
+                if (!removeExpiredClaims.Succeeded)
+                {
+                    Console.WriteLine($"Error updating security stamp");
+
+                    foreach (IdentityError error in removeExpiredClaims.Errors)
+                        Console.WriteLine(error.Description);
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private Claim GenerateTOTPAutorizationExpiryClaim()
+        {
+            DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddSeconds(30);
+
+            return new Claim(ProjectClaimTypes.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
         }
 
         private async Task ResetSignInAttempts(ApplicationUser user)

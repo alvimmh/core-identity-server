@@ -2,6 +2,7 @@
 // See LICENSE in the project root for license information.
 
 
+using System;
 using Microsoft.AspNetCore.Identity;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
@@ -16,5 +17,16 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public bool RequiresAuthenticatorReset { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public string SignInTimeStamps { get; private set; }
+        public DateTime? UpdatedAt { get; private set; }
+
+        public void SetSignInTimeStamps()
+        {
+            DateTime currentDateTime = DateTime.UtcNow;
+            string currentDateTimeString = currentDateTime.ToString();
+
+            SignInTimeStamps = SignInTimeStamps == null ? currentDateTimeString : $"{SignInTimeStamps},{currentDateTimeString}";
+            UpdatedAt = currentDateTime;
+        }
     }
 }
