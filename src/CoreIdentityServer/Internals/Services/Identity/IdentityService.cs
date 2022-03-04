@@ -16,6 +16,8 @@ using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Storage;
+using CoreIdentityServer.Internals.Constants.Account;
+using IdentityModel;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -254,22 +256,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             if (updateSecurityStamp.Succeeded)
             {
-                bool expiredUserClaimsRemoved = await RemoveExpiredUserClaimsAsync(user);
+                // setting amr claim with value "mfa"
+                // Duende Identity Server will set it to "pwd" by default if we don't set it
+                Claim AMRClaim = CreateMFATypeAMRClaim();
+                IList<Claim> additionalClaims = new List<Claim> { AMRClaim };
 
-                if (expiredUserClaimsRemoved)
-                {
-                    Claim TOTPAuthorizationExpiryClaim = GenerateTOTPAutorizationExpiryClaim();
+                await SignInManager.SignInWithClaimsAsync(user, false, additionalClaims);
 
-                    IList<Claim> additionalClaims = new List<Claim> { TOTPAuthorizationExpiryClaim };
-
-                    await SignInManager.SignInWithClaimsAsync(user, false, additionalClaims);
-                }
-                else
-                {
-                    await SignInManager.SignInAsync(user, false);
-                }
-
-                user.SetSignInTimeStamps();
+                user.UpdateSignInTimeStamps();
 
                 // record sign in timestamps
                 IdentityResult updateUser = await UserManager.UpdateAsync(user);
@@ -349,7 +343,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             bool userHasExpiredClaim = ActionContext.HttpContext.User.HasClaim(
                 claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry
             );
-            Claim newClaim = GenerateTOTPAutorizationExpiryClaim();
+            Claim newClaim = CreateTOTPAutorizationExpiryClaim();
 
             if (userHasExpiredClaim)
             {
@@ -438,33 +432,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 await EmailService.SendAccountLockedOutEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
         }
 
-        private async Task<bool> RemoveExpiredUserClaimsAsync(ApplicationUser user)
+        private Claim CreateMFATypeAMRClaim()
         {
-            IList<Claim> userClaims = await UserManager.GetClaimsAsync(user);
-            IList<Claim> expiredUserClaims = userClaims.Where(claim => claim.Type == ProjectClaimTypes.TOTPAuthorizationExpiry).ToList();
-            bool expiredClaimsExist = expiredUserClaims.Any();
-
-            if (expiredClaimsExist)
-            {
-                IdentityResult removeExpiredClaims = await UserManager.RemoveClaimsAsync(user, expiredUserClaims);
-
-                if (!removeExpiredClaims.Succeeded)
-                {
-                    Console.WriteLine($"Error updating security stamp");
-
-                    foreach (IdentityError error in removeExpiredClaims.Errors)
-                        Console.WriteLine(error.Description);
-
-                    return false;
-                }
-            }
-
-            return true;
+            return new Claim(JwtClaimTypes.AuthenticationMethod, ProjectClaimValues.AMRTypeMFA);
         }
 
-        private Claim GenerateTOTPAutorizationExpiryClaim()
+        private Claim CreateTOTPAutorizationExpiryClaim()
         {
-            DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddSeconds(30);
+            DateTime authorizationExpiryDateTime = DateTime.UtcNow.AddSeconds(AccountOptions.TOTPAuthorizationDurationInSeconds);
 
             return new Claim(ProjectClaimTypes.TOTPAuthorizationExpiry, authorizationExpiryDateTime.ToString());
         }

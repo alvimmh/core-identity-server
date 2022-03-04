@@ -20,7 +20,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public string SignInTimeStamps { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
 
-        public void SetSignInTimeStamps()
+        public void UpdateSignInTimeStamps()
         {
             DateTime currentDateTime = DateTime.UtcNow;
             string currentDateTimeString = currentDateTime.ToString();
