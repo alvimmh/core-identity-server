@@ -455,3 +455,6 @@ $RECYCLE.BIN/
 
 # Database files
 AspIdUsers.db
+
+# Signing credentials
+src/CoreIdentityServer/keys/*

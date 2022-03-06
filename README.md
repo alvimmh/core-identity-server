@@ -14,8 +14,15 @@ Add required user-secrets from protected sources for the following keys:
 6. "cisdb_password"
 7. "cisdb_auxiliary_username"
 8. "cisdb_auxiliary_password"
+9. "cisdb_signing_credential_private_key_passphrase"
 
 Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
+
+## signing key management
+
+Download the RSA private key from LastPass, rename it to remove the .txt extension and place it in src/CoreIdentityServer/keys directory.
+
+The contents of this directory are git ignored. The highest level of security and awareness must be maitained dealing with this key. Information on how to create this key is in the LastPass record.
 
 ## initialize databases
 
