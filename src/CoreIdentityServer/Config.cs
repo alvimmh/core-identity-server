@@ -36,7 +36,7 @@ namespace CoreIdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { "https://localhost:7000/authentication/signin_oidc" },
+                    RedirectUris = { "https://localhost:7000/administration/authentication/signin_oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -46,7 +46,7 @@ namespace CoreIdentityServer
 
                     // authentication/session management
                     PostLogoutRedirectUris = { "https://localhost:7000" },
-                    FrontChannelLogoutUri = "https://localhost:7000/authentication/signout_oidc",
+                    FrontChannelLogoutUri = "https://localhost:7000/administration/authentication/signout_oidc",
                     FrontChannelLogoutSessionRequired = true,
                     BackChannelLogoutUri = null,
                     BackChannelLogoutSessionRequired = false,
