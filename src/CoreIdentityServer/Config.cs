@@ -1,6 +1,7 @@
-// Copyright (c) Duende Software. All rights reserved.
+﻿// Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
+using CoreIdentityServer.Internals.Constants.Authentication;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace CoreIdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { "https://localhost:7000/administration/authentication/signin_oidc" },
+                    RedirectUris = { "{SetClientUriHere}/administration/authentication/signin_oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -46,13 +47,16 @@ namespace CoreIdentityServer
                     AllowOfflineAccess = true,
 
                     // authentication/session management
+                    PostLogoutRedirectUris = { "{SetClientUriHere}" },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
+                    BackChannelLogoutUri = "{SetClientUriHere}/administration/authentication/signout_oidc",
+                    BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
                     IdentityProviderRestrictions = { "https://localhost:5001" },
 
                     // match this value with the authentication cookie lifetime
-                    UserSsoLifetime = 86400,
+                    UserSsoLifetime = AuthenticationCookieOptions.CookieDuration.Seconds,
 
                     // token settings
                     IdentityTokenLifetime = 180,
@@ -75,9 +79,9 @@ namespace CoreIdentityServer
                     AllowRememberConsent = true,
                     ConsentLifetime = 15552000,
                     ClientName = "Team Adha Administrative",
-                    ClientUri = "https://localhost:7000",
-                    LogoUri = "https://localhost:7000",
-                },
+                    ClientUri = "{SetClientUriHere}",
+                    LogoUri = "{SetClientUriHere}",
+                }
             };
     }
 }
