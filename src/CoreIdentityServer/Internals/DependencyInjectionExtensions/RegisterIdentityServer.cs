@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,13 +42,47 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 // see https://docs.duendesoftware.com/identityserver/v5/fundamentals/resources/
                 options.EmitStaticAudienceClaim = true;
 
+                // configure UserInteraction options
                 options.UserInteraction.LoginUrl = "/access/authentication/signin";
                 options.UserInteraction.LogoutUrl = "/access/authentication/signout";
                 options.UserInteraction.LogoutIdParameter = "signOutId";
                 options.UserInteraction.ConsentUrl = "/access/consent/index";
                 options.UserInteraction.ErrorUrl = "/clientservices/correspondence/error";
 
+                // configure endpoints
+                options.Endpoints.EnableBackchannelAuthenticationEndpoint = false;
+                options.Endpoints.EnableCheckSessionEndpoint = false;
+                options.Endpoints.EnableDeviceAuthorizationEndpoint = false;
+                options.Endpoints.EnableIntrospectionEndpoint = false;
+                options.Endpoints.EnableJwtRequestUri = false;
+                options.Endpoints.EnableTokenRevocationEndpoint = false;
+
+                // configure discovery endpoint data
+                options.Discovery.ShowApiScopes = false;
+                options.Discovery.ShowClaims = false;
+                options.Discovery.ShowEndpoints = false;
+                options.Discovery.ShowExtensionGrantTypes = false;
+                options.Discovery.ShowGrantTypes = false;
+                options.Discovery.ShowIdentityScopes = false;
+                options.Discovery.ShowKeySet = true;
+                options.Discovery.ShowResponseModes = false;
+                options.Discovery.ShowResponseTypes = false;
+                options.Discovery.ShowTokenEndpointAuthenticationMethods = false;
+
+                // configure PersistedGrants options
+                options.PersistentGrants.DataProtectData = true;
+
+                // configure tenant validation on authorization
+                options.ValidateTenantOnAuthorization = false;
+
+                // configure mTLS options
+                options.MutualTls.Enabled = false;
+
+                // configure key management
                 options.KeyManagement.Enabled = false;
+
+                // cookie options are configured in src/CoreIdentityServer/Internals/DependencyInjectionExtensions/RegisterAuthentication.cs file
+                options.Authentication.CookieAuthenticationScheme = IdentityConstants.ApplicationScheme;
             })
                 .AddSigningCredential(tokenSigningCredentialPrivateKey, SecurityAlgorithms.RsaSha256)
                 .AddConfigurationStore(options =>

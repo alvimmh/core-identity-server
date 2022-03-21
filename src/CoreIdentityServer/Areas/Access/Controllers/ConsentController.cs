@@ -37,9 +37,9 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ConsentInputModel inputModel)
         {
-            object[] updateConsentResult = await ConsentService.UpdateConsent(inputModel);
-            ProcessConsentResult consentResult = (ProcessConsentResult)updateConsentResult[0];
-            bool nativeRedirect = (bool)updateConsentResult[1];
+            object[] consentResponse = await ConsentService.ManageConsentResponse(inputModel);
+            ProcessConsentResult consentResult = (ProcessConsentResult)consentResponse[0];
+            bool nativeRedirect = (bool)consentResponse[1];
 
             if (consentResult.IsRedirect)
             {

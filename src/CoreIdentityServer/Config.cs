@@ -1,4 +1,4 @@
-﻿// Copyright (c) Duende Software. All rights reserved.
+// Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
 using Duende.IdentityServer;
@@ -13,13 +13,13 @@ namespace CoreIdentityServer
             new List<IdentityResource>
             {
                 new IdentityResources.OpenId(),
-                new IdentityResources.Profile(),
+                new IdentityResources.Email()
             };
 
         public static IEnumerable<ApiScope> ApiScopes =>
             new List<ApiScope>
             {
-                new ApiScope("teamadha_api", "Team Adha API"),
+                new ApiScope("teamadha_api", "Team Adha API")
             };
 
         public static IEnumerable<Client> Clients =>
@@ -40,18 +40,18 @@ namespace CoreIdentityServer
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Email,
                         "teamadha_api"
                     },
                     AllowOfflineAccess = true,
 
                     // authentication/session management
-                    PostLogoutRedirectUris = { "https://localhost:7000" },
-                    FrontChannelLogoutUri = "https://localhost:7000/administration/authentication/signout_oidc",
-                    FrontChannelLogoutSessionRequired = true,
-                    BackChannelLogoutUri = null,
-                    BackChannelLogoutSessionRequired = false,
+                    FrontChannelLogoutUri = null,
+                    FrontChannelLogoutSessionRequired = false,
                     EnableLocalLogin = true,
                     IdentityProviderRestrictions = { "https://localhost:5001" },
+
+                    // match this value with the authentication cookie lifetime
                     UserSsoLifetime = 86400,
 
                     // token settings

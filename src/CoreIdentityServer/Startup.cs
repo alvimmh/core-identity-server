@@ -29,9 +29,9 @@ namespace CoreIdentityServer
  
             services.AddProjectIdentity();
 
-            services.AddProjectIdentityServer(Configuration);
-
             services.AddProjectAuthentication();
+
+            services.AddProjectIdentityServer(Configuration);
 
             services.AddProjectAuthorization();
 

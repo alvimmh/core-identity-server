@@ -46,7 +46,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
-        public async Task<object[]> UpdateConsent(ConsentInputModel inputModel)
+        public async Task<object[]> ManageConsentResponse(ConsentInputModel inputModel)
         {
             bool nativeRedirect = false;
             ProcessConsentResult consentResult = await ProcessConsent(inputModel);
