@@ -19,7 +19,6 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public DateTime? SentAt { get; private set; }
         public string ResentAt { get; private set; }
         public string CancelledAt { get; private set; }
-        public bool Archived { get; private set; }
         public int SendAttempts { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
@@ -64,12 +63,6 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void ArchiveRecord()
-        {
-            Archived = true;
-            UpdatedAt = DateTime.UtcNow;
-        }
-
         public bool CanResendEmail(ResendEmailInputModel inputModel)
         {
             if (SentTo != inputModel.Email)
@@ -82,7 +75,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             DateTime currentDateTime = DateTime.UtcNow;
             bool emailExpired = currentDateTime - CreatedAt > TimeSpan.FromMinutes(5);
 
-            if (emailExpired || Archived || SendAttempts >= 5)
+            if (emailExpired || SendAttempts >= 5)
             {
                 inputModel.SetErrorMessage("Resend blocked");
 

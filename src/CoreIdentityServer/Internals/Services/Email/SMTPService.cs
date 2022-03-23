@@ -58,30 +58,57 @@ namespace CoreIdentityServer.Internals.Services.Email
 
             if (eventArgs.Cancelled)
             {
-                Console.WriteLine("[{0}] Email send operation cancelled. Event id: [{1}]", currentDateTime, sendEmailEventId);
-                await MarkEmailRecordCancelled(sendEmailEventId, currentDateTime);
+                if (string.IsNullOrEmpty(sendEmailEventId))
+                {
+                    Console.WriteLine("[{0}] Unrecorded email send operation cancelled.", currentDateTime);
+                }
+                else
+                {
+                    Console.WriteLine("[{0}] Email send operation cancelled. Event id: [{1}]", currentDateTime, sendEmailEventId);
+
+                    await MarkEmailRecordCancelled(sendEmailEventId, currentDateTime);
+                }
             }
 
             if (eventArgs.Error != null)
             {
-                Console.WriteLine("[{0}] Could not send email, error: {1}. Event id: [{2}]", currentDateTime, eventArgs.Error.ToString(), sendEmailEventId);
-                await MarkEmailRecordCancelled(sendEmailEventId, currentDateTime);
+                if (string.IsNullOrEmpty(sendEmailEventId))
+                {
+                    Console.WriteLine("[{0}] Could not send unrecorded email, error: {1}.", currentDateTime, eventArgs.Error.ToString());
+                }
+                else
+                {
+                    Console.WriteLine("[{0}] Could not send email, error: {1}. Event id: [{2}]", currentDateTime, eventArgs.Error.ToString(), sendEmailEventId);
+
+                    await MarkEmailRecordCancelled(sendEmailEventId, currentDateTime);
+                }
             }
 
             if (!eventArgs.Cancelled && eventArgs.Error == null)
             {
-                Console.WriteLine("[{0}] Email sent. Event id: [{1}]", currentDateTime, sendEmailEventId);
+                if (string.IsNullOrEmpty(sendEmailEventId))
+                {
+                    Console.WriteLine("[{0}] Unrecorded email sent.", currentDateTime);
+                }
+                else
+                {
+                    Console.WriteLine("[{0}] Email sent. Event id: [{1}]", currentDateTime, sendEmailEventId);
 
-                await MarkEmailRecordSent(sendEmailEventId, currentDateTime);
+                    await MarkEmailRecordSent(sendEmailEventId, currentDateTime);
+                }
             }
         }
 
-        public void Send(string smtpFrom, string smtpTo, string subject, string body, string emailId)
+        public void Send(string smtpFrom, string smtpTo, string subject, string body, string sendEmailEventId)
         {
-            // create id for this email send event
-            string sendEmailEventId = emailId;
-
-            Console.WriteLine("Sending email. Event id: [{0}]", sendEmailEventId);
+            if (string.IsNullOrEmpty(sendEmailEventId))
+            {
+                Console.WriteLine("Sending unrecorded email.");
+            }
+            else
+            {
+                Console.WriteLine("Sending email. Event id: [{0}]", sendEmailEventId);
+            }
 
             SmtpClient.SendAsync(smtpFrom, smtpTo, subject, body, sendEmailEventId);
         }

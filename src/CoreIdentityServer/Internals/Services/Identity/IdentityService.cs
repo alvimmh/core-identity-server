@@ -144,8 +144,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         ) {
             string redirectRoute = null;
 
+            // delete an email record as it has served its purpose
             if (!string.IsNullOrWhiteSpace(resendEmailRecordId))
-                await EmailService.ArchiveEmailRecord(resendEmailRecordId, user);
+                await EmailService.DeleteEmailRecord(resendEmailRecordId, user);
 
             switch (context)
             {

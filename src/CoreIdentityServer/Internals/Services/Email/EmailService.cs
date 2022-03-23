@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
-using CoreIdentityServer.Internals.Models.InputModels;
 using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services.Email
@@ -13,23 +12,30 @@ namespace CoreIdentityServer.Internals.Services.Email
         private ApplicationDbContext DbContext;
         private SMTPService SMTPService;
 
-        public EmailService(IConfiguration config, ApplicationDbContext dbContext, SMTPService smtpService) {
+        public EmailService(IConfiguration config, ApplicationDbContext dbContext, SMTPService smtpService)
+        {
             Config = config;
             DbContext = dbContext;
             SMTPService = smtpService;
         }
 
-        private async Task<string> CreateAndSendEmail(string smtpFrom, string smtpTo, string subject, string body)
+        private async Task<string> SendEmail(string smtpFrom, string smtpTo, string subject, string body, bool recordEmail = false)
         {
-            EmailRecord emailRecord = new EmailRecord();
-            emailRecord.SetRecordDetails(smtpFrom, smtpTo, subject, body, DateTime.UtcNow);
+            EmailRecord emailRecord = null;
 
-            await DbContext.EmailRecords.AddAsync(emailRecord);
-            await DbContext.SaveChangesAsync();
+            if (recordEmail)
+            {
+                emailRecord = new EmailRecord();
+                emailRecord.SetRecordDetails(smtpFrom, smtpTo, subject, body, DateTime.UtcNow);
 
-            SMTPService.Send(smtpFrom, smtpTo, subject, body, emailRecord.Id);
+                await DbContext.EmailRecords.AddAsync(emailRecord);
+                await DbContext.SaveChangesAsync();
+            }
+            string sendEmailEventId = recordEmail ? emailRecord.Id : null;
+
+            SMTPService.Send(smtpFrom, smtpTo, subject, body, sendEmailEventId);
         
-            return emailRecord.Id;
+            return sendEmailEventId;
         }
 
         public void ResendEmail(EmailRecord emailRecord)
@@ -37,26 +43,26 @@ namespace CoreIdentityServer.Internals.Services.Email
             SMTPService.Send(emailRecord.SentFrom, emailRecord.SentTo, emailRecord.Subject, emailRecord.Body, emailRecord.Id);
         }
 
-        // archive an email record as it has served its purpose
-        public async Task ArchiveEmailRecord(string resendEmailRecordId, ApplicationUser user)
+        // delete an email record as it has served its purpose
+        public async Task DeleteEmailRecord(string resendEmailRecordId, ApplicationUser user)
         {
             EmailRecord emailRecord = await DbContext.EmailRecords.FindAsync(resendEmailRecordId);
 
             if (emailRecord == null)
             {
-                Console.WriteLine($"Could not find email record with id {resendEmailRecordId} to archive.");
+                Console.WriteLine($"Could not find email record with id {resendEmailRecordId} to delete.");
             }
             else
             {
                 if (emailRecord.SentTo == user.Email)
                 {
-                    emailRecord.ArchiveRecord();
+                    DbContext.EmailRecords.Remove(emailRecord);
 
                     await DbContext.SaveChangesAsync();
                 }
                 else
                 {
-                    Console.WriteLine($"Cannot archive email record. User email doesn't match with recipient email address of email record.");
+                    Console.WriteLine($"Cannot delete email record. User email doesn't match with recipient email address of email record.");
                 }
             }
         }
@@ -67,7 +73,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "Please Reset TOTP Access";
             string emailBody = $"Dear {userName}, you previously tried to reset your TOTP authenticator but did not reset it completely. To keep your account secure, we have blocked your latest Sign In attempt. Please finish resetting your authenticator to Sign In.";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         // send a verification code to verify user's identity before resetting TOTP access
@@ -76,7 +82,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "Please Confirm Your Identity";
             string emailBody = $"Greetings {userName}, please confirm you identity by submitting this verification code: {verificationCode}";
 
-            string emailRecordId = await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            string emailRecordId = await SendEmail(emailFrom, emailTo, emailSubject, emailBody, true);
 
             return emailRecordId;
         }
@@ -87,7 +93,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "Please Confirm Your Email";
             string emailBody = $"Greetings {userName}, please confirm your email by submitting this verification code: {verificationCode}";
 
-            string emailRecordId = await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            string emailRecordId = await SendEmail(emailFrom, emailTo, emailSubject, emailBody, true);
 
             return emailRecordId;
         }
@@ -98,7 +104,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "Email Confirmed";
             string emailBody = $"Congratulations {userName}, your email is now verified.";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         // send a verification code to user's email
@@ -108,7 +114,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailBody = $"Greetings, please confirm new sign in by submitting this verification code: {verificationCode}";
 
             // user account successfully created, initiate email confirmation
-            string emailRecordId = await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            string emailRecordId = await SendEmail(emailFrom, emailTo, emailSubject, emailBody, true);
 
             return emailRecordId;
         }
@@ -119,7 +125,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "Account Locked Out";
             string emailBody = $"Dear {userName}, due to 3 unsuccessful attempts to sign in to your account, we have locked it out. You can try again in 30 minutes or click this link to reset your TOTP access.";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         // notify user about new session
@@ -128,7 +134,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "New Active Session Started";
             string emailBody = $"Dear {userName}, this is to notify you of a new active session.";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         // notify user to complete account registration
@@ -137,7 +143,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailSubject = "SignIn Attempt Detected";
             string emailBody = $"Dear {userName}, we have detected a sign in attempt for your account. To log in, you need to finish registration.";
 
-            await CreateAndSendEmail(emailFrom, emailTo, emailSubject, emailBody);
+            await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         public void Dispose()
