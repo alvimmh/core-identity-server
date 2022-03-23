@@ -1,10 +1,36 @@
+using System.Collections.Generic;
+using Duende.IdentityServer.Services;
+using Microsoft.Extensions.Configuration;
+
 namespace CoreIdentityServer.Internals.Services
 {
     public abstract class BaseService
     {
+        private protected bool IsValidReturnUrl(
+            string returnUrl,
+            IIdentityServerInteractionService duendeServerInteractionService,
+            List<string> routeEndpoints
+        ) {
+            bool isReturnUrlNotEmpty = !string.IsNullOrWhiteSpace(returnUrl);
+
+            bool isValidReturnUrl = isReturnUrlNotEmpty && duendeServerInteractionService.IsValidReturnUrl(returnUrl);
+
+            if (isValidReturnUrl)
+                return true;
+            else if (isReturnUrlNotEmpty && !isValidReturnUrl && routeEndpoints.Contains(returnUrl?.ToLower()))
+                return true;
+            else
+                return false;
+        }
+
         private protected object[] GenerateArray(params object[] items)
         {
             return items;
+        }
+
+        private protected string GenerateAbsoluteLocalUrl(string action, string controller, string area, IConfiguration config)
+        {
+            return $"{config["ApplicationUrl"]}/{area}/{controller}/{action}";
         }
 
         private protected string GenerateRouteUrl(string action, string controller, string area, string queryString = null)

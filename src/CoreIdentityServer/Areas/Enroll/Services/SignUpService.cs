@@ -45,18 +45,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             RootRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
         }
 
-        public string ManageRegisterProspectiveUser()
-        {
-            string redirectRoute = null;
-
-            bool currentUserSignedIn = IdentityService.CheckActiveSession();
-
-            if (currentUserSignedIn)
-                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
-
-            return redirectRoute;
-        }
-
         public async Task<string> RegisterProspectiveUser(ProspectiveUserInputModel inputModel)
         {
             string redirectRoute = null;

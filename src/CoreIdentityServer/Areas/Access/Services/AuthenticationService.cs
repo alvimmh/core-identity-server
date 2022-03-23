@@ -19,40 +19,49 @@ using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class AuthenticationService : BaseService, IDisposable
     {
+        private readonly IConfiguration Configuration;
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
         private IdentityService IdentityService;
         private readonly IIdentityServerInteractionService InteractionService;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
+        private readonly RouteEndpointService RouteEndpointService;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public AuthenticationService(
+            IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             EmailService emailService,
             IdentityService identityService,
             IIdentityServerInteractionService interactionService,
             IActionContextAccessor actionContextAccessor,
-            ITempDataDictionaryFactory tempDataDictionaryFactory
+            ITempDataDictionaryFactory tempDataDictionaryFactory,
+            RouteEndpointService routeEndpointService
         ) {
+            Configuration = configuration;
             UserManager = userManager;
             EmailService = emailService;
             IdentityService = identityService;
             InteractionService = interactionService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
+            RouteEndpointService = routeEndpointService;
             RootRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
         }
 
         public async Task<object[]> ManageEmailChallenge(string returnUrl)
         {
-            object[] result = await IdentityService.ManageEmailChallenge(RootRoute, returnUrl);
+            string emailChallengeReturnUrl = IsValidReturnUrl(returnUrl, InteractionService, RouteEndpointService.EndpointRoutes) ? returnUrl : null;
+
+            object[] result = await IdentityService.ManageEmailChallenge(RootRoute, emailChallengeReturnUrl);
 
             return result;
         }
@@ -100,7 +109,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                     );
 
                     // signin succeeded & returnUrl present in query string, redirect to returnUrl
-                    if (redirectRoute != null && !string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
+                    if (redirectRoute != null && IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
                         redirectRoute = $"~{inputModel.ReturnUrl}";
                 }
                 else
@@ -123,7 +132,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (currentUserSignedIn)
                 redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
 
-            string signInReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? null : returnUrl;
+            string signInReturnUrl = IsValidReturnUrl(returnUrl, InteractionService, RouteEndpointService.EndpointRoutes) ? returnUrl : null;
 
             SignInInputModel viewModel = new SignInInputModel { ReturnUrl = signInReturnUrl };
 
@@ -135,7 +144,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             string redirectRoute = null;
             string redirectRouteQueryString = null;
 
-            if (!string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
+            if (IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
                 redirectRouteQueryString = $"ReturnUrl={HttpUtility.UrlEncode(inputModel.ReturnUrl)}";
 
             // check if there is a current user logged in, if so redirect to an authorized page
@@ -244,7 +253,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 viewModel = new SignedOutViewModel
                 {
                     AutomaticRedirectAfterSignOut = AccountOptions.AutomaticRedirectAfterSignOut,
-                    PostLogoutRedirectUri = logoutContext.PostLogoutRedirectUri,
+                    PostLogoutRedirectUri = logoutContext.PostLogoutRedirectUri ?? GenerateAbsoluteLocalUrl("SignIn", "Authentication", "Access", Configuration),
                     ClientName = string.IsNullOrWhiteSpace(logoutContext.ClientName) ? logoutContext.ClientId : logoutContext.ClientName,
                     SignOutIFrameUrl = logoutContext.SignOutIFrameUrl,
                     SignOutId = inputModel.SignOutId
@@ -277,7 +286,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         public TOTPChallengeInputModel ManageTOTPChallenge(string returnUrl)
         {
-            string TOTPChallengeReturnUrl = string.IsNullOrWhiteSpace(returnUrl) ? null : returnUrl;
+            string TOTPChallengeReturnUrl = IsValidReturnUrl(returnUrl, InteractionService, RouteEndpointService.EndpointRoutes) ? returnUrl : null;
 
             return new TOTPChallengeInputModel { ReturnUrl = TOTPChallengeReturnUrl };
         }
@@ -328,13 +337,13 @@ namespace CoreIdentityServer.Areas.Access.Services
                 {
                     string targetRoute = null;
 
-                    if (string.IsNullOrWhiteSpace(inputModel.ReturnUrl))
+                    if (IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
                     {
-                        targetRoute = RootRoute;
+                        targetRoute = $"~{inputModel.ReturnUrl}";
                     }
                     else
                     {
-                        targetRoute = $"~{inputModel.ReturnUrl}";
+                        targetRoute = RootRoute;
                     }
 
                     redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(

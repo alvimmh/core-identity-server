@@ -3,6 +3,7 @@ using CoreIdentityServer.Areas.ClientServices.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Authorization.Handlers;
+using CoreIdentityServer.Internals.Services;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,8 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
             // add TOTPChallenge authorization policy handler
             services.AddSingleton<IAuthorizationHandler, TOTPChallengeHandler>();
+
+            services.AddSingleton<RouteEndpointService>();
 
             services.AddScoped<EmailService>();
             services.AddScoped<IdentityService>();

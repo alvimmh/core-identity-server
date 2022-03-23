@@ -17,15 +17,14 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public bool RequiresAuthenticatorReset { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string SignInTimeStamps { get; private set; }
+        public DateTime? LastSignedInAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
 
-        public void UpdateSignInTimeStamps()
+        public void UpdateLastSignedInTimeStamp()
         {
             DateTime currentDateTime = DateTime.UtcNow;
-            string currentDateTimeString = currentDateTime.ToString();
 
-            SignInTimeStamps = SignInTimeStamps == null ? currentDateTimeString : $"{SignInTimeStamps},{currentDateTimeString}";
+            LastSignedInAt = currentDateTime;
             UpdatedAt = currentDateTime;
         }
     }

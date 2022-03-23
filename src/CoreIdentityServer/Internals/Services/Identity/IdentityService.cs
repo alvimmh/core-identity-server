@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using System.Security.Claims;
@@ -263,7 +262,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 await SignInManager.SignInWithClaimsAsync(user, false, additionalClaims);
 
-                user.UpdateSignInTimeStamps();
+                user.UpdateLastSignedInTimeStamp();
 
                 // record sign in timestamps
                 IdentityResult updateUser = await UserManager.UpdateAsync(user);

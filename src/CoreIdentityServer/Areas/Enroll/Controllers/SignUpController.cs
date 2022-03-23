@@ -5,6 +5,7 @@ using CoreIdentityServer.Areas.Enroll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Filters.ActionFilters;
 
 namespace CoreIdentityServer.Areas.Enroll.Controllers
 {
@@ -18,18 +19,13 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             SignUpService = signUpService;
         }
 
-        [HttpGet]
+        [HttpGet, RedirectAuthenticatedUser]
         public IActionResult RegisterProspectiveUser()
         {
-            string redirectRoute = SignUpService.ManageRegisterProspectiveUser();
-
-            if (redirectRoute != null)
-                return Redirect(redirectRoute);
-
             return View();
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel inputModel)
         {
             string redirectRoute = await SignUpService.RegisterProspectiveUser(inputModel);
@@ -40,7 +36,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpGet]
+        [HttpGet, RedirectAuthenticatedUser]
         public async Task<IActionResult> ConfirmEmail()
         {
             // result is an array containing the ViewModel & a redirect url in consecutive order
@@ -53,7 +49,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View(result[0]);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> ConfirmEmail([FromForm] EmailChallengeInputModel inputModel)
         {
             string redirectRoute = await SignUpService.VerifyEmailConfirmation(inputModel);
@@ -64,7 +60,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpGet]
+        [HttpGet, RedirectAuthenticatedUser]
         public async Task<IActionResult> RegisterTOTPAccess()
         {
             // result is an array containing the ViewModel & a redirect url in consecutive order
@@ -77,7 +73,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View(result[0]);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> RegisterTOTPAccess([FromForm] RegisterTOTPAccessInputModel inputModel)
         {
             string redirectRoute = await SignUpService.VerifyTOTPAccessRegistration(inputModel);

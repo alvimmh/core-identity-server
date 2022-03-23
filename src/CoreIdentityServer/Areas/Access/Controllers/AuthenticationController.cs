@@ -5,6 +5,7 @@ using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Filters.ActionFilters;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -37,7 +38,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpGet]
+        [HttpGet, RedirectAuthenticatedUser]
         public async Task<IActionResult> EmailChallenge([FromQuery] string returnUrl)
         {
             // result is an array containing the ViewModel & a redirect url in consecutive order
@@ -50,7 +51,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
             string redirectRoute = await AuthenticationService.ManageEmailChallengeVerification(inputModel);
@@ -61,7 +62,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpGet]
+        [HttpGet, RedirectAuthenticatedUser]
         public IActionResult SignIn([FromQuery] string returnUrl)
         {
             object[] result = AuthenticationService.ManageSignIn(returnUrl);
@@ -72,7 +73,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> SignIn([FromForm] SignInInputModel inputModel)
         {
             string redirectRoute = await AuthenticationService.SignIn(inputModel);
@@ -103,7 +104,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpGet]
+        [HttpGet, RedirectAuthenticatedUser]
         public IActionResult SignedOut()
         {
             SignedOutViewModel viewModel = AuthenticationService.ManageSignedOut();

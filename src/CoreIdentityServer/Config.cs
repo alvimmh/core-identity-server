@@ -1,4 +1,4 @@
-﻿// Copyright (c) Duende Software. All rights reserved.
+// Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
 using CoreIdentityServer.Internals.Constants.Authentication;
@@ -10,6 +10,7 @@ namespace CoreIdentityServer
 {
     public static class Config
     {
+        private static string TeamadhaBackendClientUrl = "SetClientUriHere";
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
             {
@@ -37,7 +38,7 @@ namespace CoreIdentityServer
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { "{SetClientUriHere}/administration/authentication/signin_oidc" },
+                    RedirectUris = { $"{TeamadhaBackendClientUrl}/administration/authentication/signin_oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -47,16 +48,16 @@ namespace CoreIdentityServer
                     AllowOfflineAccess = true,
 
                     // authentication/session management
-                    PostLogoutRedirectUris = { "{SetClientUriHere}" },
+                    PostLogoutRedirectUris = { TeamadhaBackendClientUrl },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
-                    BackChannelLogoutUri = "{SetClientUriHere}/administration/authentication/signout_oidc",
+                    BackChannelLogoutUri = $"{TeamadhaBackendClientUrl}/administration/authentication/signout_oidc",
                     BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
                     IdentityProviderRestrictions = { "https://localhost:5001" },
 
                     // match this value with the authentication cookie lifetime
-                    UserSsoLifetime = AuthenticationCookieOptions.CookieDuration.Seconds,
+                    UserSsoLifetime = (int)AuthenticationCookieOptions.CookieDuration.TotalSeconds,
 
                     // token settings
                     IdentityTokenLifetime = 180,
@@ -79,8 +80,8 @@ namespace CoreIdentityServer
                     AllowRememberConsent = true,
                     ConsentLifetime = 15552000,
                     ClientName = "Team Adha Administrative",
-                    ClientUri = "{SetClientUriHere}",
-                    LogoUri = "{SetClientUriHere}",
+                    ClientUri = TeamadhaBackendClientUrl,
+                    LogoUri = TeamadhaBackendClientUrl,
                 }
             };
     }
