@@ -1,17 +1,15 @@
 @{
     bool userSignedIn = User.Identity.IsAuthenticated;
+
+    string currentRoute = @Url.RouteUrl(ViewContext.RouteData.Values)?.ToLower();
+    string signOutRoute = "/access/authentication/signout";
+
+    bool showSignOutButton = currentRoute != signOutRoute;
 }
 
-@if (userSignedIn) {
+@if (userSignedIn && showSignOutButton) {
     <div class="mt-1 mb-3 pt-1 pb-3">
-        <form
-            asp-area="Access"
-            asp-controller="Authentication"
-            asp-action="SignOut"
-            method="post"
-        >
-            <button type="submit" class="btn btn-secondary btn-md">Sign Out</button>
-        </form>
+        <a href="~@signOutRoute">Sign Out</a>
     </div>
 }
 else

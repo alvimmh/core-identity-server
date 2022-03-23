@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 
@@ -10,11 +13,21 @@ namespace CoreIdentityServer.Internals.Services
     {
         private IConfiguration Config;
         private EndpointDataSource EndpointDataSource;
+        private ActionContext ActionContext;
+        private IUrlHelper UrlHelper;
         public List<string> EndpointRoutes { get; private set; }
 
-        public RouteEndpointService(IConfiguration config, EndpointDataSource endpointDataSource) {
+        public RouteEndpointService(
+            IConfiguration config,
+            EndpointDataSource endpointDataSource,
+            IActionContextAccessor actionContextAccessor,
+            IUrlHelperFactory urlHelperFactory
+        ) {
             Config = config;
             EndpointDataSource = endpointDataSource;
+            ActionContext = actionContextAccessor.ActionContext;
+            UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
+
             EndpointRoutes = new List<string>();
 
             PopulateEndpointRoutes(endpointDataSource);
@@ -26,23 +39,24 @@ namespace CoreIdentityServer.Internals.Services
 
             foreach (RouteEndpoint routeEndpoint in dataSourceRouteEndpoints)
             {
-                
                 #nullable enable
                 IReadOnlyDictionary<string, object?> routeValues = routeEndpoint.RoutePattern.RequiredValues;
                 #nullable disable
-                
+
                 string areaName = (string)(((routeValues["area"] is string) && routeValues["area"] != null) ? routeValues["area"] : null);
 
                 // all CIS routes follow the area/controller/action pattern
                 if (!string.IsNullOrWhiteSpace(areaName))
                 {
-                    string controllerName = (string)routeValues?["controller"];
-                    string actionName = (string)routeValues?["action"];
+                    string routePath = UrlHelper.RouteUrl(routeEndpoint.RoutePattern.RequiredValues).ToLower();
 
-                    string routeUrl = string.Join('/', $"/{areaName}", controllerName, actionName).ToLower();
-                    EndpointRoutes.Add(routeUrl);
+                    EndpointRoutes.Add(routePath);
                 }
             };
+
+            EndpointDataSource = null;
+            ActionContext = null;
+            UrlHelper = null;
         }
 
         public void Dispose()
