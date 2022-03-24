@@ -8,10 +8,10 @@
 
 @{
     if (!userSignedIn) {
-        <partial name="Shared/_InitiateUnauthenticatedEmailChallenge" />
+        <partial name="Shared/_InitiateUnauthenticatedTOTPAccessRecoveryChallenge" />
     }
     else
     {
-        <partial name="Shared/_InitiateAuthenticatedEmailChallenge" />
+        <partial name="Shared/_InitiateAuthenticatedTOTPAccessRecoveryChallenge" />
     }
 }

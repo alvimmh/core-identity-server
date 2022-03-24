@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
-using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess;
 using CoreIdentityServer.Internals.Constants.UserActions;
@@ -42,7 +41,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             RootRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
         }
 
-        public async Task<string> InitiateEmailChallenge(InitiateEmailChallengeInputModel inputModel)
+        public async Task<string> InitiateTOTPAccessRecoveryChallenge(InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
         {
             string redirectRoute = RootRoute;
             ApplicationUser user = null;
@@ -76,38 +75,26 @@ namespace CoreIdentityServer.Areas.Access.Services
             }
             else if (user.AccountRegistered)
             {
-                string verificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
-
-                // send email with verification code & set the redirect url
-                string resendEmailRecordId = await EmailService.SendResetTOTPAccessVerificationEmail(
-                    AutomatedEmails.NoReply,
-                    user.Email,
-                    user.UserName,
-                    verificationCode
-                );
-
                 // clear all unnecessary tempdata
                 TempData.Clear();
 
                 if (!currentUserSignedIn)
                     TempData[TempDataKeys.UserEmail] = user.Email;
 
-                TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId;
-
-                redirectRoute = GenerateRouteUrl("EmailChallenge", "ResetTOTPAccess", "Access");
+                redirectRoute = GenerateRouteUrl("RecoverTOTPAccessChallenge", "ResetTOTPAccess", "Access");
             }
 
             return redirectRoute;
         }
 
-        public async Task<object[]> ManageEmailChallenge()
+        public async Task<object[]> ManageTOTPAccessRecoveryChallenge()
         {
-            object[] result = await IdentityService.ManageEmailChallenge(RootRoute);
+            object[] result = await IdentityService.ManageTOTPAccessRecoveryChallenge(RootRoute);
 
             return result;
         }
 
-        public async Task<string> ManageEmailChallengeVerification(EmailChallengeInputModel inputModel)
+        public async Task<string> ManageTOTPAccessRecoveryChallengeVerification(TOTPAccessRecoveryChallengeInputModel inputModel)
         {
             string redirectRoute = null;
 
@@ -134,26 +121,24 @@ namespace CoreIdentityServer.Areas.Access.Services
             {
                 // user exists with unregistered account and unconfirmed email, so user is signing up
                 // or
-                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+                // user exists with registered account and confirmed email, so user trying to reset TOTP access
 
-                bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
-                    user,
-                    CustomTokenOptions.GenericTOTPTokenProvider,
-                    inputModel.VerificationCode
+                bool totpAccessRecoveryCodeVerified = await IdentityService.VerifyTOTPAccessRecoveryCode(
+                    user, inputModel.VerificationCode
                 );
 
-                if (totpCodeVerified)
+                if (totpAccessRecoveryCodeVerified)
                 {
                     redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
                         user,
-                        inputModel.ResendEmailRecordId,
-                        UserActionContexts.ResetTOTPAccessEmailChallenge,
+                        null,
+                        UserActionContexts.ResetTOTPAccessRecoveryChallenge,
                         null
                     );
                 }
                 else
                 {
-                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid recovery code");
                 }
             }
 

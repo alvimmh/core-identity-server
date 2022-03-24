@@ -4,7 +4,7 @@ namespace CoreIdentityServer.Internals.Constants.UserActions
     {
         public const string SignInEmailChallenge = "SignInEmailChallenge";
         public const string SignInTOTPChallenge = "SignInTOTPChallenge";
-        public const string ResetTOTPAccessEmailChallenge = "ResetTOTPAccessEmailChallenge";
+        public const string ResetTOTPAccessRecoveryChallenge = "ResetTOTPAccessRecoveryChallenge";
         public const string ConfirmEmailChallenge = "ConfirmEmailChallenge";
         public const string TOTPChallenge = "TOTPChallenge";
     }

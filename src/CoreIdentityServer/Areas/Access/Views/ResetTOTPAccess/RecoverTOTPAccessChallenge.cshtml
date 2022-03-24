@@ -1,29 +1,23 @@
-@model EmailChallengeInputModel
+@model TOTPAccessRecoveryChallengeInputModel
 @{
     ViewData["Title"] = "Reset TOTP Access Email Challenge";
-
-    ResendEmailInputModel partialViewModel = new ResendEmailInputModel() {
-        ResendEmailRecordId = Model.ResendEmailRecordId
-    };
 }
 
-<p>We have sent a secure 6-digit code to your email. Please enter this code below to confirm your identity.</p>
+<p>Please enter one of the TOTP recovery codes below to reset your TOTP access.</p>
 
 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 <form
     asp-area="Access"
     asp-controller="ResetTOTPAccess"
-    asp-action="EmailChallenge"
+    asp-action="RecoverTOTPAccessChallenge"
     method="post"
 >
     <div class="mt-4">
-        <label for="verification-code-input" class="form-label">Enter secure 6-digit code</label>
+        <label for="verification-code-input" class="form-label">Enter recovery code</label>
         <input type="integer" class="form-control" id="verification-code-input" asp-for="VerificationCode">
         <span asp-validation-for="VerificationCode" class="text-danger"></span>
 
         <input type="string" id="email-address-input" asp-for="Email" value="@Model.Email" hidden>
-
-        <partial name="../../../ClientServices/Views/Correspondence/_ResendEmail.cshtml" model="@partialViewModel" />
 
         <div class="d-grid col-6 mt-3 mx-auto">
             <button type="submit" class="btn btn-secondary btn-md">Continue</button>

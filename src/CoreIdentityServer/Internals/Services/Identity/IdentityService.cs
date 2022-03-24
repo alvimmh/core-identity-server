@@ -47,6 +47,88 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             UrlEncoder = urlEncoder;
         }
 
+        public async Task<object[]> ManageTOTPAccessRecoveryChallenge(string defaultRoute, string returnUrl = null)
+        {
+            TOTPAccessRecoveryChallengeInputModel model = null;
+            string redirectRoute = defaultRoute;
+
+            // check if user is signed in
+            bool userEmailExists = false;
+            bool currentUserSignedIn = CheckActiveSession();
+            string userEmail = null;
+
+            if (currentUserSignedIn)
+            {
+                ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+                if (user != null)
+                {
+                    userEmailExists = true;
+                    userEmail = user.Email;
+                }
+            }
+            else
+            {
+                userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
+
+                if (userEmailExists)
+                    userEmail = userEmailTempData.ToString();
+            }
+
+            if (userEmailExists)
+            {
+                // retain TempData so page reload keeps user on the same page
+                TempData.Keep();
+
+                if (!string.IsNullOrWhiteSpace(userEmail))
+                {
+                    model = await GenerateTOTPAccessRecoveryChallengeInputModel(userEmail, returnUrl);
+                }
+            }
+
+            return GenerateArray(model, redirectRoute);
+        }
+
+        private async Task<TOTPAccessRecoveryChallengeInputModel> GenerateTOTPAccessRecoveryChallengeInputModel(string userEmail, string returnUrl)
+        {
+            // return null to redirect to another page
+            TOTPAccessRecoveryChallengeInputModel model = null;
+
+            if (!string.IsNullOrWhiteSpace(userEmail))
+            {
+                ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
+
+                if (user == null)
+                {
+                    // user doesn't exist
+                    return model;
+                }
+                else if (user.EmailConfirmed && !user.AccountRegistered)
+                {
+                    // user exists with confirmed email and unregistered account, send email to complete registration
+                    await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
+
+                    return model;
+                }
+                else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+                {
+                    // user exists with unregistered account and unconfirmed email, so user is signing up
+                    // or
+                    // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+
+                    model = new TOTPAccessRecoveryChallengeInputModel
+                    {
+                        Email = userEmail,
+                        ReturnUrl = returnUrl
+                    };
+
+                    return model;
+                }
+            }
+
+            return model;
+        } 
+
         public async Task<object[]> ManageEmailChallenge(string defaultRoute, string returnUrl = null)
         {
             EmailChallengeInputModel model = null;
@@ -160,7 +242,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 case UserActionContexts.SignInEmailChallenge:
                     redirectRoute = await SignIn(user);
                     break;
-                case UserActionContexts.ResetTOTPAccessEmailChallenge:
+                case UserActionContexts.ResetTOTPAccessRecoveryChallenge:
                     redirectRoute = await AcknowledgeResetTOTPAccessRequest(user);
                     break;
                 case UserActionContexts.TOTPChallenge:
@@ -325,7 +407,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
 
-                // reset TOTP access request acknowledgement failed, return ViewModel
+                // reset TOTP access request acknowledgement failed, return null to return ViewModel
                 return redirectRoute;
             }
 
@@ -527,6 +609,24 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             );
 
             return verificationResult;
+        }
+
+        public async Task<bool> VerifyTOTPAccessRecoveryCode(ApplicationUser user, string verificationCode)
+        {
+            // verify TOTP access recovery code
+            IdentityResult redeemTOTPAccessRecoveryCode = await UserManager.RedeemTwoFactorRecoveryCodeAsync(user, verificationCode);
+        
+            if (!redeemTOTPAccessRecoveryCode.Succeeded)
+            {
+                Console.WriteLine("Error redeeming user TOTP access recovery code");
+
+                foreach (IdentityError error in redeemTOTPAccessRecoveryCode.Errors)
+                    Console.WriteLine(error.Description);
+
+                return false;
+            }
+
+            return true;
         }
 
         public string GenerateQRCodeUri(string email, string authenticatorKey)

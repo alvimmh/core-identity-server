@@ -1,12 +1,11 @@
-@model InitiateEmailChallengeInputModel
+@model InitiateTOTPAccessRecoveryChallengeInputModel
 
-<p>To keep your account safe, we need to verify its you. We will send you a secure 6-digit code to your email.</p>
 <p>Please enter your email below.</p>
 
 <form
     asp-area="Access"
     asp-controller="ResetTOTPAccess"
-    asp-action="InitiateEmailChallenge"
+    asp-action="InitiateTOTPAccessRecoveryChallenge"
     method="post"
 >
     <div class="mt-4">

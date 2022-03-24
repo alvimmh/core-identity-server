@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess
 {
-    public class InitiateEmailChallengeInputModel
+    public class InitiateTOTPAccessRecoveryChallengeInputModel
     {
         [Required]
         [EmailAddress]
