@@ -181,11 +181,30 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             bool userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
 
             string userEmail = userEmailExists ? userEmailTempData.ToString() : null;
+
             if (string.IsNullOrWhiteSpace(userEmail))
                 return result;
-            
-            // retain TempData so page reload keeps user on the same page
-            TempData.Keep();
+
+            bool tempDataExpiryDateTimeExists = TempData.TryGetValue(TempDataKeys.TempDataExpiryDateTime, out object tempdataExpiryDateTimeTempData);
+
+            DateTime? tempDataExpiryDateTime = tempDataExpiryDateTimeExists ? (DateTime)tempdataExpiryDateTimeTempData : null;
+
+            // if TempData is not expired, retain TempData so page reload keeps user on the same page
+            //
+            // expiring TempData helps against unwanted compromise of TOTP Access, when user lefts
+            // screen/browser unattended or stays in the page for more than 3 minutes and then tries
+            // refresh the page 
+            //
+            // if TempData is expired, user can no longer refresh to register TOTP Access authenticator,
+            // instead user will be redirected to RootRoute
+            //
+            // this only protects against refreshing the page via GET action that increases the
+            // TOTP Access registration time window
+            //
+            if (tempDataExpiryDateTime != null && DateTime.UtcNow < tempDataExpiryDateTime)
+                TempData.Keep();
+            else
+                return result;
 
             ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
 

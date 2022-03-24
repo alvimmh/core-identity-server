@@ -270,6 +270,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 TempData[TempDataKeys.UserEmail] = user.Email;
+                SetTempDataExpiryDateTime(TempData);
 
                 redirectRoute = GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");
             }
@@ -415,6 +416,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await SignOut();
 
             TempData[TempDataKeys.UserEmail] = user.Email;
+            SetTempDataExpiryDateTime(TempData);
 
             // redirect user to Register TOTP Access page
             return GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");

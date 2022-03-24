@@ -1,11 +1,22 @@
+using System;
 using System.Collections.Generic;
+using CoreIdentityServer.Internals.Constants.Account;
+using CoreIdentityServer.Internals.Constants.Storage;
 using Duende.IdentityServer.Services;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services
 {
     public abstract class BaseService
     {
+        private protected void SetTempDataExpiryDateTime(ITempDataDictionary TempData)
+        {
+            DateTime expiryDateTime = DateTime.UtcNow.AddSeconds(AccountOptions.TempDataLifetimeInSeconds);
+
+            TempData[TempDataKeys.TempDataExpiryDateTime] = expiryDateTime;
+        }
+
         private protected bool IsValidReturnUrl(
             string returnUrl,
             IIdentityServerInteractionService duendeServerInteractionService,
