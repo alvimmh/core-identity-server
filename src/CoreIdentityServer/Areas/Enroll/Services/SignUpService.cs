@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
+using System.Collections.Generic;
 
 namespace CoreIdentityServer.Areas.Enroll.Services
 {
@@ -207,6 +208,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
                 string authenticatorKey = null;
                 string authenticatorKeyUri = null;
+                List<string> userTOTPRecoveryCodes = null;
 
                 IdentityResult resetAuthenticatorKey = await UserManager.ResetAuthenticatorKeyAsync(user);
 
@@ -214,6 +216,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 {
                     authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(user);
                     authenticatorKeyUri = IdentityService.GenerateQRCodeUri(userEmail, authenticatorKey);
+                    userTOTPRecoveryCodes = await IdentityService.GenerateTOTPRecoveryCodes(user, 3);
                 }
                 else
                 {
@@ -228,8 +231,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 {
                     AuthenticatorKey = authenticatorKey,
                     AuthenticatorKeyUri = authenticatorKeyUri,
+                    TOTPRecoveryCodes = string.Join(", ", userTOTPRecoveryCodes),
                     Email = userEmail,
-                    SessionVerificationTOTPCode = sessionVerificationCode,
+                    SessionVerificationTOTPCode = sessionVerificationCode
                 };
 
                 result = GenerateArray(model, redirectRoute);

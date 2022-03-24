@@ -17,6 +17,7 @@ using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Constants.Account;
 using IdentityModel;
+using System.Linq;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -421,6 +422,18 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             TempData.Clear();
 
             await SignInManager.RefreshSignInAsync(user);
+        }
+
+        public async Task<List<string>> GenerateTOTPRecoveryCodes(ApplicationUser user, int numberOfRecoveryCodes)
+        {
+            List<string> recoveryCodes = new List<string>();
+
+            while (recoveryCodes.Count < numberOfRecoveryCodes)
+            {
+                recoveryCodes = (await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, numberOfRecoveryCodes)).ToList();
+            }
+
+            return recoveryCodes;
         }
 
         public async Task RecordUnsuccessfulSignInAttempt(ApplicationUser user)

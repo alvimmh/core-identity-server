@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace CoreIdentityServer.Areas.Enroll.Models.SignUp
@@ -9,6 +10,9 @@ namespace CoreIdentityServer.Areas.Enroll.Models.SignUp
 
         [Required]
         public string AuthenticatorKeyUri { get; set; }
+
+        [Required]
+        public string TOTPRecoveryCodes { get; set; }
 
         [Required]
         [EmailAddress]
