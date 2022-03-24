@@ -415,6 +415,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await SignInManager.SignOutAsync();
         }
 
+        public async Task RefreshUserSignIn(ApplicationUser user)
+        {
+            // delete all TempData
+            TempData.Clear();
+
+            await SignInManager.RefreshSignInAsync(user);
+        }
+
         public async Task RecordUnsuccessfulSignInAttempt(ApplicationUser user)
         {
             IdentityResult saveUnsuccessfulAttempt = await UserManager.AccessFailedAsync(user);

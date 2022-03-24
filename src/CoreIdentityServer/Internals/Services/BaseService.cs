@@ -16,11 +16,25 @@ namespace CoreIdentityServer.Internals.Services
             bool isValidReturnUrl = isReturnUrlNotEmpty && duendeServerInteractionService.IsValidReturnUrl(returnUrl);
 
             if (isValidReturnUrl)
+            {
                 return true;
-            else if (isReturnUrlNotEmpty && !isValidReturnUrl && routeEndpoints.Contains(returnUrl?.ToLower()))
+            }
+            else if (isReturnUrlNotEmpty && !isValidReturnUrl && routeEndpoints.Contains(returnUrl.ToLower()))
+            {
                 return true;
+            }
+            else if (isReturnUrlNotEmpty && !isValidReturnUrl)
+            {
+                int returnUrlQueryStringStartIndex = returnUrl.IndexOf('?');
+
+                string returnUrlPath = returnUrl.Substring(0, returnUrlQueryStringStartIndex);
+
+                return routeEndpoints.Contains(returnUrlPath.ToLower());
+            }
             else
+            {
                 return false;
+            }
         }
 
         private protected object[] GenerateArray(params object[] items)

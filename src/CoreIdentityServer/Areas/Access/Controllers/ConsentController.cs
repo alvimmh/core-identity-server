@@ -10,6 +10,7 @@ using CoreIdentityServer.Areas.Access.Models.Consent;
 using CoreIdentityServer.Internals.Extensions;
 using CoreIdentityServer.Areas.Access.Services;
 using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -23,7 +24,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             ConsentService = consentService;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index(string returnUrl)
         {
             ConsentViewModel viewModel = await ConsentService.ManageConsent(returnUrl);
@@ -34,7 +35,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View("~/Areas/ClientServices/Views/Correspondence/Error.cshtml");
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index(ConsentInputModel inputModel)
         {
             object[] consentResponse = await ConsentService.ManageConsentResponse(inputModel);

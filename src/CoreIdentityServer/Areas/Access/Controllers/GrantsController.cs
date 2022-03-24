@@ -9,6 +9,7 @@ using CoreIdentityServer.Internals.Filters.ActionFilters;
 using CoreIdentityServer.Internals.Constants.Routes;
 using CoreIdentityServer.Areas.Access.Services;
 using CoreIdentityServer.Areas.Access.Models.Grants;
+using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -22,7 +23,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             GrantsService = grantsService;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index()
         {
             GrantsViewModel viewModel = await GrantsService.ManageGrants();
@@ -30,8 +31,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(viewModel);
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Revoke([FromForm] RevokeGrantInputModel inputModel)
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.TOTPChallenge)]
+        public async Task<IActionResult> Index([FromForm] RevokeGrantInputModel inputModel)
         {
             await GrantsService.RevokeGrant(inputModel);
 

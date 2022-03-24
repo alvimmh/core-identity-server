@@ -12,11 +12,16 @@ using System.Security.Claims;
 using Duende.IdentityServer.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using CoreIdentityServer.Internals.Services.Identity.IdentityService;
+using CoreIdentityServer.Internals.Models.DatabaseModels;
+using Microsoft.AspNetCore.Identity;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class GrantsService : BaseService, IDisposable
     {
+        private IdentityService IdentityService;
+        private readonly UserManager<ApplicationUser> UserManager;
         private readonly IIdentityServerInteractionService InteractionService;
         private readonly IEventService EventService;
         private readonly IClientStore ClientStore;
@@ -25,12 +30,16 @@ namespace CoreIdentityServer.Areas.Access.Services
         private bool ResourcesDisposed;
 
         public GrantsService(
+            IdentityService identityService,
+            UserManager<ApplicationUser> userManager,
             IIdentityServerInteractionService interactionService,
             IEventService eventService,
             IClientStore clientStore,
             IResourceStore resourceStore,
             IActionContextAccessor actionContextAccessor
         ) {
+            IdentityService = identityService;
+            UserManager = userManager;
             InteractionService = interactionService;
             EventService = eventService;
             ClientStore = clientStore;
@@ -55,10 +64,23 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 if (validGrantExists)
                 {
-                    ClaimsPrincipal user = ActionContext.HttpContext.User;
+                    ClaimsPrincipal userSession = ActionContext.HttpContext.User;
+
+                    ApplicationUser user = await UserManager.GetUserAsync(userSession);
 
                     await InteractionService.RevokeUserConsentAsync(inputModel.ClientId);
-                    await EventService.RaiseAsync(new GrantsRevokedEvent(user.GetSubjectId(), inputModel.ClientId));
+                    await EventService.RaiseAsync(new GrantsRevokedEvent(userSession.GetSubjectId(), inputModel.ClientId));
+
+                    // initiate signout so the client with revoked grant signs out the user
+                    await IdentityService.SignOut();
+
+                    if (user != null)
+                    {
+                        // since all sessions are signed out,
+                        // user is automatically signed in again to prevent user go through sign in flow again
+                        // this ensures that all revoked sessions are signed out while the current session is still signed in
+                        await IdentityService.RefreshUserSignIn(user);
+                    }
                 }
             }
 

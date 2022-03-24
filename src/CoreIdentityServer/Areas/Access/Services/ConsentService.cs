@@ -16,6 +16,8 @@ using Duende.IdentityServer.Events;
 using CoreIdentityServer.Internals.Extensions;
 using System.Security.Claims;
 using Duende.IdentityServer.Extensions;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using CoreIdentityServer.Internals.Constants.Storage;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -24,6 +26,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         private ActionContext ActionContext;
         private readonly IIdentityServerInteractionService InteractionService;
         private readonly IEventService EventService;
+        private readonly ITempDataDictionary TempData;
         private readonly ILogger<ConsentService> Logger;
         private bool ResourcesDisposed;
 
@@ -31,17 +34,34 @@ namespace CoreIdentityServer.Areas.Access.Services
             IActionContextAccessor actionContextAccessor,
             IIdentityServerInteractionService interactionService,
             IEventService eventService,
+            ITempDataDictionaryFactory tempDataDictionaryFactory,
             ILogger<ConsentService> logger
         ) {
             ActionContext = actionContextAccessor.ActionContext;
             InteractionService = interactionService;
             EventService = eventService;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             Logger = logger;
         }
 
         public async Task<ConsentViewModel> ManageConsent(string returnUrl)
         {
             ConsentViewModel viewModel = await BuildViewModelAsync(returnUrl);
+
+            if (viewModel == null)
+            {
+                bool consentReturnUrlExists = TempData.TryGetValue(
+                    TempDataKeys.ConsentReturnUrl,
+                    out object consentReturnUrlTempData
+                );
+
+                string consentReturnUrl = consentReturnUrlExists ? consentReturnUrlTempData.ToString() : null;
+
+                if (!string.IsNullOrWhiteSpace(consentReturnUrl))
+                {
+                    viewModel = await BuildViewModelAsync(consentReturnUrl);
+                }
+            }
 
             return viewModel;
         }
@@ -140,6 +160,9 @@ namespace CoreIdentityServer.Areas.Access.Services
                 // communicate outcome of consent back to identityserver
                 await InteractionService.GrantConsentAsync(authorizationRequest, grantedConsent);
 
+                // remove any stored tempdata
+                TempData.Clear();
+
                 // indicate that's it ok to redirect back to authorization endpoint
                 result.RedirectUri = inputModel.ReturnUrl;
                 result.Client = authorizationRequest.Client;
@@ -159,6 +182,8 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             if (authorizationRequest != null)
             {
+                TempData[TempDataKeys.ConsentReturnUrl] = returnUrl;
+
                 return CreateConsentViewModel(inputModel, returnUrl, authorizationRequest);
             }
             else
