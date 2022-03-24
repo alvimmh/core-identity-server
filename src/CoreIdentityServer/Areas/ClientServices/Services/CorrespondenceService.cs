@@ -67,8 +67,10 @@ namespace CoreIdentityServer.Areas.ClientServices.Services
             return true;
         }
 
-        public async Task<ErrorViewModel> ManageError(string errorId)
+        public async Task<ErrorViewModel> ManageDuendeIdentityServerError(string errorType)
         {
+            string errorId = errorType;
+
             ErrorViewModel viewModel = new ErrorViewModel();
 
             // retrieve error details from identityserver
@@ -76,14 +78,23 @@ namespace CoreIdentityServer.Areas.ClientServices.Services
 
             if (errorMessage != null)
             {
-                viewModel.Error = errorMessage;
-
                 if (!Environment.IsDevelopment())
                 {
                     // only show in development
                     errorMessage.ErrorDescription = null;
                 }
+
+                viewModel.Error = errorMessage;
             }
+
+            return viewModel;
+        }
+
+        public ErrorViewModel ManageError(string errorType)
+        {
+            string statusCode = errorType;
+
+            ErrorViewModel viewModel = new ErrorViewModel(statusCode);
 
             return viewModel;
         }

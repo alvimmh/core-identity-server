@@ -145,7 +145,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             string redirectRouteQueryString = null;
 
             if (IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
-                redirectRouteQueryString = $"ReturnUrl={HttpUtility.UrlEncode(inputModel.ReturnUrl)}";
+                redirectRouteQueryString = $"returnurl={HttpUtility.UrlEncode(inputModel.ReturnUrl)}";
 
             // check if there is a current user logged in, if so redirect to an authorized page
             bool currentUserSignedIn = IdentityService.CheckActiveSession();

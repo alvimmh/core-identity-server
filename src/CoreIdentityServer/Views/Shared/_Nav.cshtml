@@ -4,12 +4,14 @@
     string currentRoute = @Url.RouteUrl(ViewContext.RouteData.Values)?.ToLower();
     string signOutRoute = "/access/authentication/signout";
 
+    string signOutUrl = Url.Action("signout", "authentication", new { Area = "access" });
+
     bool showSignOutButton = currentRoute != signOutRoute;
 }
 
 @if (userSignedIn && showSignOutButton) {
     <div class="mt-1 mb-3 pt-1 pb-3">
-        <a href="~@signOutRoute">Sign Out</a>
+        <a href="@signOutUrl">Sign Out</a>
     </div>
 }
 else

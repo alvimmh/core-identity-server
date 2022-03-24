@@ -44,10 +44,13 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
                 // configure UserInteraction options
                 options.UserInteraction.LoginUrl = "/access/authentication/signin";
+                options.UserInteraction.LoginReturnUrlParameter = "returnurl";
                 options.UserInteraction.LogoutUrl = "/access/authentication/signout";
-                options.UserInteraction.LogoutIdParameter = "signOutId";
+                options.UserInteraction.LogoutIdParameter = "signoutid";
                 options.UserInteraction.ConsentUrl = "/access/consent/index";
+                options.UserInteraction.ConsentReturnUrlParameter = "returnurl";
                 options.UserInteraction.ErrorUrl = "/clientservices/correspondence/error";
+                options.UserInteraction.ErrorIdParameter = "errortype";
 
                 // configure endpoints
                 options.Endpoints.EnableBackchannelAuthenticationEndpoint = false;

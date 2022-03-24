@@ -46,6 +46,9 @@ namespace CoreIdentityServer
                 app.UseMigrationsEndPoint();
             }
 
+            app.UseExceptionHandler("/clientservices/correspondence/error");
+            app.UseStatusCodePagesWithRedirects("~/clientservices/correspondence/error?errortype={0}");
+
             app.UseStaticFiles();
 
             app.UseRouting();

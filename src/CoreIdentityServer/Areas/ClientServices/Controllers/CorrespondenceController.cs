@@ -30,11 +30,16 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
         }
 
         [SecurityHeaders, AllowAnonymous]
-        public async Task<IActionResult> Error(string errorId)
+        public async Task<IActionResult> Error(string errorType)
         {
-            ErrorViewModel viewModel = await CorrespondenceService.ManageError(errorId);
+            ErrorViewModel viewModel = null;
 
-            return View("Error", viewModel);
+            if (int.TryParse(errorType, out _))
+                viewModel = CorrespondenceService.ManageError(errorType);
+            else
+                viewModel = await CorrespondenceService.ManageDuendeIdentityServerError(errorType);
+
+            return View(viewModel);
         }
     }
 }

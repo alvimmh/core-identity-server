@@ -8,6 +8,8 @@ namespace CoreIdentityServer.Areas.ClientServices.Models.Correspondence
 {
     public class ErrorViewModel
     {
+        public ErrorMessage Error { get; set; }
+
         public ErrorViewModel()
         {}
 
@@ -15,7 +17,5 @@ namespace CoreIdentityServer.Areas.ClientServices.Models.Correspondence
         {
             Error = new ErrorMessage { Error = error };
         }
-
-        public ErrorMessage Error { get; set; }
     }
 }
