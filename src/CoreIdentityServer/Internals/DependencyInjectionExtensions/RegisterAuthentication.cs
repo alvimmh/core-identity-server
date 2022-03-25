@@ -43,8 +43,10 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 options.Cookie.MaxAge = AuthenticationCookieOptions.CookieDuration;
                 options.Cookie.Name = AuthenticationCookieOptions.CookieName;
                 options.Cookie.Path = "/";
-                options.Cookie.SameSite = SameSiteMode.Strict;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+                // samesite set to None to allow cross-site requests
+                options.Cookie.SameSite = SameSiteMode.None;
 
                 options.ExpireTimeSpan = AuthenticationCookieOptions.CookieDuration;
                 options.SlidingExpiration = false;
