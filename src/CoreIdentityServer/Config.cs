@@ -10,7 +10,7 @@ namespace CoreIdentityServer
 {
     public static class Config
     {
-        private static string TeamadhaBackendClientUrl = "SetClientUriHere";
+
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
             {
@@ -27,12 +27,12 @@ namespace CoreIdentityServer
         public static IEnumerable<Client> Clients =>
             new List<Client>
             {
-                // Team Adha backend interactive client using code flow + pkce
+                // Team Adha Administrative interactive client using code flow + pkce
                 new Client
                 {
                     // basic settings
                     Enabled = true,
-                    ClientId = "teamadha_backend",
+                    ClientId = "teamadha_administrative",
                     RequireClientSecret = true,
                     ClientSecrets = { new Secret("secret".Sha256()) },
                     AllowedGrantTypes = GrantTypes.Code,
@@ -43,6 +43,7 @@ namespace CoreIdentityServer
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Email,
+                        IdentityServerConstants.StandardScopes.OfflineAccess,
                         "teamadha_api"
                     },
                     AllowOfflineAccess = true,
@@ -70,9 +71,9 @@ namespace CoreIdentityServer
                     AlwaysIncludeUserClaimsInIdToken = false,
 
                     // refresh token settings
-                    AbsoluteRefreshTokenLifetime = 604800,
+                    AbsoluteRefreshTokenLifetime = 3600,
                     RefreshTokenUsage = TokenUsage.OneTimeOnly,
-                    RefreshTokenExpiration = TokenExpiration.Absolute,
+                    RefreshTokenExpiration = TokenExpiration.Sliding,
                     UpdateAccessTokenClaimsOnRefresh = true,
 
                     // consent screen settings
