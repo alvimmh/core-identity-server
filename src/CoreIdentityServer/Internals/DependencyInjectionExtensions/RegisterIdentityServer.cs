@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -85,7 +84,6 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 options.KeyManagement.Enabled = false;
 
                 // cookie options are configured in src/CoreIdentityServer/Internals/DependencyInjectionExtensions/RegisterAuthentication.cs file
-                options.Authentication.CookieAuthenticationScheme = IdentityConstants.ApplicationScheme;
             })
                 .AddSigningCredential(tokenSigningCredentialPrivateKey, SecurityAlgorithms.RsaSha256)
                 .AddConfigurationStore(options =>

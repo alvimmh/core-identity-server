@@ -1,5 +1,6 @@
 using System;
 using CoreIdentityServer.Internals.Constants.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,10 +47,23 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
                 // samesite set to None to allow cross-site requests
-                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.SameSite = SameSiteMode.Lax;
 
                 options.ExpireTimeSpan = AuthenticationCookieOptions.CookieDuration;
                 options.SlidingExpiration = false;
+            });
+
+            // Duende Identity Server overrides the cookie samesite attribut to 'None' in order to support
+            // front-channel logout using iframes
+            // 'src/AspNetIdentity/IdentityServerBuilderExtensions.cs' of Duende Identity Server repository
+            //
+            // ref: https://github.com/DuendeSoftware/IdentityServer/blob/main/src/AspNetIdentity/IdentityServerBuilderExtensions.cs
+            //
+            // so post configuring this cookie option to override it to 'Lax' again as this application uses
+            // back-channel logout
+            //
+            services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options => {
+                options.Cookie.SameSite = SameSiteMode.Lax;
             });
 
             return services;
