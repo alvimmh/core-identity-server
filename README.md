@@ -26,11 +26,12 @@ The contents of this directory are git ignored. The highest level of security an
 
 ## initialize databases
 
-Run the following commands to initialize & seed the required databases:
+Run the following commands inside the root directory to initialize & seed the required databases:
 
 1. `dotnet ef database update --context ApplicationDbContext --project src/CoreIdentityServer/`
 2. `dotnet ef database update --context ConfigurationDbContext --project src/CoreIdentityServer/`
 3. `dotnet ef database update --context PersistedGrantDbContext --project src/CoreIdentityServer/`
+4. `dotnet user-secrets -p src/CoreIdentityServer/ set "product_owner_email" "set product owner email here"`
 4. `dotnet run \/seed --project src/CoreIdentityServer/`
 
 ## run project

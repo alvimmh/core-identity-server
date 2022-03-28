@@ -4,8 +4,6 @@
 
 using System;
 using System.Linq;
-using System.Security.Claims;
-using IdentityModel;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using CoreIdentityServer.Internals.Constants.Emails;
+using CoreIdentityServer.Internals.Services.Email;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Main
 {
@@ -48,96 +48,92 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
             {               
                 using (IServiceScope scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
                 {
-                    ApplicationDbContext context = scope.ServiceProvider.GetService<ApplicationDbContext>();
+                    ApplicationDbContext DbContext = scope.ServiceProvider.GetService<ApplicationDbContext>();
 
-                    context.Database.Migrate();
+                    DbContext.Database.Migrate();
 
-                    UserManager<ApplicationUser> userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                    UserManager<ApplicationUser> UserManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
                     
-                    ApplicationUser alice = userMgr.FindByNameAsync("alice").Result;
+                    string productOwnerEmail = config["product_owner_email"];
 
-                    if (alice == null)
+                    ApplicationUser productOwner = UserManager.FindByEmailAsync(productOwnerEmail).Result;
+
+                    if (productOwner == null)
                     {
-                        alice = new ApplicationUser
+                        productOwner = new ApplicationUser
                         {
-                            UserName = "alice",
-                            Email = "AliceSmith@email.com",
+                            Email = productOwnerEmail,
                             EmailConfirmed = true,
-                            FirstName = "Alice",
-                            LastName = "Smith"
+                            UserName = productOwnerEmail,
+                            FirstName = "",
+                            LastName = "",
+                            TwoFactorEnabled = true,
+                            AccountRegistered = true
                         };
 
-                        IdentityResult result = userMgr.CreateAsync(alice).Result;
+                        IdentityResult createProductOwner = UserManager.CreateAsync(productOwner).Result;
 
-                        if (!result.Succeeded)
+                        if (!createProductOwner.Succeeded)
                         {
-                            throw new Exception(result.Errors.First().Description);
+                            throw new Exception(createProductOwner.Errors.First().Description);
                         }
 
-                        result = userMgr.AddClaimsAsync(
-                            alice,
-                            new Claim[] {
-                                new Claim(JwtClaimTypes.Name, "Alice Smith"),
-                                new Claim(JwtClaimTypes.GivenName, "Alice"),
-                                new Claim(JwtClaimTypes.FamilyName, "Smith"),
-                                new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
-                            }
-                        ).Result;
+                        Log.Information("Seeded Product Owner.");
 
-                        if (!result.Succeeded)
-                        {
-                            throw new Exception(result.Errors.First().Description);
-                        }
+                        string productOwnerTOTPAccessRecoveryCode = UserManager.GenerateNewTwoFactorRecoveryCodesAsync(productOwner, 1).Result.FirstOrDefault();
 
-                        Log.Debug("alice created");
+                        if (string.IsNullOrWhiteSpace(productOwnerTOTPAccessRecoveryCode))
+                            throw new Exception("Could not create TOTP Access recovery code for product owner.");
+
+                        SMTPService SMTPService = new SMTPService(config);
+                        EmailService EmailService = new EmailService(config, DbContext, SMTPService);
+
+                        EmailService.SendProductOwnerTOTPAccessRecoveryCodeEmail(
+                            AutomatedEmails.NoReply,
+                            productOwnerEmail,
+                            productOwnerEmail,
+                            productOwnerTOTPAccessRecoveryCode
+                        );
+
+                        Log.Information("Sent email notification to Product Owner.");
                     }
                     else
                     {
-                        Log.Debug("alice already exists");
+                        Log.Debug("Product Owner already exists.");
                     }
 
-                    ApplicationUser bob = userMgr.FindByNameAsync("bob").Result;
+                    RoleManager<IdentityRole> RoleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-                    if (bob == null)
+                    IdentityRole productOwnerRole = RoleManager.FindByNameAsync("Product Owner").Result;
+
+                    if (productOwnerRole == null)
                     {
-                        bob = new ApplicationUser
-                        {
-                            UserName = "bob",
-                            Email = "BobSmith@email.com",
-                            EmailConfirmed = true,
-                            FirstName = "Bob",
-                            LastName = "Smith"
-                        };
+                        productOwnerRole = new IdentityRole("Product Owner");
 
-                        IdentityResult result = userMgr.CreateAsync(bob).Result;
+                        IdentityResult createProductOwnerRole = RoleManager.CreateAsync(productOwnerRole).Result;
 
-                        if (!result.Succeeded)
+                        if (!createProductOwnerRole.Succeeded)
                         {
-                            throw new Exception(result.Errors.First().Description);
+                            throw new Exception(createProductOwnerRole.Errors.First().Description);
                         }
 
-                        result = userMgr.AddClaimsAsync(
-                            bob,
-                            new Claim[] {
-                                new Claim(JwtClaimTypes.Name, "Bob Smith"),
-                                new Claim(JwtClaimTypes.GivenName, "Bob"),
-                                new Claim(JwtClaimTypes.FamilyName, "Smith"),
-                                new Claim(JwtClaimTypes.WebSite, "http://bob.com"),
-                                new Claim("location", "somewhere")
-                            }
-                        ).Result;
-
-                        if (!result.Succeeded)
-                        {
-                            throw new Exception(result.Errors.First().Description);
-                        }
-
-                        Log.Debug("bob created");
+                        Log.Information("Seeded Product Owner role.");
                     }
                     else
                     {
-                        Log.Debug("bob already exists");
+                        Log.Debug("Product Owner role already exists.");
                     }
+
+                    IdentityResult assignProductOwnerToCorrespondingRole = UserManager.AddToRoleAsync(productOwner, "Product Owner").Result;
+
+                    if (!assignProductOwnerToCorrespondingRole.Succeeded)
+                    {
+                        throw new Exception("Could not assign Product Owner user to corresponding role.");
+                    }
+
+                    Log.Information("Assigned Product Owner to corresponding role.");
+
+                    Log.Information("Seeded main database.");
                 }
             }
         }

@@ -99,7 +99,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             }
         }
 
-        public void Send(string smtpFrom, string smtpTo, string subject, string body, string sendEmailEventId)
+        public void SendAsync(string smtpFrom, string smtpTo, string subject, string body, string sendEmailEventId)
         {
             if (string.IsNullOrEmpty(sendEmailEventId))
             {
@@ -111,6 +111,15 @@ namespace CoreIdentityServer.Internals.Services.Email
             }
 
             SmtpClient.SendAsync(smtpFrom, smtpTo, subject, body, sendEmailEventId);
+        }
+
+        public void Send(string smtpFrom, string smtpTo, string subject, string body)
+        {
+            Console.WriteLine("Sending unrecorded email");
+
+            SmtpClient.Send(smtpFrom, smtpTo, subject, body);
+
+            Console.WriteLine("Email sent");
         }
 
         private async Task MarkEmailRecordSent(string recordId, DateTime sentDateTime)

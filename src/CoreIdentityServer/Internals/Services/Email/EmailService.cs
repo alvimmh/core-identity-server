@@ -31,16 +31,17 @@ namespace CoreIdentityServer.Internals.Services.Email
                 await DbContext.EmailRecords.AddAsync(emailRecord);
                 await DbContext.SaveChangesAsync();
             }
+
             string sendEmailEventId = recordEmail ? emailRecord.Id : null;
 
-            SMTPService.Send(smtpFrom, smtpTo, subject, body, sendEmailEventId);
+            SMTPService.SendAsync(smtpFrom, smtpTo, subject, body, sendEmailEventId);
         
             return sendEmailEventId;
         }
 
         public void ResendEmail(EmailRecord emailRecord)
         {
-            SMTPService.Send(emailRecord.SentFrom, emailRecord.SentTo, emailRecord.Subject, emailRecord.Body, emailRecord.Id);
+            SMTPService.SendAsync(emailRecord.SentFrom, emailRecord.SentTo, emailRecord.Subject, emailRecord.Body, emailRecord.Id);
         }
 
         // delete an email record as it has served its purpose
@@ -144,6 +145,15 @@ namespace CoreIdentityServer.Internals.Services.Email
             string emailBody = $"Dear {userName}, we have detected a sign in attempt for your account. To log in, you need to finish registration.";
 
             await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
+        }
+
+        // send a TOTP Access recovery code to CIS product owner
+        public void SendProductOwnerTOTPAccessRecoveryCodeEmail(string emailFrom, string emailTo, string userName, string recoveryCode)
+        {
+            string emailSubject = "Product Owner Credentials";
+            string emailBody = $"Greetings {userName}, please sign in to your account by resetting TOTP Access using this recovery code: {recoveryCode}. You can update your profile settings after signing in by visiting the '/vault/profile/index' page.";
+
+            SMTPService.Send(emailFrom, emailTo, emailSubject, emailBody);
         }
 
         public void Dispose()
