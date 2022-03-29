@@ -1,0 +1,40 @@
+@{
+    string errorMessage = null;
+
+    bool errorMessageExists = TempData.TryGetValue(
+        TempDataKeys.ErrorMessage,
+        out object errorMessageTempData
+    );
+
+    if (errorMessageExists)
+    {
+        errorMessage = (string)errorMessageTempData;
+    }
+
+    string successMessage = null;
+
+    bool successMessageExists = TempData.TryGetValue(
+        TempDataKeys.SuccessMessage,
+        out object successMessageTempData
+    );
+
+    if (successMessageExists)
+    {
+        successMessage = (string)successMessageTempData;
+    }
+}
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="text-center alert alert-danger alert-dismissible fade show" role="alert">
+        @errorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="text-center alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}

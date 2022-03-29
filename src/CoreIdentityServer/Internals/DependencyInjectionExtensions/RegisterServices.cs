@@ -1,4 +1,5 @@
 using CoreIdentityServer.Areas.Access.Services;
+using CoreIdentityServer.Areas.Administration.Services;
 using CoreIdentityServer.Areas.ClientServices.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
 using CoreIdentityServer.Areas.Vault.Services;
@@ -36,6 +37,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<CorrespondenceService>();
             services.AddScoped<ConsentService>();
             services.AddScoped<GrantsService>();
+            services.AddScoped<RolesService>();
 
             return services;
         }

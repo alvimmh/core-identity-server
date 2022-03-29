@@ -87,7 +87,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             if (consentResult.HasValidationError)
                 ActionContext.ModelState.AddModelError(string.Empty, consentResult.ValidationError);
-            
+
             return GenerateArray(consentResult, nativeRedirect);
         }
 

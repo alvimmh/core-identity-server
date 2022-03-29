@@ -1,0 +1,37 @@
+@model EditRoleInputModel
+@{
+    DeleteRoleInputModel partialViewModel = new DeleteRoleInputModel {
+        Id = Model.Id
+    };
+}
+
+<div class="my-5">
+    <a asp-area="Administration" asp-controller="Roles" asp-action="Index">Back To Role Management</a>
+</div>
+
+<h1>Role Details</h1>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<form
+    asp-area="Administration"
+    asp-controller="Roles"
+    asp-action="Details"
+    method="post"
+>
+    <div class="mt-4">
+        <input asp-for="Id" value="@Model.Id" hidden>
+
+        <div class="mt-2">
+            <label for="name-input" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name-input" asp-for="Name" value="@Model.Name">
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Update</button>
+        </div>
+    </div>
+</form>
+
+<partial name="./_DeleteRole.cshtml" model="@partialViewModel" />

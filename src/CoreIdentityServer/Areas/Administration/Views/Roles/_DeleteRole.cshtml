@@ -1,0 +1,16 @@
+@model DeleteRoleInputModel
+
+<div>
+    <form
+        asp-area="Administration"
+        asp-controller="Roles"
+        asp-action="Delete"
+        method="post"
+    >
+        <input asp-for="Id" value="@Model.Id" hidden>
+
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Delete Role</button>
+        </div>
+    </form>
+</div>

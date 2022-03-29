@@ -7,5 +7,6 @@ namespace CoreIdentityServer.Internals.Constants.Routes
         public const string Enroll = "enroll";
         public const string Vault = "vault";
         public const string ClientServices = "clientservices";
+        public const string Administration = "administration";
     }
 }
