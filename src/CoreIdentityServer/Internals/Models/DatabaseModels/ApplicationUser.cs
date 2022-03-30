@@ -17,6 +17,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public bool RequiresAuthenticatorReset { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public DateTime CreatedAt { get; set; }
         public DateTime? LastSignedInAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
 

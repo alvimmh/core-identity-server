@@ -83,7 +83,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 Email = inputModel.Email,
                 UserName = inputModel.Email,
                 FirstName = inputModel.FirstName,
-                LastName = inputModel.LastName
+                LastName = inputModel.LastName,
+                CreatedAt = DateTime.UtcNow
             };
 
             // if user doesn't already exist, create new user without password

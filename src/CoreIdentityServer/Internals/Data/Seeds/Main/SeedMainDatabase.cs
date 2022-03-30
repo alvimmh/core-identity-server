@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
+using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Main
 {
@@ -68,7 +69,8 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                             FirstName = "",
                             LastName = "",
                             TwoFactorEnabled = true,
-                            AccountRegistered = true
+                            AccountRegistered = true,
+                            CreatedAt = DateTime.UtcNow
                         };
 
                         IdentityResult createProductOwner = UserManager.CreateAsync(productOwner).Result;
@@ -78,12 +80,12 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                             throw new Exception(createProductOwner.Errors.First().Description);
                         }
 
-                        Log.Information("Seeded Product Owner.");
+                        Log.Information($"Seeded {AuthorizedRoles.ProductOwner}.");
 
                         string productOwnerTOTPAccessRecoveryCode = UserManager.GenerateNewTwoFactorRecoveryCodesAsync(productOwner, 1).Result.FirstOrDefault();
 
                         if (string.IsNullOrWhiteSpace(productOwnerTOTPAccessRecoveryCode))
-                            throw new Exception("Could not create TOTP Access recovery code for product owner.");
+                            throw new Exception($"Could not create TOTP Access recovery code for {AuthorizedRoles.ProductOwner.ToLower()}.");
 
                         SMTPService SMTPService = new SMTPService(config);
                         EmailService EmailService = new EmailService(config, DbContext, SMTPService);
@@ -95,20 +97,20 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                             productOwnerTOTPAccessRecoveryCode
                         );
 
-                        Log.Information("Sent email notification to Product Owner.");
+                        Log.Information($"Sent email notification to {AuthorizedRoles.ProductOwner}.");
                     }
                     else
                     {
-                        Log.Debug("Product Owner already exists.");
+                        Log.Debug($"{AuthorizedRoles.ProductOwner} already exists.");
                     }
 
                     RoleManager<IdentityRole> RoleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-                    IdentityRole productOwnerRole = RoleManager.FindByNameAsync("Product Owner").Result;
+                    IdentityRole productOwnerRole = RoleManager.FindByNameAsync(AuthorizedRoles.ProductOwner).Result;
 
                     if (productOwnerRole == null)
                     {
-                        productOwnerRole = new IdentityRole("Product Owner");
+                        productOwnerRole = new IdentityRole(AuthorizedRoles.ProductOwner);
 
                         IdentityResult createProductOwnerRole = RoleManager.CreateAsync(productOwnerRole).Result;
 
@@ -117,21 +119,30 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                             throw new Exception(createProductOwnerRole.Errors.First().Description);
                         }
 
-                        Log.Information("Seeded Product Owner role.");
+                        Log.Information($"Seeded {AuthorizedRoles.ProductOwner} role.");
                     }
                     else
                     {
-                        Log.Debug("Product Owner role already exists.");
+                        Log.Debug($"{AuthorizedRoles.ProductOwner} role already exists.");
                     }
 
-                    IdentityResult assignProductOwnerToCorrespondingRole = UserManager.AddToRoleAsync(productOwner, "Product Owner").Result;
+                    bool isProductOwnerAlreadyAssignedToCorrespondingRole = UserManager.IsInRoleAsync(productOwner, AuthorizedRoles.ProductOwner).Result;
 
-                    if (!assignProductOwnerToCorrespondingRole.Succeeded)
+                    if (isProductOwnerAlreadyAssignedToCorrespondingRole)
                     {
-                        throw new Exception("Could not assign Product Owner user to corresponding role.");
+                        Log.Debug($"{AuthorizedRoles.ProductOwner} already assigned to corresponding role.");
                     }
+                    else
+                    {
+                        IdentityResult assignProductOwnerToCorrespondingRole = UserManager.AddToRoleAsync(productOwner, AuthorizedRoles.ProductOwner).Result;
 
-                    Log.Information("Assigned Product Owner to corresponding role.");
+                        if (!assignProductOwnerToCorrespondingRole.Succeeded)
+                        {
+                            throw new Exception($"Could not assign {AuthorizedRoles.ProductOwner} user to corresponding role.");
+                        }
+
+                        Log.Information($"Assigned {AuthorizedRoles.ProductOwner} to corresponding role.");
+                    }
 
                     Log.Information("Seeded main database.");
                 }

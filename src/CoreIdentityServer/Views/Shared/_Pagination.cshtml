@@ -1,0 +1,19 @@
+@model PaginationViewModel
+@{
+  string previousButtonDisabledStatus = Model.CurrentPage > 1 ? null : "disabled";
+  string nextButtonDisabledStatus = Model.CurrentPage < Model.TotalPages ? null : "disabled";
+
+  int previousPageNumber = Model.CurrentPage > 1 ? Model.CurrentPage - 1 : 1;
+  int nextPageNumber = Model.CurrentPage < Model.TotalPages ? Model.CurrentPage + 1 : Model.TotalPages;
+}
+
+<ul class="mt-5 mb-2 pagination justify-content-center">
+    <li class="page-item @previousButtonDisabledStatus"><a class="page-link" href="@Model.PageLink(previousPageNumber)">Previous</a></li>
+
+    @for (int pageNumber = previousPageNumber; pageNumber <= nextPageNumber; pageNumber++)
+    {
+        <li class="page-item @Model.CSSClassForActiveStatus(pageNumber)"><a class="page-link" href="@Model.PageLink(pageNumber)">@pageNumber</a></li>
+    }
+
+    <li class="page-item @nextButtonDisabledStatus"><a class="page-link" href="@Model.PageLink(nextPageNumber)">Next</a></li>
+</ul>

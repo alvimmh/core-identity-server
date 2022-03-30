@@ -1,0 +1,48 @@
+@model IndexViewModel
+@{
+  string PageLink(int pageNumber)
+  {
+    if (pageNumber == Model.CurrentPage)
+    {
+      return "#";
+    }
+
+    return Url.Action("Index", "Users", new { Area = AreaNames.Administration, page = pageNumber });
+  }
+
+  PaginationViewModel paginationViewModel = new PaginationViewModel() {
+    CurrentPage = Model.CurrentPage,
+    TotalPages = Model.TotalPages,
+    MethodToGeneratePageLink = PageLink
+  };
+}
+
+<div class="container">     
+  <h1 class="mb-3">Application Users</h1>
+
+  <table id="enable-datatables" class="table table-hover">
+    <thead>
+      <tr>
+          <th>Email</th>
+      </tr>
+    </thead>
+    <tbody>
+        @foreach (ApplicationUser user in Model.Users)
+        {
+          <tr>
+            <td>
+                <a asp-area="Administration" asp-controller="Users" asp-action="Details">@user.Email</a>
+            </td>
+          </tr>
+        }
+    </tbody>
+  </table>
+
+  <partial name="./../../../../Views/Shared/_Pagination.cshtml" model="@paginationViewModel" />
+</div>
+
+@section scripts {
+    <link rel="stylesheet" type="text/css" href="~/lib/datatables.net/datatables.min.css"/>
+    <script type="text/javascript" charset="utf8" src="~/lib/datatables.net/datatables.min.js"></script>
+    <script type="text/javascript" src="~/js/initiate-jquery-datatable.js"></script>
+}

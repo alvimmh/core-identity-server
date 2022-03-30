@@ -22,9 +22,9 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            IndexViewModel rolesViewModel = await RolesService.ManageIndex();
+            IndexViewModel viewModel = await RolesService.ManageIndex();
 
-            return View(rolesViewModel);
+            return View(viewModel);
         }
 
         [HttpGet]

@@ -38,6 +38,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<ConsentService>();
             services.AddScoped<GrantsService>();
             services.AddScoped<RolesService>();
+            services.AddScoped<UsersService>();
 
             return services;
         }
