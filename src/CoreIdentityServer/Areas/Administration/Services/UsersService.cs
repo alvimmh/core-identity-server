@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Administration.Models.Users;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
+using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,7 +47,12 @@ namespace CoreIdentityServer.Areas.Administration.Services
                 skipRecords = 0;
             }
 
-            viewModel.Users = await UserManager.Users.OrderBy(item => item.CreatedAt).Skip(skipRecords).Take(viewModel.ResultsInPage).ToListAsync();
+            viewModel.Users = await UserManager.Users
+                                                .OrderBy(item => item.CreatedAt)
+                                                .Skip(skipRecords)
+                                                .Take(viewModel.ResultsInPage)
+                                                .ProjectToType<UserViewModel>()
+                                                .ToListAsync();
 
             return viewModel;
         }

@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Administration.Models.Roles;
 using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Services;
+using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -37,9 +37,11 @@ namespace CoreIdentityServer.Areas.Administration.Services
 
         public async Task<IndexViewModel> ManageIndex()
         {
-            List<IdentityRole> roles = await RoleManager.Roles.ToListAsync();
+            IndexViewModel viewModel = new IndexViewModel();
 
-            return new IndexViewModel { Roles = roles };
+            viewModel.Roles = await RoleManager.Roles.ProjectToType<RoleViewModel>().ToListAsync();
+
+            return viewModel;
         }
 
         public async Task<object[]> ManageDetails(string id)

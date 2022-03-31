@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using CoreIdentityServer.Internals.Models.DatabaseModels;
 
 namespace CoreIdentityServer.Areas.Administration.Models.Users
 {
@@ -8,6 +7,6 @@ namespace CoreIdentityServer.Areas.Administration.Models.Users
         public int CurrentPage { get; set; }
         public int TotalPages { get; set; }
         public int ResultsInPage { get; private set; } = 15;
-        public List<ApplicationUser> Users;
+        public List<UserViewModel> Users;
     }
 }

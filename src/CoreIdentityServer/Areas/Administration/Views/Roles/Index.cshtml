@@ -6,7 +6,7 @@
     <div class="col col-lg-6 col-sm-12">
         <p>Application Roles:</p>
         <ol>
-            @foreach (IdentityRole role in Model.Roles)
+            @foreach (RoleViewModel role in Model.Roles)
             {
                 <li>
                     <a asp-area="Administration" asp-controller="Roles" asp-action="Details" asp-route-id="@role.Id">@role.Name</a>
