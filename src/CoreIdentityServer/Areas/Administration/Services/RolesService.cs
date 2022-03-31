@@ -48,7 +48,14 @@ namespace CoreIdentityServer.Areas.Administration.Services
         {
             IdentityRole role = await RoleManager.FindByIdAsync(id);
 
-            EditRoleInputModel roleInputModel = role == null ? null : new EditRoleInputModel {
+            if (role == null)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "Role not found.";
+
+                return GenerateArray(null, RootRoute);
+            }
+
+            EditRoleInputModel roleInputModel = new EditRoleInputModel {
                 Id = role.Id,
                 Name = role.Name
             };

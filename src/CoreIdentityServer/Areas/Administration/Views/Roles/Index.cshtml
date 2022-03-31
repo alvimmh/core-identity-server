@@ -2,9 +2,10 @@
 
 
 <div class="container">
+  <h1 class="mb-5">Application Roles</h1>
+
   <div class="row">
-    <div class="col col-lg-6 col-sm-12">
-        <p>Application Roles:</p>
+    <div class="col">
         <ol>
             @foreach (RoleViewModel role in Model.Roles)
             {
@@ -14,7 +15,7 @@
             }
         </ol>
     </div>
-    <div class="col col-lg-6 col-sm-12">
+    <div class="col">
         <p>
           <a asp-area="Administration" asp-controller="Roles" asp-action="Create">Create New Role</a>
         </p>

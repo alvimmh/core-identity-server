@@ -3,6 +3,8 @@
 
 
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
@@ -20,6 +22,12 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public DateTime CreatedAt { get; set; }
         public DateTime? LastSignedInAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
+
+        [InverseProperty("User")]
+        public virtual ICollection<UserAccessRecord> UserAccessRecords { get; set; }
+        
+        [InverseProperty("Accessor")]
+        public virtual ICollection<UserAccessRecord> AccessedUserRecords { get; set; }
 
         public void UpdateLastSignedInTimeStamp()
         {

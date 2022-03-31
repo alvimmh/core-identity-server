@@ -26,5 +26,18 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
 
             return View(viewModel);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Details([FromRoute] string id)
+        {
+            // result is an array containing the ViewModel & a redirect url in consecutive order
+            object[] result = await UsersService.ManageDetails(id);
+
+            // if ViewModel is null then redirect to route returned from UsersService
+            if (result[0] == null)
+                return Redirect((string)result[1]);
+
+            return View(result[0]);
+        }
     }
 }

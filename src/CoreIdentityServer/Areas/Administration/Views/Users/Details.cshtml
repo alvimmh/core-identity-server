@@ -1,0 +1,46 @@
+@model UserDetailsViewModel
+@{
+    PropertyInfo[] viewModelProperties = Model.GetType().GetProperties();
+
+    object GetPropertyValue(PropertyInfo property)
+    {
+        object propertyValue = property.GetValue(Model);
+
+        if (property.PropertyType == typeof(DateTime))
+        {
+            string propertyValueString = propertyValue.ToString().ToUpper();
+
+            return $"{propertyValueString} UTC";
+        }
+
+        return propertyValue;
+    }
+}
+
+<h1>User Details</h1>
+
+<div class="container my-5">
+    <table id="enable-datatables" class="table table-hover">
+        <thead>
+            <tr>
+                <th>Property</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (PropertyInfo property in viewModelProperties)
+            {
+                <tr>
+                    <td>@property.Name</td>
+                    <td>@GetPropertyValue(property)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section scripts {
+    <link rel="stylesheet" type="text/css" href="~/lib/datatables.net/datatables.min.css"/>
+    <script type="text/javascript" charset="utf8" src="~/lib/datatables.net/datatables.min.js"></script>
+    <script type="text/javascript" src="~/js/initiate-jquery-datatable.js"></script>
+}

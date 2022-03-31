@@ -12,6 +12,7 @@ namespace CoreIdentityServer.Internals.Data
         }
 
         public DbSet<EmailRecord> EmailRecords { get; set; }
+        public DbSet<UserAccessRecord> UserAccessRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

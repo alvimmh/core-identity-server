@@ -37,10 +37,29 @@ namespace CoreIdentityServer.Internals.Services
             else if (isReturnUrlNotEmpty && !isValidReturnUrl)
             {
                 int returnUrlQueryStringStartIndex = returnUrl.IndexOf('?');
+                int returnUrlSubstringEndIndex = returnUrlQueryStringStartIndex;
+                
+                if (returnUrlQueryStringStartIndex == -1)
+                {
+                    // remove trailing '/' character
+                    string returnUrlWithoutUnnecessaryCharacters = returnUrl.TrimEnd('/');
 
-                string returnUrlPath = returnUrl.Substring(0, returnUrlQueryStringStartIndex);
+                    // check for route attributes
+                    int returnUrlRouteAttributeStartIndex = returnUrl.LastIndexOf('/');
 
-                return routeEndpoints.Contains(returnUrlPath.ToLower());
+                    returnUrlSubstringEndIndex = returnUrlRouteAttributeStartIndex != -1 ? returnUrlRouteAttributeStartIndex : returnUrlSubstringEndIndex;
+                }
+
+                if (returnUrlSubstringEndIndex == -1)
+                {
+                    return false;
+                }
+                else
+                {
+                    string returnUrlPath = returnUrl.Substring(0, returnUrlSubstringEndIndex);
+
+                    return routeEndpoints.Contains(returnUrlPath.ToLower());
+                }
             }
             else
             {
