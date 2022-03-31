@@ -6,6 +6,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
     public class UserAccessRecord
     {
         public string Id { get; private set; }
+        public string Purpose { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 

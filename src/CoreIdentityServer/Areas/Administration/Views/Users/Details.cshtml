@@ -17,6 +17,10 @@
     }
 }
 
+<div class="mb-3">
+    <a asp-area="Administration" asp-controller="Users" asp-action="Index">Back To User Management</a>
+</div>
+
 <h1>User Details</h1>
 
 <div class="container my-5">
@@ -37,6 +41,18 @@
             }
         </tbody>
     </table>
+
+    <div class="row mt-3 text-center">
+        <div class="col">
+            <a asp-action="Edit" asp-controller="Users" asp-area="Administration" asp-route-id="@Model.Id" class="btn btn-info">Edit</a>
+        </div>
+        <div class="col">
+            <a href="#" class="btn btn-warning">Block</a>
+        </div>
+        <div class="col">
+            <a href="#" class="btn btn-danger">Delete</a>
+        </div>
+    </div>
 </div>
 
 @section scripts {

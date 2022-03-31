@@ -39,5 +39,29 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
 
             return View(result[0]);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit([FromRoute] string id)
+        {
+            // result is an array containing the ViewModel & a redirect url in consecutive order
+            object[] result = await UsersService.ManageEdit(id);
+
+            // if ViewModel is null then redirect to route returned from UsersService
+            if (result[0] == null)
+                return Redirect((string)result[1]);
+
+            return View(result[0]);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit([FromForm] EditUserInputModel inputModel)
+        {
+            string redirectRoute = await UsersService.ManageUpdate(inputModel);
+
+            if (redirectRoute == null)
+                return View(inputModel);
+
+            return Redirect(redirectRoute);
+        }
     }
 }

@@ -1,0 +1,41 @@
+@model EditUserInputModel
+
+<div class="my-5">
+    <p>
+        <a asp-area="Administration" asp-controller="Users" asp-action="Index">Back To User Management</a>
+    </p>
+    <p>
+        <a asp-area="Administration" asp-controller="Users" asp-action="Details" asp-route-id="@Model.Id">Back To User Details</a>
+    </p>
+</div>
+
+<h1>Edit User</h1>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<form
+    asp-area="Administration"
+    asp-controller="Users"
+    asp-action="Edit"
+    method="post"
+>
+    <div class="mt-4">
+        <input asp-for="Id" value="@Model.Id" hidden>
+
+        <div class="mt-2">
+            <label for="first-name-input" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="first-name-input" asp-for="FirstName" value="@Model.FirstName">
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+
+        <div class="mt-2">
+            <label for="last-name-input" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="last-name-input" asp-for="LastName" value="@Model.LastName">
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+
+        <div class="d-grid col-6 mt-3 mx-auto">
+            <button type="submit" class="btn btn-secondary btn-md">Update</button>
+        </div>
+    </div>
+</form>

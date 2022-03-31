@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Administration.Models.Users;
+using CoreIdentityServer.Internals.Constants.Administration;
 using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
@@ -10,8 +11,10 @@ using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CoreIdentityServer.Areas.Administration.Services
 {
@@ -21,6 +24,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
         private readonly UserManager<ApplicationUser> UserManager;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
+        private IUrlHelper UrlHelper;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
@@ -28,12 +32,14 @@ namespace CoreIdentityServer.Areas.Administration.Services
             ApplicationDbContext dbContext,
             UserManager<ApplicationUser> userManager,
             IActionContextAccessor actionContextAccessor,
-            ITempDataDictionaryFactory tempDataDictionaryFactory
+            ITempDataDictionaryFactory tempDataDictionaryFactory,
+            IUrlHelperFactory urlHelperFactory
         ) {
             DbContext = dbContext;
             UserManager = userManager;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(actionContextAccessor.ActionContext.HttpContext);
+            UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
             RootRoute = GenerateRouteUrl("Index", "Users", "Administration");
         }
 
@@ -86,34 +92,142 @@ namespace CoreIdentityServer.Areas.Administration.Services
             }
             else
             {
-                ApplicationUser accessor = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+                bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Details);
 
-                UserAccessRecord userAccessRecord = new UserAccessRecord()
+                if (userAccessRecorded)
                 {
-                    UserId = user.Id,
-                    AccessorId = accessor.Id
-                };
+                    UserDetailsViewModel viewModel = user.Adapt<UserDetailsViewModel>();
 
-                try {
-                    await DbContext.UserAccessRecords.AddAsync(userAccessRecord);
-
-                    await DbContext.SaveChangesAsync();
+                    return GenerateArray(viewModel, RootRoute);
                 }
-                catch (Exception exception)
+                else
                 {
-                    if (exception is DbUpdateException || exception is DbUpdateConcurrencyException)
+                    TempData[TempDataKeys.ErrorMessage] = "Could not access user. Please try again.";
+
+                    return result;
+                }
+            }
+        }
+
+        public async Task<object[]> ManageEdit(string userId)
+        {
+            object[] result = GenerateArray(null, RootRoute);
+
+            ApplicationUser user = await UserManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "User not found.";
+
+                return result;
+            }
+            else
+            {
+                bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Edit);
+
+                if (userAccessRecorded)
+                {
+                    EditUserInputModel viewModel = user.Adapt<EditUserInputModel>();
+
+                    return GenerateArray(viewModel, RootRoute);
+                }
+                else
+                {
+                    TempData[TempDataKeys.ErrorMessage] = "Could not access user. Please try again.";
+
+                    return result;
+                }
+            }
+        }
+
+        public async Task<string> ManageUpdate(EditUserInputModel inputModel)
+        {
+            if (!ActionContext.ModelState.IsValid)
+                return null;
+            
+            ApplicationUser user = await UserManager.FindByIdAsync(inputModel.Id);
+
+            if (user == null)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "User not found";
+
+                return RootRoute;
+            }
+            else if (user.FirstName == inputModel.FirstName && user.LastName == inputModel.LastName)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "Edit fields to update user.";
+
+                return null;
+            }
+            else
+            {
+                user.FirstName = inputModel.FirstName;
+                user.LastName = inputModel.LastName;
+
+                using IDbContextTransaction transaction = await DbContext.Database.BeginTransactionAsync();
+
+                bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Update);
+
+                if (userAccessRecorded)
+                {
+                    IdentityResult updateUser = await UserManager.UpdateAsync(user);
+
+                    if (!updateUser.Succeeded)
                     {
-                        TempData[TempDataKeys.ErrorMessage] = "Could not access user. Please try again.";
+                        await transaction.RollbackAsync();
 
-                        return result;
+                        // updating role failed, adding erros to ModelState
+                        foreach (IdentityError error in updateUser.Errors)
+                            ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+
+                        return null;
                     }
+                    else
+                    {
+                        await transaction.CommitAsync();
 
-                    throw;
+                        TempData[TempDataKeys.SuccessMessage] = "User updated.";
+
+                        return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+                    }
+                }
+                else
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData[TempDataKeys.ErrorMessage] = "Could not update user. Please try again.";
+
+                    return null;
+                }
+            }
+        }
+
+        private async Task<bool> RecordUserAccess(ApplicationUser user, string purpose)
+        {
+            ApplicationUser accessor = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+            UserAccessRecord userAccessRecord = new UserAccessRecord()
+            {
+                UserId = user.Id,
+                AccessorId = accessor.Id,
+                Purpose = purpose
+            };
+
+            try {
+                await DbContext.UserAccessRecords.AddAsync(userAccessRecord);
+
+                await DbContext.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                if (exception is DbUpdateException || exception is DbUpdateConcurrencyException)
+                {
+                    return false;
                 }
 
-                UserDetailsViewModel viewModel = user.Adapt<UserDetailsViewModel>();
-
-                return GenerateArray(viewModel, RootRoute);
+                throw;
             }
         }
 
