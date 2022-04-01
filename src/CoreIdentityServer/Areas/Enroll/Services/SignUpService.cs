@@ -137,16 +137,17 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             }
             else if (user.EmailConfirmed && !user.AccountRegistered)
             {
-                // user exists with confirmed email and unregistered account, send email to complete registration
+                TempData[TempDataKeys.ErrorMessage] = "An error occured. Please check email for further instructions.";
+
+                // user exists with unregistered account but confirmed email, send email to complete registration
+                // so user goes through the registration process again
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
-                
+
                 redirectRoute = RootRoute;
             }
-            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+            else if (!user.EmailConfirmed && !user.AccountRegistered)
             {
-                // user exists with unregistered account and unconfirmed email, so user is signing up
-                // or
-                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+                // user exists with unconfirmed email and unregistered account, so user is signing up
 
                 // if TOTP code verified, redirect to target page
                 bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
@@ -211,7 +212,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             if (user == null || !user.EmailConfirmed)
             {
-                // user does not exist or user's email was never confirmed
+                // user does not exist or user's email is not confirmed
                 return result;
             }
             else if (user.AccountRegistered && !user.RequiresAuthenticatorReset)
@@ -240,6 +241,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 }
                 else
                 {
+                    TempData[TempDataKeys.ErrorMessage] = "An error occured, please try again.";
+
                     // resetting authenticator key failed, user will be redirected to defaultRoute
                     return result;
                 }
@@ -273,7 +276,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             if (user == null || !user.EmailConfirmed)
             {
-                // user doesn't exist, redirect to root route
+                // user doesn't exist or user's email is not confirmed, redirect to root route
                 redirectRoute = RootRoute;
             }
             else if (user.AccountRegistered && !user.RequiresAuthenticatorReset)
@@ -313,20 +316,34 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
                         if (updateUser.Succeeded)
                         {
-                            // account registration complete, sign in the user
-                            redirectRoute = await IdentityService.SignIn(user);
+                            bool userCanSignIn = await IdentityService.VerifySignInPrerequisites(user);
+
+                            if (userCanSignIn)
+                            {
+                                // account registration complete, sign in the user
+                                redirectRoute = await IdentityService.SignIn(user);
+                            }
+                            else
+                            {
+                                TempData[TempDataKeys.SuccessMessage] = "TOTP Access Registration Successful. Please sign in to continue.";
+
+                                return GenerateRouteUrl("SignIn", "Authentication", "Access");
+                            }
                         }
                         else
                         {
-                            // update user failed but session still valid, generate new session verification code
+                            // update user failed, user can retry
+
+                            // session still valid, generate new session verification code
                             newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
                             Console.WriteLine("Update user failed when registering TOTP Access");
 
-                            // Error enabling Two Factor Authentication, add them to ModelState
+                            // log errors
                             foreach (IdentityError error in updateUser.Errors)
                                 Console.WriteLine(error.Description);
-                            
+
+                            // Error enabling Two Factor Authentication, add them to ModelState
                             ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again.");
                         }
                     }
@@ -344,6 +361,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 }
                 else
                 {
+                    TempData[TempDataKeys.ErrorMessage] = "An error occured. Please try again.";
+
                     // Session verification failed, redirecting to RootRoute
                     redirectRoute = RootRoute;
                 }

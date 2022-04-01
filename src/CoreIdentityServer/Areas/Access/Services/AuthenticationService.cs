@@ -78,44 +78,43 @@ namespace CoreIdentityServer.Areas.Access.Services
             if (user == null)
             {
                 // user doesn't exist, but don't reveal to end user
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
+                ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
             }
-            else if (user.EmailConfirmed && !user.AccountRegistered)
+            else
             {
-                // user exists with confirmed email and unregistered account, send email to complete registration
-                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
-                
-                redirectRoute = RootRoute;
-            }
-            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
-            {
-                // user exists with unregistered account and unconfirmed email, so user is signing up
-                // or
-                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+                bool userCanSignIn = await IdentityService.VerifySignInPrerequisites(user);
 
-                bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
-                    user,
-                    CustomTokenOptions.GenericTOTPTokenProvider,
-                    inputModel.VerificationCode
-                );
-
-                if (totpCodeVerified)
+                if (userCanSignIn)
                 {
-                    redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
+                    bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
                         user,
-                        inputModel.ResendEmailRecordId,
-                        UserActionContexts.SignInEmailChallenge,
-                        null
+                        CustomTokenOptions.GenericTOTPTokenProvider,
+                        inputModel.VerificationCode
                     );
 
-                    // signin succeeded & returnUrl present in query string, redirect to returnUrl
-                    if (redirectRoute != null && IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
-                        redirectRoute = $"~{inputModel.ReturnUrl}";
+                    if (totpCodeVerified)
+                    {
+                        redirectRoute = await IdentityService.ManageTOTPChallengeSuccess(
+                            user,
+                            inputModel.ResendEmailRecordId,
+                            UserActionContexts.SignInEmailChallenge,
+                            null
+                        );
+
+                        // signin succeeded & returnUrl present in query string, redirect to returnUrl
+                        if (redirectRoute != null && IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
+                            redirectRoute = $"~{inputModel.ReturnUrl}";
+                    }
+                    else
+                    {
+                        await IdentityService.RecordUnsuccessfulSignInAttempt(user);
+
+                        ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                    }
                 }
                 else
                 {
-                    await IdentityService.RecordUnsuccessfulSignInAttempt(user);
-
+                    // add generic error and return ViewModel
                     ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
                 }
             }
@@ -123,20 +122,13 @@ namespace CoreIdentityServer.Areas.Access.Services
             return redirectRoute;
         }
 
-        public object[] ManageSignIn(string returnUrl)
+        public SignInInputModel ManageSignIn(string returnUrl)
         {
-            string redirectRoute = null;
-
-            bool currentUserSignedIn = IdentityService.CheckActiveSession();
-
-            if (currentUserSignedIn)
-                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
-
             string signInReturnUrl = IsValidReturnUrl(returnUrl, InteractionService, RouteEndpointService.EndpointRoutes) ? returnUrl : null;
 
             SignInInputModel viewModel = new SignInInputModel { ReturnUrl = signInReturnUrl };
 
-            return GenerateArray(viewModel, redirectRoute);
+            return viewModel;
         }
 
         public async Task<string> SignIn(SignInInputModel inputModel)
@@ -146,15 +138,6 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             if (IsValidReturnUrl(inputModel.ReturnUrl, InteractionService, RouteEndpointService.EndpointRoutes))
                 redirectRouteQueryString = $"returnurl={HttpUtility.UrlEncode(inputModel.ReturnUrl)}";
-
-            // check if there is a current user logged in, if so redirect to an authorized page
-            bool currentUserSignedIn = IdentityService.CheckActiveSession();
-
-            if (currentUserSignedIn)
-            {
-                redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll", redirectRouteQueryString);
-                return redirectRoute;
-            }
 
             // check if ModelState is valid, if not return null to return viewModel
             if (!ActionContext.ModelState.IsValid)
@@ -167,26 +150,11 @@ namespace CoreIdentityServer.Areas.Access.Services
                 // user doesn't exist, but don't reveal to end user
                 ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
             }
-            else if (user.EmailConfirmed && !user.AccountRegistered)
+            else
             {
-                // user exists with confirmed email and unregistered account, send email to complete registration
-                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
-                
-                redirectRoute = GenerateRouteUrl("Access", "Authentication", "SignIn", redirectRouteQueryString);
-            }
-            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
-            {
-                // user exists with unregistered account and unconfirmed email, so user is signing up
-                // or
-                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+                bool userCanSignIn = await IdentityService.VerifySignInPrerequisites(user);
 
-                if (user.RequiresAuthenticatorReset)
-                {
-                    await EmailService.SendResetTOTPAccessReminderEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
-
-                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
-                }
-                else
+                if (userCanSignIn)
                 {
                     bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
                         user,
@@ -204,14 +172,19 @@ namespace CoreIdentityServer.Areas.Access.Services
                         );
 
                         // add query string since IdentityService.ManageTOTPChallengeSuccess method doesn't share this concern
-                        redirectRoute = GenerateRouteUrl(redirectRoute, redirectRouteQueryString);
+                        redirectRoute = GenerateRouteUrl(redirectRoute, redirectRouteQueryString);    
                     }
                     else
                     {
                         await IdentityService.RecordUnsuccessfulSignInAttempt(user);
 
-                        ActionContext.ModelState.AddModelError(string.Empty, "Invalid verification code");
+                        ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
                     }
+                }
+                else
+                {
+                    // add generic error and return ViewModel
+                    ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
                 }
             }
 
@@ -314,19 +287,8 @@ namespace CoreIdentityServer.Areas.Access.Services
                 // user doesn't exist, redirect to Root route
                 redirectRoute = RootRoute;
             }
-            else if (user.EmailConfirmed && !user.AccountRegistered)
+            else
             {
-                // user exists with confirmed email and unregistered account, send email to complete registration
-                await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
-                
-                redirectRoute = RootRoute;
-            }
-            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
-            {
-                // user exists with unregistered account and unconfirmed email, so user is signing up
-                // or
-                // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
-
                 bool totpCodeVerified = await IdentityService.VerifyTOTPCode(
                     user,
                     TokenOptions.DefaultAuthenticatorProvider,

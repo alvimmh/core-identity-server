@@ -65,12 +65,9 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpGet, RedirectAuthenticatedUser]
         public IActionResult SignIn([FromQuery] string returnUrl)
         {
-            object[] result = AuthenticationService.ManageSignIn(returnUrl);
+            SignInInputModel viewModel = AuthenticationService.ManageSignIn(returnUrl);
 
-            if (result[0] == null)
-                return Redirect((string)result[1]);
-
-            return View(result[0]);
+            return View(viewModel);
         }
 
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
@@ -85,7 +82,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SignOut(string signOutId)
+        public async Task<IActionResult> SignOut([FromQuery] string signOutId)
         {
             SignOutViewModel viewModel = await AuthenticationService.ManageSignOut(signOutId);
 

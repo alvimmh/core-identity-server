@@ -11,6 +11,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
     public class ResetTOTPAccessController : Controller
     {
         private ResetTOTPAccessService ResetTOTPAccessService;
+
         public ResetTOTPAccessController(ResetTOTPAccessService resetTOTPAccessService)
         {
             ResetTOTPAccessService = resetTOTPAccessService;

@@ -213,7 +213,8 @@ namespace CoreIdentityServer.Areas.Administration.Services
                 Purpose = purpose
             };
 
-            try {
+            try
+            {
                 await DbContext.UserAccessRecords.AddAsync(userAccessRecord);
 
                 await DbContext.SaveChangesAsync();

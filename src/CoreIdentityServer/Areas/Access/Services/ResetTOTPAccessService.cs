@@ -63,7 +63,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             if (user == null || !user.EmailConfirmed)
             {
-                // user doesn't exist
+                // user doesn't exist or user email is not confirmed
                 return redirectRoute;
             }
             else if (!user.AccountRegistered)
@@ -117,10 +117,8 @@ namespace CoreIdentityServer.Areas.Access.Services
                 
                 redirectRoute = RootRoute;
             }
-            else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+            else if (user.EmailConfirmed && user.AccountRegistered)
             {
-                // user exists with unregistered account and unconfirmed email, so user is signing up
-                // or
                 // user exists with registered account and confirmed email, so user trying to reset TOTP access
 
                 bool totpAccessRecoveryCodeVerified = await IdentityService.VerifyTOTPAccessRecoveryCode(

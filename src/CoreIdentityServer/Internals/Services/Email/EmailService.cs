@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services.Email
@@ -57,9 +58,23 @@ namespace CoreIdentityServer.Internals.Services.Email
             {
                 if (emailRecord.SentTo == user.Email)
                 {
-                    DbContext.EmailRecords.Remove(emailRecord);
+                    try
+                    {
+                        DbContext.EmailRecords.Remove(emailRecord);
 
-                    await DbContext.SaveChangesAsync();
+                        await DbContext.SaveChangesAsync();
+                    }
+                    catch (Exception exception)
+                    {
+                        if (exception is DbUpdateException || exception is DbUpdateConcurrencyException)
+                        {
+                            Console.WriteLine("Could not delete email record: {0}", exception.Message);
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
                 }
                 else
                 {

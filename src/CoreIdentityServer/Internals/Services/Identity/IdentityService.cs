@@ -47,7 +47,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             UrlEncoder = urlEncoder;
         }
 
-        public async Task<object[]> ManageTOTPAccessRecoveryChallenge(string defaultRoute, string returnUrl = null)
+        public async Task<object[]> ManageTOTPAccessRecoveryChallenge(string defaultRoute)
         {
             TOTPAccessRecoveryChallengeInputModel model = null;
             string redirectRoute = defaultRoute;
@@ -56,10 +56,11 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             bool userEmailExists = false;
             bool currentUserSignedIn = CheckActiveSession();
             string userEmail = null;
+            ApplicationUser user = null;
 
             if (currentUserSignedIn)
             {
-                ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+                user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
 
                 if (user != null)
                 {
@@ -82,51 +83,42 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
                 if (!string.IsNullOrWhiteSpace(userEmail))
                 {
-                    model = await GenerateTOTPAccessRecoveryChallengeInputModel(userEmail, returnUrl);
+                    model = await GenerateTOTPAccessRecoveryChallengeInputModel(userEmail, user);
                 }
             }
 
             return GenerateArray(model, redirectRoute);
         }
 
-        private async Task<TOTPAccessRecoveryChallengeInputModel> GenerateTOTPAccessRecoveryChallengeInputModel(string userEmail, string returnUrl)
+        private async Task<TOTPAccessRecoveryChallengeInputModel> GenerateTOTPAccessRecoveryChallengeInputModel(string userEmail, ApplicationUser challengedUser = null)
         {
-            // return null to redirect to another page
-            TOTPAccessRecoveryChallengeInputModel model = null;
-
             if (!string.IsNullOrWhiteSpace(userEmail))
             {
-                ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
+                ApplicationUser user = challengedUser ?? await UserManager.FindByEmailAsync(userEmail);
 
                 if (user == null)
                 {
-                    // user doesn't exist
-                    return model;
+                    // user doesn't exist, return null to redirect to another page
+                    return null;
                 }
                 else if (user.EmailConfirmed && !user.AccountRegistered)
                 {
                     // user exists with confirmed email and unregistered account, send email to complete registration
                     await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, userEmail, user.UserName);
 
-                    return model;
+                    return null;
                 }
-                else if ((!user.EmailConfirmed && !user.AccountRegistered) || (user.EmailConfirmed && user.AccountRegistered))
+                else if (user.EmailConfirmed && user.AccountRegistered)
                 {
-                    // user exists with unregistered account and unconfirmed email, so user is signing up
-                    // or
-                    // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
-
-                    model = new TOTPAccessRecoveryChallengeInputModel
+                    // user exists with registered account and confirmed email, so user is trying to reset TOTP access
+                    return new TOTPAccessRecoveryChallengeInputModel
                     {
-                        Email = userEmail,
-                        ReturnUrl = returnUrl
+                        Email = userEmail
                     };
-
-                    return model;
                 }
             }
 
-            return model;
+            return null;
         } 
 
         public async Task<object[]> ManageEmailChallenge(string defaultRoute, string returnUrl = null)
@@ -136,12 +128,13 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             // check if user is signed in
             bool userEmailExists = false;
+            ApplicationUser user = null;
             bool currentUserSignedIn = CheckActiveSession();
             string userEmail = null;
 
             if (currentUserSignedIn)
             {
-                ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+                user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
 
                 if (user != null)
                 {
@@ -164,28 +157,29 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             if (userEmailExists)
             {
-                // retain TempData so page reload keeps user on the same page
-                TempData.Keep();
+                // retain TempData as user isn't signed in, so page reload keeps user on the same page
+                if (!currentUserSignedIn)
+                    TempData.Keep();
 
                 string resendEmailRecordId = resendEmailRecordIdExists ? resendEmailRecordIdTempData.ToString() : null;
 
                 if (!string.IsNullOrWhiteSpace(userEmail))
                 {
-                    model = await GenerateEmailChallengeInputModel(userEmail, resendEmailRecordId, returnUrl);
+                    model = await GenerateEmailChallengeInputModel(userEmail, resendEmailRecordId, returnUrl, user);
                 }
             }
 
             return GenerateArray(model, redirectRoute);
         }
 
-        private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail, string resendEmailRecordId, string returnUrl)
+        private async Task<EmailChallengeInputModel> GenerateEmailChallengeInputModel(string userEmail, string resendEmailRecordId, string returnUrl, ApplicationUser challengedUser = null)
         {
             // return null to redirect to another page
             EmailChallengeInputModel model = null;
 
             if (!string.IsNullOrWhiteSpace(userEmail))
             {
-                ApplicationUser user = await UserManager.FindByEmailAsync(userEmail);
+                ApplicationUser user = challengedUser ?? await UserManager.FindByEmailAsync(userEmail);
 
                 if (user == null)
                 {
@@ -203,7 +197,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 {
                     // user exists with unregistered account and unconfirmed email, so user is signing up
                     // or
-                    // user exists with registered account and confirmed email, so user is either signing in or trying to reset TOTP access
+                    // user exists with registered account and confirmed email, so user is signing in
 
                     model = new EmailChallengeInputModel
                     {
@@ -288,18 +282,6 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
         private async Task<string> SignInTOTP(ApplicationUser user)
         {
-            string redirectRoute = null;
-
-            bool userMeetsSignInPrerequisites = await VerifySignInPrerequisites(user);
-
-            if (!userMeetsSignInPrerequisites)
-            {
-                // add generic error and return ViewModel
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
-
-                return redirectRoute;
-            }
-
             await ResetSignInAttempts(user);
 
             string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
@@ -314,24 +296,12 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             TempData[TempDataKeys.UserEmail] = user.Email;
             TempData[TempDataKeys.ResendEmailRecordId] = resendEmailRecordId.ToString();
 
-            redirectRoute = GenerateRouteUrl("EmailChallenge", "Authentication", "Access");
-
-            return redirectRoute;
+            return GenerateRouteUrl("EmailChallenge", "Authentication", "Access");
         }
 
         public async Task<string> SignIn(ApplicationUser user)
         {
             string redirectRoute = null;
-
-            bool userMeetsSignInPrerequisites = await VerifySignInPrerequisites(user);
-
-            if (!userMeetsSignInPrerequisites)
-            {
-                // add generic error and return ViewModel
-                ActionContext.ModelState.AddModelError(string.Empty, "Invalid email or TOTP code");
-
-                return redirectRoute;
-            }
 
             await ResetSignInAttempts(user);
 
@@ -345,6 +315,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 Claim AMRClaim = CreateMFATypeAMRClaim();
                 IList<Claim> additionalClaims = new List<Claim> { AMRClaim };
 
+                Console.WriteLine("Setting 'idp' claim overriding value: mfa");
                 await SignInManager.SignInWithClaimsAsync(user, false, additionalClaims);
 
                 user.UpdateLastSignedInTimeStamp();
@@ -359,7 +330,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                     foreach (IdentityError error in updateUser.Errors)
                         Console.WriteLine(error.Description);
                     
-                    ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+                    ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again.");
 
                     // could not update user information, so signout user and redirect to sign in page
                     await SignOut();
@@ -385,7 +356,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 foreach (IdentityError error in updateSecurityStamp.Errors)
                     Console.WriteLine(error.Description);
 
-                ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+                ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again.");
             }
 
             return redirectRoute;
@@ -406,7 +377,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 foreach (IdentityError error in updateUser.Errors)
                     Console.WriteLine(error.Description);
                 
-                ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again later.");
+                ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again with a different recovery code.");
 
                 // reset TOTP access request acknowledgement failed, return null to return ViewModel
                 return redirectRoute;
@@ -562,10 +533,13 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             }
         }
 
-        private async Task<bool> VerifySignInPrerequisites(ApplicationUser user)
+        public async Task<bool> VerifySignInPrerequisites(ApplicationUser user)
         {
             // check if user doesn't exist with the given email
             if (user == null)
+                return false;
+            
+            if (!user.EmailConfirmed)
                 return false;
 
             // if user exists but did not complete registration, send email to complete registration
