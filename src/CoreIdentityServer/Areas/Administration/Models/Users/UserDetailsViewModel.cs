@@ -10,6 +10,7 @@ namespace CoreIdentityServer.Areas.Administration.Models.Users
         public int AccessFailedCount { get; set; }
         public bool TwoFactorEnabled { get; set; }
         public bool RequiresAuthenticatorReset { get; set; }
+        public bool Blocked { get; set; }
         public DateTime? LastSignedInAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

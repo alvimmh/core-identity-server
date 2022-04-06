@@ -18,6 +18,8 @@ using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Constants.Account;
 using IdentityModel;
 using System.Linq;
+using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Services;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -25,6 +27,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
     {
         private readonly UserManager<ApplicationUser> UserManager;
         private readonly SignInManager<ApplicationUser> SignInManager;
+        private readonly IBackChannelLogoutService DefaultBackChannelLogoutService;
         private EmailService EmailService;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
@@ -34,6 +37,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         public IdentityService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
+            IBackChannelLogoutService defaultBackChannelLogoutService,
             EmailService emailService,
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
@@ -41,6 +45,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         ) {
             UserManager = userManager;
             SignInManager = signInManager;
+            DefaultBackChannelLogoutService = defaultBackChannelLogoutService;
             EmailService = emailService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
@@ -471,6 +476,31 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await SignInManager.SignOutAsync();
         }
 
+        // send notifications to all clients of CIS to logout the user
+        //
+        // this will trigger back-channel logout notifications to all clients
+        // if the user is persisted in the client, the client will sign out the user
+        // otherwise the client will return a failed HTTP response
+        //
+        // note, different clients may implement different types of user authentication system,
+        // this method only sends the back-channel notification for these clients
+        //
+        // it is the client's responsibility to signout the user from their system
+        public async Task SendBackChannelLogoutNotificationsForUserAsync(ApplicationUser user)
+        {
+            List<string> allClients = Config.Clients.Select(client => client.ClientId).ToList();
+
+            // note, SessionId is required, so not setting it to null
+            LogoutNotificationContext blockedUserLogoutNotificationContext = new LogoutNotificationContext()
+            {
+                SubjectId = user.Id,
+                ClientIds = allClients,
+                SessionId = string.Empty
+            };
+
+            await DefaultBackChannelLogoutService.SendLogoutNotificationsAsync(blockedUserLogoutNotificationContext);
+        }
+
         public async Task RefreshUserSignIn(ApplicationUser user)
         {
             // delete all TempData
@@ -537,6 +567,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         {
             // check if user doesn't exist with the given email
             if (user == null)
+                return false;
+
+            if (user.Blocked)
                 return false;
             
             if (!user.EmailConfirmed)

@@ -7,6 +7,7 @@ using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
+using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
     {
         private readonly ApplicationDbContext DbContext;
         private readonly UserManager<ApplicationUser> UserManager;
+        private IdentityService IdentityService;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
         private IUrlHelper UrlHelper;
@@ -31,12 +33,14 @@ namespace CoreIdentityServer.Areas.Administration.Services
         public UsersService(
             ApplicationDbContext dbContext,
             UserManager<ApplicationUser> userManager,
+            IdentityService identityService,
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             IUrlHelperFactory urlHelperFactory
         ) {
             DbContext = dbContext;
             UserManager = userManager;
+            IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(actionContextAccessor.ActionContext.HttpContext);
             UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
@@ -176,7 +180,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
                     {
                         await transaction.RollbackAsync();
 
-                        // updating role failed, adding erros to ModelState
+                        // updating user failed, adding erros to ModelState
                         foreach (IdentityError error in updateUser.Errors)
                             ActionContext.ModelState.AddModelError(string.Empty, error.Description);
 
@@ -198,6 +202,70 @@ namespace CoreIdentityServer.Areas.Administration.Services
                     TempData[TempDataKeys.ErrorMessage] = "Could not update user. Please try again.";
 
                     return null;
+                }
+            }
+        }
+
+        public async Task<string> ManageBlock(BlockUserInputModel inputModel)
+        {
+            if (!ActionContext.ModelState.IsValid)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "User not found.";
+
+                return RootRoute;
+            }
+            
+            ApplicationUser user = await UserManager.FindByIdAsync(inputModel.Id);
+
+            if (user == null)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "User not found";
+
+                return RootRoute;
+            }
+            else
+            {
+                user.Block();
+
+                using IDbContextTransaction transaction = await DbContext.Database.BeginTransactionAsync();
+
+                bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Block);
+
+                if (userAccessRecorded)
+                {
+                    IdentityResult updateSecurityStampAndSaveUser = await UserManager.UpdateSecurityStampAsync(user);
+
+                    if (!updateSecurityStampAndSaveUser.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+
+                        // updating user failed, adding erros to ModelState
+                        foreach (IdentityError error in updateSecurityStampAndSaveUser.Errors)
+                            Console.WriteLine(error.Description);
+
+                        TempData[TempDataKeys.ErrorMessage] = "Could not block user. Please try again.";
+
+                        return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+                    }
+                    else
+                    {
+                        await transaction.CommitAsync();
+
+                        // send notifications to all clients of CIS to signout the user
+                        await IdentityService.SendBackChannelLogoutNotificationsForUserAsync(user);
+
+                        TempData[TempDataKeys.SuccessMessage] = "User blocked.";
+
+                        return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+                    }
+                }
+                else
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData[TempDataKeys.ErrorMessage] = "Could not block user. Please try again.";
+
+                    return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
                 }
             }
         }

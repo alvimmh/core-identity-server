@@ -22,6 +22,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public DateTime CreatedAt { get; set; }
         public DateTime? LastSignedInAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
+        public bool Blocked { get; private set; }
 
         [InverseProperty("User")]
         public virtual ICollection<UserAccessRecord> UserAccessRecords { get; set; }
@@ -35,6 +36,12 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
 
             LastSignedInAt = currentDateTime;
             UpdatedAt = currentDateTime;
+        }
+
+        public void Block()
+        {
+            Blocked = true;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

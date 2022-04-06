@@ -63,5 +63,13 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
 
             return Redirect(redirectRoute);
         }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Block([FromForm] BlockUserInputModel inputModel)
+        {
+            string redirectRoute = await UsersService.ManageBlock(inputModel);
+
+            return Redirect(redirectRoute);
+        }
     }
 }
