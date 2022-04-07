@@ -206,7 +206,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
             }
         }
 
-        public async Task<string> ManageBlock(BlockUserInputModel inputModel)
+        public async Task<string> ManageBlock(BlockUserInputModel inputModel, bool blockUser)
         {
             if (!ActionContext.ModelState.IsValid)
             {
@@ -214,7 +214,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
 
                 return RootRoute;
             }
-            
+
             ApplicationUser user = await UserManager.FindByIdAsync(inputModel.Id);
 
             if (user == null)
@@ -225,25 +225,40 @@ namespace CoreIdentityServer.Areas.Administration.Services
             }
             else
             {
-                user.Block();
+                string blockAction = blockUser ? UserAccessPurposes.Block : UserAccessPurposes.Unblock;
+                string blockActionLowerCase = blockAction.ToLower();
+
+                user.ToggleBlock(blockUser);
 
                 using IDbContextTransaction transaction = await DbContext.Database.BeginTransactionAsync();
 
-                bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Block);
+                bool userAccessRecorded = await RecordUserAccess(user, blockAction);
+
 
                 if (userAccessRecorded)
                 {
-                    IdentityResult updateSecurityStampAndSaveUser = await UserManager.UpdateSecurityStampAsync(user);
+                    IdentityResult updateBlockedStatus = null;
+                    
+                    if (blockUser)
+                    {
+                        // update blocked status and the security stamp of user in CIS
+                        updateBlockedStatus = await UserManager.UpdateSecurityStampAsync(user);
+                    }
+                    else
+                    {
+                        // update blocked status
+                        updateBlockedStatus = await UserManager.UpdateAsync(user);
+                    }
 
-                    if (!updateSecurityStampAndSaveUser.Succeeded)
+                    if (!updateBlockedStatus.Succeeded)
                     {
                         await transaction.RollbackAsync();
 
-                        // updating user failed, adding erros to ModelState
-                        foreach (IdentityError error in updateSecurityStampAndSaveUser.Errors)
+                        // updating user failed, adding errors to ModelState
+                        foreach (IdentityError error in updateBlockedStatus.Errors)
                             Console.WriteLine(error.Description);
 
-                        TempData[TempDataKeys.ErrorMessage] = "Could not block user. Please try again.";
+                        TempData[TempDataKeys.ErrorMessage] = $"Could not {blockActionLowerCase} user. Please try again.";
 
                         return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
                     }
@@ -251,10 +266,13 @@ namespace CoreIdentityServer.Areas.Administration.Services
                     {
                         await transaction.CommitAsync();
 
-                        // send notifications to all clients of CIS to signout the user
-                        await IdentityService.SendBackChannelLogoutNotificationsForUserAsync(user);
+                        if (blockUser)
+                        {
+                            // send notifications to all clients of CIS to signout the user
+                            await IdentityService.SendBackChannelLogoutNotificationsForUserAsync(user);
+                        }
 
-                        TempData[TempDataKeys.SuccessMessage] = "User blocked.";
+                        TempData[TempDataKeys.SuccessMessage] = $"User {blockActionLowerCase}ed.";
 
                         return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
                     }
@@ -263,7 +281,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
                 {
                     await transaction.RollbackAsync();
 
-                    TempData[TempDataKeys.ErrorMessage] = "Could not block user. Please try again.";
+                    TempData[TempDataKeys.ErrorMessage] = $"Could not {blockActionLowerCase} user. Please try again.";
 
                     return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
                 }

@@ -49,7 +49,14 @@
             <a asp-action="Edit" asp-controller="Users" asp-area="Administration" asp-route-id="@Model.Id" class="btn btn-info">Edit</a>
         </div>
         <div class="col">
-            <partial name="./_Block.cshtml" model="@blockUserInputModel" />
+            @if (Model.Blocked)
+            {
+                <partial name="./_Unblock.cshtml" model="@blockUserInputModel" />
+            }
+            else
+            {
+                <partial name="./_Block.cshtml" model="@blockUserInputModel" />
+            }
         </div>
         <div class="col">
             <a href="#" class="btn btn-danger">Delete</a>

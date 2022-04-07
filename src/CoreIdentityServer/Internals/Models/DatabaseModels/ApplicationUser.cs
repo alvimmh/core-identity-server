@@ -38,9 +38,9 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = currentDateTime;
         }
 
-        public void Block()
+        public void ToggleBlock(bool block)
         {
-            Blocked = true;
+            Blocked = block;
             UpdatedAt = DateTime.UtcNow;
         }
     }

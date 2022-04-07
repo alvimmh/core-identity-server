@@ -7,6 +7,7 @@ namespace CoreIdentityServer.Internals.Constants.Administration
         public const string Edit = "Edit";
         public const string Update = "Update";
         public const string Block = "Block";
+        public const string Unblock = "Unblock";
         public const string Delete = "Delete";
     }
 }

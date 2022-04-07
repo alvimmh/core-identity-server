@@ -570,14 +570,22 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 return false;
 
             if (user.Blocked)
+            {
+                Console.WriteLine($"User with id {user.Id} is blocked.");
                 return false;
+            }
             
             if (!user.EmailConfirmed)
+            {
+                Console.WriteLine($"User with id {user.Id} has unconfirmed email.");
                 return false;
+            }
 
             // if user exists but did not complete registration, send email to complete registration
             if (!user.AccountRegistered)
             {
+                Console.WriteLine($"User with id {user.Id} has unregistered account.");
+
                 await EmailService.SendAccountNotRegisteredEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 return false;
@@ -586,6 +594,8 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             // if user exists but requires authenticator reset, send email to reset
             if (user.AccountRegistered && user.RequiresAuthenticatorReset)
             {
+                Console.WriteLine($"User with id {user.Id} needs to reset TOTP access authenticator.");
+
                 await EmailService.SendResetTOTPAccessReminderEmail(AutomatedEmails.NoReply, user.Email, user.Email);
 
                 return false;
@@ -597,7 +607,11 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             bool isUserLockedOut = await UserManager.IsLockedOutAsync(user);
 
             if (!canUserSignIn || (appSupportsLockout && isUserLockedOut))
+            {
+                Console.WriteLine($"User with id {user.Id} cannot signin or is locked out.");
+
                 return false;
+            }
 
             return true;
         }
