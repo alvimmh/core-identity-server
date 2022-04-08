@@ -7,13 +7,56 @@
   int nextPageNumber = Model.CurrentPage < Model.TotalPages ? Model.CurrentPage + 1 : Model.TotalPages;
 }
 
-<ul class="mt-5 mb-2 pagination justify-content-center">
-    <li class="page-item @previousButtonDisabledStatus"><a class="page-link" href="@Model.PageLink(previousPageNumber)">Previous</a></li>
+@if (Model.IsPaginationRequestMethodGet)
+{
+  <ul class="mt-5 mb-2 pagination justify-content-center">
+      <li class="page-item @previousButtonDisabledStatus"><a class="page-link" href="@Model.PageLink(previousPageNumber)">Previous</a></li>
 
-    @for (int pageNumber = previousPageNumber; pageNumber <= nextPageNumber; pageNumber++)
-    {
+      @for (int pageNumber = previousPageNumber; pageNumber <= nextPageNumber; pageNumber++)
+      {
         <li class="page-item @Model.CSSClassForActiveStatus(pageNumber)"><a class="page-link" href="@Model.PageLink(pageNumber)">@pageNumber</a></li>
-    }
+      }
 
-    <li class="page-item @nextButtonDisabledStatus"><a class="page-link" href="@Model.PageLink(nextPageNumber)">Next</a></li>
-</ul>
+      <li class="page-item @nextButtonDisabledStatus"><a class="page-link" href="@Model.PageLink(nextPageNumber)">Next</a></li>
+  </ul>
+}
+else
+{
+  <ul class="mt-5 mb-2 pagination justify-content-center">
+      <li class="page-item @previousButtonDisabledStatus">
+        <form
+          asp-area="@Model.PaginationRequestArea"
+          asp-controller="@Model.PaginationRequestController"
+          asp-action="@Model.PaginationRequestAction"
+          method="post"
+        >
+          @Html.Raw(Model.PageForm(previousPageNumber, "Previous"))
+        </form>
+      </li>
+
+      @for (int pageNumber = previousPageNumber; pageNumber <= nextPageNumber; pageNumber++)
+      {
+          <li class="page-item @Model.CSSClassForActiveStatus(pageNumber)">
+            <form
+              asp-area="@Model.PaginationRequestArea"
+              asp-controller="@Model.PaginationRequestController"
+              asp-action="@Model.PaginationRequestAction"
+              method="post"
+            >
+              @Html.Raw(Model.PageForm(pageNumber, pageNumber.ToString()))
+            </form>
+          </li>
+      }
+
+      <li class="page-item @nextButtonDisabledStatus">
+        <form
+          asp-area="@Model.PaginationRequestArea"
+          asp-controller="@Model.PaginationRequestController"
+          asp-action="@Model.PaginationRequestAction"
+          method="post"
+        >
+          @Html.Raw(Model.PageForm(nextPageNumber, "Next"))
+        </form>
+      </li>
+  </ul>
+}

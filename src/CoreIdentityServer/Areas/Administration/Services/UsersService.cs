@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Administration.Models.Users;
 using CoreIdentityServer.Internals.Constants.Administration;
@@ -52,6 +54,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
             IndexViewModel viewModel = new IndexViewModel();
 
             int totalUsers = await UserManager.Users.CountAsync();
+            viewModel.TotalResults = totalUsers;
             
             double totalPages = (double)totalUsers / viewModel.ResultsInPage;
             viewModel.TotalPages = (int)Math.Ceiling(totalPages);
@@ -80,6 +83,89 @@ namespace CoreIdentityServer.Areas.Administration.Services
                                                 .ToListAsync();
 
             return viewModel;
+        }
+
+        public async Task<IndexViewModel> ManageSearch(SearchUsersInputModel inputModel)
+        {
+            List<UserViewModel> searchResults = new List<UserViewModel>();
+
+            bool idEmpty = string.IsNullOrWhiteSpace(inputModel.Id);
+            bool emailEmpty = string.IsNullOrWhiteSpace(inputModel.Email);
+            bool firstNameEmpty = string.IsNullOrWhiteSpace(inputModel.FirstName);
+            bool lastNameEmpty = string.IsNullOrWhiteSpace(inputModel.LastName);
+
+            if (idEmpty && emailEmpty && firstNameEmpty && lastNameEmpty)
+            {
+                ActionContext.ModelState.AddModelError(string.Empty, "Please specify a search parameter.");
+
+                return new IndexViewModel { Users = searchResults };
+            }
+
+            if (!idEmpty)
+            {
+                ApplicationUser user = await UserManager.FindByIdAsync(inputModel.Id);
+
+                if (user != null)
+                    searchResults.Add(user.Adapt<UserViewModel>());
+
+                return new IndexViewModel { Id = inputModel.Id, Users = searchResults, TotalResults = searchResults.Count };
+            }
+
+            if (!emailEmpty)
+            {
+                ApplicationUser user = await UserManager.FindByEmailAsync(inputModel.Email);
+
+                if (user != null)
+                    searchResults.Add(user.Adapt<UserViewModel>());
+
+                return new IndexViewModel { Email = inputModel.Email, Users = searchResults, TotalResults = searchResults.Count };
+            }
+
+            if (!firstNameEmpty || !lastNameEmpty)
+            {
+                IndexViewModel viewModel = new IndexViewModel() {
+                    FirstName = inputModel.FirstName,
+                    LastName = inputModel.LastName
+                };
+
+                Expression<Func<ApplicationUser, bool>> searchFilter = GenerateNamesFilter(inputModel.FirstName, inputModel.LastName, firstNameEmpty, lastNameEmpty);
+
+                int totalMatchedUsers = await UserManager.Users.Where(searchFilter).CountAsync();
+
+                double totalPages = (double)totalMatchedUsers / viewModel.ResultsInPage;
+                viewModel.TotalPages = (int)Math.Ceiling(totalPages);
+                viewModel.TotalResults = totalMatchedUsers;
+
+                int skipRecords = 0;
+
+                bool isPageNumberInputValid = Int32.TryParse(inputModel.Page, out int currentPage);
+
+                if (isPageNumberInputValid && currentPage > 0 && currentPage <= viewModel.TotalPages)
+                {
+                    viewModel.CurrentPage = currentPage;
+                    int lastPage = currentPage - 1;
+                    skipRecords = lastPage * viewModel.ResultsInPage;
+                }
+                else
+                {
+                    viewModel.CurrentPage = 1;
+                    skipRecords = 0;
+                }
+
+                searchResults = await UserManager.Users
+                                                    .Where(searchFilter)
+                                                    .OrderBy(item => item.CreatedAt)
+                                                    .Skip(skipRecords)
+                                                    .Take(viewModel.ResultsInPage)
+                                                    .ProjectToType<UserViewModel>()
+                                                    .ToListAsync();
+
+                viewModel.Users = searchResults;
+
+                return viewModel;
+            }
+
+            return new IndexViewModel() { Users = searchResults };
         }
 
         public async Task<object[]> ManageDetails(string userId)
@@ -318,12 +404,36 @@ namespace CoreIdentityServer.Areas.Administration.Services
             }
         }
 
+        private Expression<Func<ApplicationUser, bool>> GenerateNamesFilter(string firstName, string lastName, bool firstNameEmpty, bool lastNameEmpty)
+        {
+            Expression<Func<ApplicationUser, bool>> filter = null;
+
+            string firstNameLowerCase = firstName?.ToLower();
+            string lastNameLowerCase = lastName?.ToLower();
+
+            if (!firstNameEmpty && !lastNameEmpty)
+            {
+                filter = user => user.FirstName.ToLower().Contains(firstNameLowerCase) && user.LastName.ToLower().Contains(lastNameLowerCase);
+            }
+            else if (!firstNameEmpty)
+            {
+                filter = user => user.FirstName.ToLower().Contains(firstNameLowerCase);
+            }
+            else if (!lastNameEmpty)
+            {
+                filter = user => user.LastName.ToLower().Contains(lastNameLowerCase);
+            }
+
+            return filter;
+        }
+
         public void Dispose()
         {
             if (ResourcesDisposed)
                 return;
 
             UserManager.Dispose();
+            DbContext.Dispose();
             ResourcesDisposed = true;
         }
     }

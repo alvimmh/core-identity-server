@@ -1,5 +1,81 @@
 @model IndexViewModel
 @{
+  SearchUsersInputModel searchUsersInputModel = new SearchUsersInputModel() {
+    Id = Model.Id,
+    Email = Model.Email,
+    FirstName = Model.FirstName,
+    LastName = Model.LastName
+  };
+
+  int resultsInCurrentPage = Model.Users.Count;
+
+  string GeneratePageHeader(int results, int totalResults, string parameterName, string parameterValue, string parameterName2 = null, string parameterValue2 = null)
+  {
+    string searchResultType = results == 1 ? "user" : "users";
+
+    if (results > 0 && parameterName == null && parameterValue == null)
+    {
+      return $"Showing {resultsInCurrentPage} of {Model.TotalResults} {searchResultType}";
+    }
+    else if (results == 1 && parameterName2 != null && parameterValue2 != null)
+    {
+      return $"Showing {results} {searchResultType} with {parameterName} {parameterValue} and {parameterName2} {parameterValue2}";
+    }
+    else if (results == 1)
+    {
+      return $"Showing {results} {searchResultType} with {parameterName} {parameterValue}";
+    }
+    else if (results > 1 && parameterName2 != null && parameterValue2 != null)
+    {
+      return $"Showing {results} of {totalResults} {searchResultType} with {parameterName} {parameterValue} and {parameterName2} {parameterValue2}";
+    }
+    else if (results > 1)
+    {
+      return $"Showing {results} of {totalResults} {searchResultType} with {parameterName} {parameterValue}";
+    }
+    else if (results == 0 && parameterName2 != null && parameterValue2 != null)
+    {
+      return $"No {searchResultType} found with {parameterName} {parameterValue} and {parameterName2} {parameterValue2}";
+    }
+    else if (results == 0)
+    {
+      return $"No {searchResultType} found with {parameterName} {parameterValue}";
+    }
+    else
+    {
+      return null;
+    }
+  }
+
+  string pageHeader = GeneratePageHeader(resultsInCurrentPage, Model.TotalResults, null, null);
+  bool isPaginationRequestMethodGet = true;
+
+  if (!string.IsNullOrWhiteSpace(Model.Id))
+  {
+    pageHeader = GeneratePageHeader(resultsInCurrentPage, Model.TotalResults, "id", Model.Id);
+    isPaginationRequestMethodGet = false;
+  }
+  else if (!string.IsNullOrWhiteSpace(Model.Email))
+  {
+    pageHeader = GeneratePageHeader(resultsInCurrentPage, Model.TotalResults, "email", Model.Email);
+    isPaginationRequestMethodGet = false;
+  }
+  else if (!string.IsNullOrWhiteSpace(Model.FirstName) && !string.IsNullOrWhiteSpace(Model.LastName))
+  {
+    pageHeader = GeneratePageHeader(resultsInCurrentPage, Model.TotalResults, "first name", Model.FirstName, "last name", Model.LastName);
+    isPaginationRequestMethodGet = false;
+  }
+  else if (!string.IsNullOrWhiteSpace(Model.FirstName))
+  {
+    pageHeader = GeneratePageHeader(resultsInCurrentPage, Model.TotalResults, "first name", Model.FirstName);
+    isPaginationRequestMethodGet = false;
+  }
+  else if (!string.IsNullOrWhiteSpace(Model.LastName))
+  {
+    pageHeader = GeneratePageHeader(resultsInCurrentPage, Model.TotalResults, "last name", Model.LastName);
+    isPaginationRequestMethodGet = false;
+  }
+
   string PageLink(int pageNumber)
   {
     if (pageNumber == Model.CurrentPage)
@@ -10,10 +86,29 @@
     return Url.Action("Index", "Users", new { Area = AreaNames.Administration, page = pageNumber });
   }
 
+  string RenderPaginationFormElements(int pageNumber, string buttonText)
+  {
+    // passing only form elements without the form
+    // form tag helper is required to render in-view in order to generate the anti-forgery token
+    return (
+        $"<input id=\"page-input\" asp-for=\"Page\" value=\"{pageNumber}\" name=\"Page\" hidden>" +
+        $"<input type=\"text\" class=\"form-control\" id=\"id-input\" asp-for=\"Id\" name=\"Id\" value=\"{Model.Id}\" hidden>" +
+        $"<input type=\"text\" class=\"form-control\" id=\"email-input\" asp-for=\"Email\" name=\"Email\" value=\"{Model.Email}\" hidden>" +
+        $"<input type=\"text\" class=\"form-control\" id=\"first-name-input\" asp-for=\"FirstName\" name=\"FirstName\" value=\"{Model.FirstName}\" hidden>" +
+        $"<input type=\"text\" class=\"form-control\" id=\"last-name-input\" asp-for=\"LastName\" name=\"LastName\" value=\"{Model.LastName}\" hidden>" +
+        $"<button type=\"submit\" class=\"page-link\">{buttonText}</button>"
+    );
+  }
+
   PaginationViewModel paginationViewModel = new PaginationViewModel() {
     CurrentPage = Model.CurrentPage,
     TotalPages = Model.TotalPages,
-    MethodToGeneratePageLink = PageLink
+    IsPaginationRequestMethodGet = isPaginationRequestMethodGet,
+    MethodToGeneratePageLink = PageLink,
+    MethodToGeneratePaginationFormElements = RenderPaginationFormElements,
+    PaginationRequestArea = "Administration",
+    PaginationRequestController = "Users",
+    PaginationRequestAction = "Index"
   };
 
   string RegistrationStatus(bool registered)
@@ -25,37 +120,52 @@
   }
 }
 
-<div class="container">     
-  <h1 class="mb-3">Application Users</h1>
-
-  <table id="enable-datatables" class="table table-hover">
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>First Name</th>
-        <th>Last Name</th>
-        <th>Registration Status</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody>
-        @foreach (UserViewModel user in Model.Users)
-        {
-          <tr>
-            <td>@user.Email</td>
-            <td>@user.FirstName</td>
-            <td>@user.LastName</td>
-            <td>@RegistrationStatus(user.AccountRegistered)</td>
-            <td>
-              <a asp-action="Details" asp-controller="Users" asp-area="Administration" asp-route-id="@user.Id">Access</a>
-            </td>
-          </tr>
-        }
-    </tbody>
-  </table>
-
-  <partial name="./../../../../Views/Shared/_Pagination.cshtml" model="@paginationViewModel" />
+<div class="row align-items-center mb-3">
+  <div class="col-2">
+    <button class="btn btn-primary mb-3 ml-auto mr-0" type="button" data-bs-toggle="collapse" data-bs-target="#search-form" aria-expanded="false" aria-controls="search-form">
+      Search
+    </button>
+  </div>
+  <div class="col-8 text-center">
+    <h5>@pageHeader</h5>
+  </div>
+  <div class="col-2">
+    @if (!isPaginationRequestMethodGet)
+    {
+      <a asp-action="Index" asp-controller="Users" asp-area="Administration" class="d-block text-end">Clear</a>
+    }
+  </div>
 </div>
+
+<partial name="./_Search.cshtml" model="@searchUsersInputModel" />
+
+<table id="enable-datatables" class="table table-hover">
+  <thead>
+    <tr>
+      <th>Email</th>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Registration Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+      @foreach (UserViewModel user in Model.Users)
+      {
+        <tr>
+          <td>@user.Email</td>
+          <td>@user.FirstName</td>
+          <td>@user.LastName</td>
+          <td>@RegistrationStatus(user.AccountRegistered)</td>
+          <td>
+            <a asp-action="Details" asp-controller="Users" asp-area="Administration" asp-route-id="@user.Id">Access</a>
+          </td>
+        </tr>
+      }
+  </tbody>
+</table>
+
+<partial name="./../../../../Views/Shared/_Pagination.cshtml" model="@paginationViewModel" />
 
 @section scripts {
     <link rel="stylesheet" type="text/css" href="~/lib/datatables.net/datatables.min.css"/>

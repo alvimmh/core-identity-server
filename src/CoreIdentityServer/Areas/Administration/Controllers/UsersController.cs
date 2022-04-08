@@ -27,6 +27,14 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(viewModel);
         }
 
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Index([FromForm] SearchUsersInputModel inputModel)
+        {
+            IndexViewModel viewModel = await UsersService.ManageSearch(inputModel);
+
+            return View(viewModel);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Details([FromRoute] string id)
         {

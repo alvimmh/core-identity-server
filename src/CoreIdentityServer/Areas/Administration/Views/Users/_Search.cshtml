@@ -1,0 +1,52 @@
+@model SearchUsersInputModel
+@{
+  string showSearchFormClassName = "";
+
+  if (ViewData.ModelState.ErrorCount > 0)
+    showSearchFormClassName = "show";
+}
+
+<div class="mb-5 collapse @showSearchFormClassName" id="search-form">
+  <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+  <form
+    asp-area="Administration"
+    asp-controller="Users"
+    asp-action="Index"
+    method="post"
+  >
+    <input id="page-input" asp-for="Page" value="@Model.Page" hidden>
+
+    <div class="row mb-3">
+      <div class="col-6">
+        <label for="id-input" class="form-label">User Id</label>
+        <input type="text" class="form-control" id="id-input" asp-for="Id" value="@Model.Id">
+        <span asp-validation-for="Id" class="text-danger"></span>
+      </div>
+
+      <div class="col-6">
+        <label for="email-input" class="form-label">Email</label>
+        <input type="text" class="form-control" id="email-input" asp-for="Email" value="@Model.Email">
+        <span asp-validation-for="Email" class="text-danger"></span>
+      </div>
+    </div>
+
+    <div class="row mb-5">
+      <div class="col-6">
+        <label for="first-name-input" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="first-name-input" asp-for="FirstName" value="@Model.FirstName">
+        <span asp-validation-for="FirstName" class="text-danger"></span>
+      </div>
+
+      <div class="col-6">
+        <label for="last-name-input" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="last-name-input" asp-for="LastName" value="@Model.LastName">
+        <span asp-validation-for="LastName" class="text-danger"></span>
+      </div>
+    </div>
+
+    <div class="d-grid col-6 mx-auto">
+      <button type="submit" class="btn btn-secondary btn-md">Search</button>
+    </div>
+  </form>
+</div>
