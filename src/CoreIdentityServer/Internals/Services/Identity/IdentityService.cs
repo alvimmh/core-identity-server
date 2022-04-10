@@ -20,6 +20,12 @@ using IdentityModel;
 using System.Linq;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
+using CoreIdentityServer.Internals.Constants.Events;
+using CoreIdentityServer.Internals.Models.ViewModels;
+using Mapster;
+using System.Net.Http;
+using CoreIdentityServer.Internals.Constants.Authentication;
+using CoreIdentityServer.Internals.Constants.Errors;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 {
@@ -29,7 +35,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         private readonly SignInManager<ApplicationUser> SignInManager;
         private readonly IBackChannelLogoutService DefaultBackChannelLogoutService;
         private EmailService EmailService;
+        private OIDCTokenService OIDCTokenService;
         private ActionContext ActionContext;
+        private readonly HttpClient HttpClient;
         private readonly ITempDataDictionary TempData;
         private readonly UrlEncoder UrlEncoder;
         private bool ResourcesDisposed;
@@ -39,7 +47,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             SignInManager<ApplicationUser> signInManager,
             IBackChannelLogoutService defaultBackChannelLogoutService,
             EmailService emailService,
+            OIDCTokenService oidcTokenService,
             IActionContextAccessor actionContextAccessor,
+            HttpClient httpClient,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             UrlEncoder urlEncoder
         ) {
@@ -47,7 +57,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             SignInManager = signInManager;
             DefaultBackChannelLogoutService = defaultBackChannelLogoutService;
             EmailService = emailService;
+            OIDCTokenService = oidcTokenService;
             ActionContext = actionContextAccessor.ActionContext;
+            HttpClient = httpClient;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             UrlEncoder = urlEncoder;
         }
@@ -501,6 +513,117 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await DefaultBackChannelLogoutService.SendLogoutNotificationsAsync(blockedUserLogoutNotificationContext);
         }
 
+        public async Task<IdentityResult> SendBackChannelDeleteNotificationsForUserAsync(ApplicationUser user)
+        {
+            List<ClientNotificationViewModel> allClients = Config.Clients
+                                                                    .Select(client => client.Adapt<ClientNotificationViewModel>())
+                                                                    .ToList();
+
+            List<BackChannelNotificationRequest> notificationRequests = new List<BackChannelNotificationRequest>();
+
+            foreach (ClientNotificationViewModel client in allClients)
+            {
+                CreateTokenInputModel inputModel = new CreateTokenInputModel()
+                {
+                    SubjectId = user.Id,
+                    ClientId = client.ClientId
+                };
+
+                string notificationJWTToken = await OIDCTokenService.CreateTokenAsync(inputModel, OIDCTokenEvents.BackChannelDelete);
+
+                string notificationEndpoint = $"{client.ClientUri}/administration/authentication/delete_oidc";
+
+                BackChannelNotificationRequest notificationRequest = new BackChannelNotificationRequest()
+                {
+                    NotificationType = BackChannelNotificationTypes.Delete,
+                    JWTToken = notificationJWTToken,
+                    ClientId = client.ClientId,
+                    ClientNotificationUri = notificationEndpoint
+                };
+
+                notificationRequests.Add(notificationRequest);
+            }
+
+            Task<bool>[] sendNotificationTasks = notificationRequests.Select(SendBackChannelNotificationAsync).ToArray();
+        
+            bool[] sendNotificationTaskResults = await Task.WhenAll<bool>(sendNotificationTasks);
+
+            bool tasksSucceeded = !sendNotificationTaskResults.Any(element => element == false);
+
+            if (!tasksSucceeded)
+            {
+                bool tasksSucceededPartially = sendNotificationTaskResults.Any(element => element == true);
+
+                // user was deleted from some clients but not all
+                if (tasksSucceededPartially)
+                {
+                    IdentityError error = new IdentityError()
+                    {
+                        Description = InternalCustomErrors.UserPartiallyDeleted
+                    };
+
+                    return IdentityResult.Failed(error);
+                }
+
+                return IdentityResult.Failed();
+            }
+
+            return IdentityResult.Success;
+        }
+
+        private async Task<bool> SendBackChannelNotificationAsync(BackChannelNotificationRequest request)
+        {
+            Dictionary<string, string> data = CreateFormPostPayloadAsync(request);
+
+            return await PostBackChannelNotificationJwt(request, data);
+        }
+
+        private Dictionary<string, string> CreateFormPostPayloadAsync(BackChannelNotificationRequest request)
+        {
+            Dictionary<string, string> data = new Dictionary<string, string>
+            {
+                { CustomTokenOptions.BackChannelDeleteTokenPostBodyKey, request.JWTToken }
+            };
+
+            return data;
+        }
+
+        private Task<bool> PostBackChannelNotificationJwt(
+            BackChannelNotificationRequest request,
+            Dictionary<string, string> data
+        ) {
+            return PostBackChannelNotificationAsync(request.ClientNotificationUri, data, request.NotificationType);
+        }
+
+        private async Task<bool> PostBackChannelNotificationAsync(string url, Dictionary<string, string> payload, string notificationType)
+        {
+            try
+            {
+                HttpResponseMessage response = await HttpClient.PostAsync(url, new FormUrlEncodedContent(payload));
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Response from back-channel {0} notification endpoint: {1} status code: {2}", notificationType, url, (int)response.StatusCode);
+
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Response from {0} notification endpoint: {1} status code: {2}", notificationType, url, (int)response.StatusCode);
+                
+                    return false;
+                }
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine("Exception invoking back-channel {0} for url: {1}", notificationType, url);
+                Console.WriteLine(exception.Message);
+                Console.WriteLine(exception.InnerException);
+
+                return false;
+            }
+        }
+
         public async Task RefreshUserSignIn(ApplicationUser user)
         {
             // delete all TempData
@@ -567,6 +690,9 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         {
             // check if user doesn't exist with the given email
             if (user == null)
+                return false;
+
+            if (user.Archived)
                 return false;
 
             if (user.Blocked)

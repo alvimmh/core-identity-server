@@ -87,5 +87,13 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
 
             return Redirect(redirectRoute);
         }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete([FromForm] DeleteUserInputModel inputModel)
+        {
+            string redirectRoute = await UsersService.ManageDelete(inputModel);
+
+            return Redirect(redirectRoute);
+        }
     }
 }

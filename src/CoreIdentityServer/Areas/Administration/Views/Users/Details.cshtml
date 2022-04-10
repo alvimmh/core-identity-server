@@ -2,6 +2,8 @@
 @{
     BlockUserInputModel blockUserInputModel = new BlockUserInputModel { Id = Model.Id };
 
+    DeleteUserInputModel deleteUserInputModel = new DeleteUserInputModel { Id = Model.Id };
+
     PropertyInfo[] viewModelProperties = Model.GetType().GetProperties();
 
     object GetPropertyValue(PropertyInfo property)
@@ -59,7 +61,7 @@
             }
         </div>
         <div class="col">
-            <a href="#" class="btn btn-danger">Delete</a>
+            <partial name="./_Delete.cshtml" model="@deleteUserInputModel" />
         </div>
     </div>
 </div>

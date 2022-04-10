@@ -5,6 +5,8 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Administration.Models.Users;
 using CoreIdentityServer.Internals.Constants.Administration;
+using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Errors;
 using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
@@ -314,12 +316,20 @@ namespace CoreIdentityServer.Areas.Administration.Services
                 string blockAction = blockUser ? UserAccessPurposes.Block : UserAccessPurposes.Unblock;
                 string blockActionLowerCase = blockAction.ToLower();
 
-                user.ToggleBlock(blockUser);
+                bool userIsProductOwner = await UserManager.IsInRoleAsync(user, AuthorizedRoles.ProductOwner);
+
+                if (userIsProductOwner)
+                {
+                    TempData[TempDataKeys.ErrorMessage] = $"Cannot {blockActionLowerCase} a user with role {AuthorizedRoles.ProductOwner}.";
+
+                    return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+                }
+
+                user.SetBlock(blockUser);
 
                 using IDbContextTransaction transaction = await DbContext.Database.BeginTransactionAsync();
 
                 bool userAccessRecorded = await RecordUserAccess(user, blockAction);
-
 
                 if (userAccessRecorded)
                 {
@@ -370,6 +380,139 @@ namespace CoreIdentityServer.Areas.Administration.Services
                     TempData[TempDataKeys.ErrorMessage] = $"Could not {blockActionLowerCase} user. Please try again.";
 
                     return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+                }
+            }
+        }
+
+        public async Task<string> ManageDelete(DeleteUserInputModel inputModel)
+        {
+            if (!ActionContext.ModelState.IsValid)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "User not found.";
+
+                return RootRoute;
+            }
+
+            ApplicationUser user = await UserManager.FindByIdAsync(inputModel.Id);
+
+            if (user == null)
+            {
+                TempData[TempDataKeys.ErrorMessage] = "User not found";
+
+                return RootRoute;
+            }
+            else
+            {
+                string userDetailsRoute = UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+
+                bool isUserProductOwner = await UserManager.IsInRoleAsync(user, AuthorizedRoles.ProductOwner);
+
+                if (isUserProductOwner)
+                {
+                    TempData[TempDataKeys.ErrorMessage] = $"Cannot delete a user with role {AuthorizedRoles.ProductOwner}.";
+
+                    return userDetailsRoute;
+                }
+
+                using IDbContextTransaction transaction = await DbContext.Database.BeginTransactionAsync();
+
+                bool userAccessToArchiveRecorded = await RecordUserAccess(user, UserAccessPurposes.Archive);
+
+                if (userAccessToArchiveRecorded)
+                {
+                    user.Archive();
+
+                    IdentityResult updateUserSecurityStamp = await UserManager.UpdateSecurityStampAsync(user);
+
+                    if (!updateUserSecurityStamp.Succeeded)
+                    {
+                        await transaction.RollbackAsync();
+
+                        // updating user security stamp failed, logging errors
+                        foreach (IdentityError error in updateUserSecurityStamp.Errors)
+                            Console.WriteLine(error.Description);
+
+                        TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                        return userDetailsRoute;
+                    }
+
+                    string userArchivedSavePoint = "userArchived";
+                    await transaction.CreateSavepointAsync(userArchivedSavePoint);
+
+                    bool userAccessToDeleteRecorded = await RecordUserAccess(user, UserAccessPurposes.Delete);
+
+                    if (userAccessToDeleteRecorded)
+                    {
+                        IdentityResult deleteUser = await UserManager.DeleteAsync(user);
+
+                        if (!deleteUser.Succeeded)
+                        {
+                            await transaction.RollbackAsync();
+
+                            // deleting user failed, logging errors
+                            foreach (IdentityError error in deleteUser.Errors)
+                                Console.WriteLine(error.Description);
+
+                            TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                            return userDetailsRoute;
+                        }
+                        else
+                        {
+                            // send notifications to all clients of CIS to delete the user
+                            IdentityResult deleteUserFromAllClients = await IdentityService.SendBackChannelDeleteNotificationsForUserAsync(user);
+
+                            if (!deleteUserFromAllClients.Succeeded)
+                            {
+                                if (deleteUserFromAllClients.Errors.Any(error => error.Description == InternalCustomErrors.UserPartiallyDeleted))
+                                {
+                                    await transaction.RollbackToSavepointAsync(userArchivedSavePoint);
+
+                                    await transaction.CommitAsync();
+
+                                    // send notifications to all clients of CIS to signout the user
+                                    await IdentityService.SendBackChannelLogoutNotificationsForUserAsync(user);
+
+                                    TempData[TempDataKeys.ErrorMessage] = "Could not delete user properly. User was partially deleted and was archived to restrict access. Please try again.";
+
+                                    return userDetailsRoute;
+                                }
+                                else
+                                {
+                                    await transaction.RollbackAsync();
+
+                                    TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                                    return userDetailsRoute;
+                                }
+                            }
+                            else
+                            {
+                                await transaction.CommitAsync();
+
+                                TempData[TempDataKeys.SuccessMessage] = "User deleted.";
+
+                                return RootRoute;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        await transaction.RollbackAsync();
+
+                        TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                        return userDetailsRoute;
+                    }
+                }
+                else
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                    return userDetailsRoute;
                 }
             }
         }

@@ -3,8 +3,6 @@
 
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
@@ -22,13 +20,12 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         public DateTime CreatedAt { get; set; }
         public DateTime? LastSignedInAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
+        
+        // field to indicate if user is blocked from using CIS or not
         public bool Blocked { get; private set; }
 
-        [InverseProperty("User")]
-        public virtual ICollection<UserAccessRecord> UserAccessRecords { get; set; }
-        
-        [InverseProperty("Accessor")]
-        public virtual ICollection<UserAccessRecord> AccessedUserRecords { get; set; }
+        // field to indicate if user is soft-deleted or not
+        public bool Archived { get; private set; }
 
         public void UpdateLastSignedInTimeStamp()
         {
@@ -38,9 +35,15 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = currentDateTime;
         }
 
-        public void ToggleBlock(bool block)
+        public void SetBlock(bool block)
         {
             Blocked = block;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void Archive()
+        {
+            Archived = true;
             UpdatedAt = DateTime.UtcNow;
         }
     }

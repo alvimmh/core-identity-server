@@ -9,5 +9,6 @@ namespace CoreIdentityServer.Internals.Constants.Administration
         public const string Block = "Block";
         public const string Unblock = "Unblock";
         public const string Delete = "Delete";
+        public const string Archive = "Archive";
     }
 }

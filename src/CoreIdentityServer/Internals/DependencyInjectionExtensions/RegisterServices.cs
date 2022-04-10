@@ -29,6 +29,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddSingleton<RouteEndpointService>();
 
             services.AddScoped<EmailService>();
+            services.AddScoped<OIDCTokenService>();
             services.AddScoped<IdentityService>();
             services.AddScoped<SignUpService>();
             services.AddScoped<AuthenticationService>();

@@ -1,22 +1,17 @@
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
 {
+    [Index(nameof(UserId)), Index(nameof(AccessorId))]
     public class UserAccessRecord
     {
         public string Id { get; private set; }
         public string Purpose { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-
-        [ForeignKey("User")]
         public string UserId { get; set; }
-        public virtual ApplicationUser User { get; set; }
-
-        [ForeignKey("Accessor")]
         public string AccessorId { get; set; }
-        public virtual ApplicationUser Accessor { get; set; }
 
         public UserAccessRecord()
         {

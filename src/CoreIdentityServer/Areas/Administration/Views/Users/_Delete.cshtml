@@ -1,14 +1,14 @@
-@model BlockUserInputModel
+@model DeleteUserInputModel
 
 <form
     asp-area="Administration"
     asp-controller="Users"
-    asp-action="Block"
+    asp-action="Delete"
     method="post"
 >
     <input type="text" asp-for="Id" value="@Model.Id" hidden>
 
     <div class="d-grid col-6 mx-auto">
-        <button type="submit" class="btn btn-secondary btn-md">Block</button>
+        <button type="submit" class="btn btn-danger btn-md">Delete</button>
     </div>
 </form>
