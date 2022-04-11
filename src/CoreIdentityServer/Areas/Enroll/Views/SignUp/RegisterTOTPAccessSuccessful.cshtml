@@ -1,14 +1,24 @@
+@model RegisterTOTPAccessSuccessfulViewModel
 
 @{
     ViewData["Title"] = "Register TOTP Access Successful";
 }
 
-<p>Congrats! You have successfully signed up with us.</p>
+@if (!Model.ResetAccess)
+{
+    <p>Congrats! You have successfully signed up with us.</p>
+    <p>Protecting your data is our top priority. Using a TOTP based login helps us keep your data safe. Learn more about how we keep your data safe, here.</p>
+    <p>Please use your email & TOTP code generated from the authenticator app to sign in with us from now on.</p>
+}
 
-<p>Protecting your data is our top priority. Using a TOTP based login helps us keep your data safe. Learn more about how we keep your data safe, here.</p>
-<p>Please use your email & TOTP code generated from the authenticator app to sign in with us from now on.</p>
-<p>If you lose access to your authenticator app, select ‘Reset TOTP Access’ from the sign in page.</p>
+@if (Model.TOTPRecoveryCodes != null)
+{
+    <p class="fw-bolder">Store these recovery codes in a secure place. They can be used to recover your TOTP access. They will not be shown again.</p>
+    <p class="lh-1 text-center text-primary pt-1">@Model.TOTPRecoveryCodes</p>
+}
 
 <div class="d-grid col-10 mt-4 mx-auto">
-    <button type="button" class="btn btn-secondary btn-md">Continue to dashboard</button>
+    <a asp-area="General" asp-controller="Pages" asp-action="Dashboard" class="btn btn-primary">
+        Continue to dashboard
+    </a>
 </div>

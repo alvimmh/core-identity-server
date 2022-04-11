@@ -363,7 +363,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                     // clear all unnecessary temp data
                     TempData.Clear();
 
-                    redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
+                    redirectRoute = GenerateRouteUrl("General", "Pages", "Dashboard");
                 }
             }
             else

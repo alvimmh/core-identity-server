@@ -5,19 +5,7 @@
 
 <p class="lh-1">Email confirmed.</p>
 
-<div>
-    <p class="lh-1 text-danger">Reloading the page resets the QR code & recovery codes.</p>
-    <p>To register for TOTP access, please follow the instructions below:</p>
-    <ol>
-        <li>
-            <p>Store these recovery codes in a secure place. They can be used to recover your TOTP access. They will not be shown again.</p>
-            <p class="lh-1 text-center text-primary pt-1">@Model.TOTPRecoveryCodes</p>
-        </li>
-        <li>
-            <p>Use an authenticator app to scan the QR code below then enter the 6-digit code generated from the app.</p>
-        </li>
-    </ol>
-</div>
+<p>Use an authenticator app to scan the QR code below then enter the 6-digit code generated from the app.</p>
 
 <div class="text-center"><canvas id="totp-auth-qr-code"></canvas></div>
 <p><a id="copy-secret-key" class="d-block text-center lh-1">Copy secret key</a></p>
@@ -37,7 +25,6 @@
         <input type="email" asp-for="Email" value="@Model.Email" hidden>
         <input type="text" asp-for="AuthenticatorKey" value="@Model.AuthenticatorKey" hidden>
         <input type="text" asp-for="AuthenticatorKeyUri" value="@Model.AuthenticatorKeyUri" hidden>
-        <input type="text" asp-for="TOTPRecoveryCodes" value="@Model.TOTPRecoveryCodes" hidden>
         <input type="text" asp-for="SessionVerificationTOTPCode" value="@Model.SessionVerificationTOTPCode" hidden>
 
         <div class="d-grid col-6 mt-3 mx-auto">

@@ -4,6 +4,8 @@ using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using CoreIdentityServer.Internals.Constants.Routes;
 using CoreIdentityServer.Internals.Models.InputModels;
+using Microsoft.AspNetCore.Authorization;
+using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -56,6 +58,27 @@ namespace CoreIdentityServer.Areas.Access.Controllers
 
             if (redirectRoute == null)
                 return View(inputModel);
+
+            return Redirect(redirectRoute);
+        }
+
+        [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
+        public async Task<IActionResult> ResetTOTPAccessRecoveryCodes()
+        {
+            // result is an array containing the ViewModel & a redirect url in consecutive order
+            object[] result = await ResetTOTPAccessService.ManageResetTOTPAccessRecoveryCodes();
+
+            // if ViewModel is null then redirect to route returned from ResetTOTPAccessService
+            if (result[0] == null)
+                return Redirect((string)result[1]);
+            
+            return View(result[0]);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.TOTPChallenge)]
+        public async Task<IActionResult> ResetTOTPAccessRecoveryCodes([FromForm] ResetTOTPAccessRecoveryCodesInputModel inputModel)
+        {
+            string redirectRoute = await ResetTOTPAccessService.ResetTOTPAccessRecoveryCodes(inputModel);
 
             return Redirect(redirectRoute);
         }

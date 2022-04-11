@@ -229,7 +229,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
                 string authenticatorKey = null;
                 string authenticatorKeyUri = null;
-                List<string> userTOTPRecoveryCodes = null;
 
                 IdentityResult resetAuthenticatorKey = await UserManager.ResetAuthenticatorKeyAsync(user);
 
@@ -237,7 +236,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 {
                     authenticatorKey = await UserManager.GetAuthenticatorKeyAsync(user);
                     authenticatorKeyUri = IdentityService.GenerateQRCodeUri(userEmail, authenticatorKey);
-                    userTOTPRecoveryCodes = await IdentityService.GenerateTOTPRecoveryCodes(user, 3);
                 }
                 else
                 {
@@ -254,7 +252,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                 {
                     AuthenticatorKey = authenticatorKey,
                     AuthenticatorKeyUri = authenticatorKeyUri,
-                    TOTPRecoveryCodes = string.Join(", ", userTOTPRecoveryCodes),
                     Email = userEmail,
                     SessionVerificationTOTPCode = sessionVerificationCode
                 };
@@ -322,6 +319,9 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                             {
                                 // account registration complete, sign in the user
                                 redirectRoute = await IdentityService.SignIn(user);
+
+                                if (redirectRoute != null)
+                                    redirectRoute = GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll");
                             }
                             else
                             {
@@ -369,6 +369,31 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             }
 
             return redirectRoute;
+        }
+
+        public async Task<object[]> ManageTOTPAccessSuccessfulRegistration(bool resetAccess = false)
+        {
+            ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+            if (user != null)
+            {
+                List<string> userTOTPRecoveryCodes = null;
+
+                int validRecoveryCodes = await UserManager.CountRecoveryCodesAsync(user);
+
+                if (validRecoveryCodes < 1)
+                    userTOTPRecoveryCodes = await IdentityService.GenerateTOTPRecoveryCodes(user, 3);
+
+                RegisterTOTPAccessSuccessfulViewModel viewModel = new RegisterTOTPAccessSuccessfulViewModel()
+                {
+                    TOTPRecoveryCodes = userTOTPRecoveryCodes != null ? string.Join(", ", userTOTPRecoveryCodes) : null,
+                    ResetAccess = resetAccess
+                };
+
+                return GenerateArray(viewModel, null);
+            }
+
+            return GenerateArray(null, RootRoute);
         }
 
         // clean up to be done by DI

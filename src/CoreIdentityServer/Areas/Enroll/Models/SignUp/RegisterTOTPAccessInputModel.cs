@@ -12,9 +12,6 @@ namespace CoreIdentityServer.Areas.Enroll.Models.SignUp
         public string AuthenticatorKeyUri { get; set; }
 
         [Required]
-        public string TOTPRecoveryCodes { get; set; }
-
-        [Required]
         [EmailAddress]
         public string Email { get; set; }
 

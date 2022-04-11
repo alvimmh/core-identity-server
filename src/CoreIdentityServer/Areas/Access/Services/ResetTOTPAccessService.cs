@@ -13,6 +13,7 @@ using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using System.Collections.Generic;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -141,6 +142,37 @@ namespace CoreIdentityServer.Areas.Access.Services
             }
 
             return redirectRoute;
+        }
+
+        public async Task<object[]> ManageResetTOTPAccessRecoveryCodes()
+        {
+            ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+            if (user != null)
+            {
+                ResetTOTPAccessRecoveryCodesInputModel viewModel = new ResetTOTPAccessRecoveryCodesInputModel() { Id = user.Id };
+            
+                return GenerateArray(viewModel, null);
+            }
+            
+            return GenerateArray(null, RootRoute);
+        }
+
+        public async Task<string> ResetTOTPAccessRecoveryCodes(ResetTOTPAccessRecoveryCodesInputModel inputModel)
+        {
+            if (!ActionContext.ModelState.IsValid)
+                return RootRoute;
+
+            ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+            if (user != null && user.Id == inputModel.Id)
+            {
+                IEnumerable<string> userTOTPRecoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 0);
+
+                return GenerateRouteUrl("RegisterTOTPAccessSuccessful", "SignUp", "Enroll", "resetaccess=true");
+            }
+
+            return RootRoute;
         }
 
         // clean up to be done by DI

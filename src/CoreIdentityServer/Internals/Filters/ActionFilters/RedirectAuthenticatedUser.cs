@@ -9,7 +9,7 @@ namespace CoreIdentityServer.Internals.Filters.ActionFilters
         {
             if (context.HttpContext.User.Identity.IsAuthenticated)
             {
-                context.Result = new RedirectResult("~/Enroll/SignUp/RegisterTOTPAccessSuccessful");
+                context.Result = new RedirectResult("~/general/pages/dashboard");
             }
         }
     }
