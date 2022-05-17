@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CoreIdentityServer.Internals.Constants.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -16,6 +18,7 @@ namespace CoreIdentityServer.Internals.Services
         private ActionContext ActionContext;
         private IUrlHelper UrlHelper;
         public List<string> EndpointRoutes { get; private set; }
+        public List<string> EndpointRoutesRequiringTOTPChallenge { get; private set; }
 
         public RouteEndpointService(
             IConfiguration config,
@@ -29,6 +32,7 @@ namespace CoreIdentityServer.Internals.Services
             UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
 
             EndpointRoutes = new List<string>();
+            EndpointRoutesRequiringTOTPChallenge = new List<string>();
 
             PopulateEndpointRoutes(endpointDataSource);
         }
@@ -51,6 +55,14 @@ namespace CoreIdentityServer.Internals.Services
                     string routePath = UrlHelper.RouteUrl(routeEndpoint.RoutePattern.RequiredValues).ToLower();
 
                     EndpointRoutes.Add(routePath);
+
+                    bool routeEndpointRequiresTOTPChallenge = routeEndpoint
+                                                                .Metadata
+                                                                .OfType<AuthorizeAttribute>()
+                                                                .Any(metadata => metadata.Policy == Policies.TOTPChallenge);
+
+                    if (routeEndpointRequiresTOTPChallenge)
+                        EndpointRoutesRequiringTOTPChallenge.Add(routePath);
                 }
             };
 

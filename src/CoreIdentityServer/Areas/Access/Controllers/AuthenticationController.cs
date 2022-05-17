@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Routes;
 using CoreIdentityServer.Internals.Filters.ActionFilters;
+using CoreIdentityServer.Internals.Filters.FilterFactories;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -17,6 +18,12 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         public AuthenticationController(AuthenticationService authenticationService)
         {
             AuthenticationService = authenticationService;
+        }
+
+        [HttpGet, ManageAccessDeniedFilterFactory]
+        public IActionResult AccessDenied([FromQuery] string returnUrl)
+        {
+            return View();
         }
 
         [HttpGet, Authorize]

@@ -35,7 +35,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.ConfigureApplicationCookie(options => {
                 options.ReturnUrlParameter = "returnurl";
                 options.LoginPath = "/access/authentication/signin";
-                options.AccessDeniedPath = "/access/authentication/totpchallenge";
+                options.AccessDeniedPath = "/access/authentication/accessdenied";
 
                 // configure authentication cookie options
                 options.Cookie.Domain = "localhost";

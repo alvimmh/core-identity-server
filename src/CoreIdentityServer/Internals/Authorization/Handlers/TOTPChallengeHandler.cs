@@ -15,26 +15,7 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
         {
             if (authorizationHandlerContext.User.Identity.IsAuthenticated)
             {
-                // claim used to store expiry DateTime of TOTP authorization period
-                Claim TOTPAuthorizationExpiryClaim = authorizationHandlerContext.User.FindFirst(ProjectClaimTypes.TOTPAuthorizationExpiry);
-                Claim authenticationTimeClaim = authorizationHandlerContext.User.FindFirst(JwtClaimTypes.AuthenticationTime);
-
-                bool userAuthorized = false;
-
-                // check if the current time is within the duration of the TOTPAuthorizationExpiry claim's value
-                if (TOTPAuthorizationExpiryClaim != null)
-                {
-                    DateTime authorizationExpiryDateTime = DateTime.Parse(TOTPAuthorizationExpiryClaim.Value);
-                    userAuthorized = DateTime.UtcNow < authorizationExpiryDateTime;
-                }
-
-                // check if authentication was performed within the duration of the TOTPAuthorizationExpiry claim's value
-                if (!userAuthorized && authenticationTimeClaim != null)
-                {
-                    long unixAuthenticationTime = long.Parse(authenticationTimeClaim.Value);
-                    DateTime authenticationTime = DateTimeOffset.FromUnixTimeSeconds(unixAuthenticationTime).UtcDateTime;
-                    userAuthorized = DateTime.UtcNow < authenticationTime.AddSeconds(AccountOptions.TOTPAuthorizationDurationInSeconds);
-                }
+                bool userAuthorized = IsUserAuthorized(authorizationHandlerContext.User);
 
                 if (userAuthorized)
                 {
@@ -43,6 +24,43 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
             }
 
             return Task.FromResult(false);
+        }
+
+        public static Claim GetTOTPAuthorizationExpiryClaim(ClaimsPrincipal user)
+        {
+            return user.FindFirst(ProjectClaimTypes.TOTPAuthorizationExpiry);
+        }
+
+        public static Claim GetAuthenticationTimeClaim(ClaimsPrincipal user)
+        {
+            return user.FindFirst(JwtClaimTypes.AuthenticationTime);
+        }
+
+        public static bool IsUserAuthorized(ClaimsPrincipal user)
+        {
+            // claim used to store expiry DateTime of TOTP authorization period
+            Claim totpAuthorizationExpiryClaim = GetTOTPAuthorizationExpiryClaim(user);
+            Claim authenticationTimeClaim = GetAuthenticationTimeClaim(user);
+
+            // check if the current time is within the duration of the TOTPAuthorizationExpiry claim's value
+            if (totpAuthorizationExpiryClaim != null)
+            {
+                DateTime authorizationExpiryDateTime = DateTime.Parse(totpAuthorizationExpiryClaim.Value);
+
+                if (DateTime.UtcNow < authorizationExpiryDateTime)
+                    return true;
+            }
+
+            // check if authentication was performed within the duration of the TOTPAuthorizationExpiry claim's value
+            if (authenticationTimeClaim != null)
+            {
+                long unixAuthenticationTime = long.Parse(authenticationTimeClaim.Value);
+                DateTime authenticationTime = DateTimeOffset.FromUnixTimeSeconds(unixAuthenticationTime).UtcDateTime;
+
+                return DateTime.UtcNow < authenticationTime.AddSeconds(AccountOptions.TOTPAuthorizationDurationInSeconds);
+            }
+
+            return false;
         }
     }
 }
