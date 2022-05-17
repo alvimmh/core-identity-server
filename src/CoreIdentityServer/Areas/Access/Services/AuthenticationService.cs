@@ -20,6 +20,7 @@ using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Configuration;
+using CoreIdentityServer.Internals.Authorization.Handlers;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -55,6 +56,28 @@ namespace CoreIdentityServer.Areas.Access.Services
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             RouteEndpointService = routeEndpointService;
             RootRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
+        }
+
+        public string ManageAccessDenied(string returnUrl)
+        {
+            bool returnUrlAvailable = !string.IsNullOrWhiteSpace(returnUrl);
+
+            if (returnUrlAvailable)
+            {
+                bool returnUrlRequiresTOTPChallenge = RouteEndpointService.EndpointRoutesRequiringTOTPChallenge.Contains(returnUrl.ToLower());
+                bool userHasTOTPAuthorization = returnUrlRequiresTOTPChallenge ? TOTPChallengeHandler.IsUserAuthorized(ActionContext.HttpContext.User) : false;
+
+                if (returnUrlRequiresTOTPChallenge && !userHasTOTPAuthorization)
+                {
+                    string encodedReturnUrl = HttpUtility.UrlEncode(returnUrl.ToLower());
+
+                    string totpChallengeRedirectRoute = GenerateRouteUrl("totpchallenge", "authentication", "access", $"returnurl={encodedReturnUrl}");
+
+                    return totpChallengeRedirectRoute;
+                }
+            }
+
+            return null;
         }
 
         public async Task<object[]> ManageEmailChallenge(string returnUrl)
