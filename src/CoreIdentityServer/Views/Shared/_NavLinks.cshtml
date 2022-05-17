@@ -1,0 +1,65 @@
+@{
+    bool userSignedIn = User.Identity.IsAuthenticated;
+
+    string currentRoute = @Url.RouteUrl(ViewContext.RouteData.Values)?.ToLower();
+    string rootRoute = "/";
+    string signInRoute = "/access/authentication/signin";
+    string signOutRoute = "/access/authentication/signout";
+
+    bool showSignInLink = currentRoute != signInRoute && currentRoute != rootRoute;
+    bool showSignOutLink = currentRoute != signOutRoute;
+
+    string signInUrl = Url.Action("signin", "authentication", new { Area = "access" });
+    string signUpUrl = Url.Action("registerprospectiveuser", "signup", new { Area = "enroll" });
+    string signOutUrl = Url.Action("signout", "authentication", new { Area = "access" });
+    string profileUrl = Url.Action("index", "profile", new { Area = "vault" });
+    string resetTOTPAccessUrl = Url.Action("prompt", "resettotpaccess", new { Area = "access" });
+    string grantsUrl = Url.Action("index", "grants", new { Area = "access" });
+    string administrationDashboardUrl = Url.Action("index", "dashboard", new { Area = "administration" });
+}
+
+@if (userSignedIn)
+{
+    <li class="nav-item">
+        <a class="nav-link" href="@profileUrl">Profile</a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="@resetTOTPAccessUrl">Reset TOTP Access</a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="@grantsUrl">Applications</a>
+    </li>
+
+    @if (showSignOutLink)
+    {
+        <li class="d-md-none"><hr class="dropdown-divider"></li>
+
+        @if (User.IsInRole(AuthorizedRoles.ProductOwner))
+        {
+            <li class="nav-item">
+                <a class="nav-link" href="@administrationDashboardUrl">Administration</a>
+            </li>
+        }
+
+        <li class="nav-item">
+            <a class="nav-link" href="@signOutUrl">Sign Out</a>
+        </li>
+    }
+}
+else
+{
+    if (showSignInLink)
+    {
+        <li class="nav-item">
+            <a class="nav-link" href="@signInUrl">Sign In</a>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link" href="@signUpUrl">Sign Up</a>
+        </li>
+    }
+}

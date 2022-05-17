@@ -3,14 +3,16 @@
   "defaultProvider": "jsdelivr",
   "libraries": [
     {
-      "provider": "jsdelivr",
       "library": "bootstrap@5.1.3",
       "destination": "wwwroot/lib/bootstrap"
     },
     {
-      "provider": "jsdelivr",
       "library": "qrcode@1.5.0",
       "destination": "wwwroot/lib/qrcode"
+    },
+    {
+      "library": "bootstrap-icons@1.8.2",
+      "destination": "wwwroot/lib/bootstrap-icons"
     }
   ]
 }

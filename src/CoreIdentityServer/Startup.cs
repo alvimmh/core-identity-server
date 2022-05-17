@@ -58,10 +58,8 @@ namespace CoreIdentityServer
             {
                 endpoints.MapControllerRoute(
                     name: "Areas",
-                    pattern: "{area:exists}/{controller=SignUp}/{action=RegisterProspectiveUser}/{id?}"
+                    pattern: "{area=access}/{controller=authentication}/{action=signin}/{id?}"
                 );
-
-                endpoints.MapDefaultControllerRoute();
             });
         }
     }
