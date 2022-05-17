@@ -26,15 +26,15 @@
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
-    <div class="text-center alert alert-danger alert-dismissible fade show" role="alert">
+    <div class="w-75 mx-auto text-center alert alert-danger alert-dismissible fade show p-0" role="alert">
         @errorMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <i data-bs-dismiss="alert" aria-label="Close Icon Button" class="btn btn-sm bi bi-x fs-4"></i>
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(successMessage))
 {
-    <div class="text-center alert alert-success alert-dismissible fade show" role="alert">
+    <div class="w-75 mx-auto text-center alert alert-success alert-dismissible fade show p-0" role="alert">
         @successMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <i data-bs-dismiss="alert" aria-label="Close Icon Button" class="btn btn-sm bi bi-x fs-4"></i>
     </div>
 }
