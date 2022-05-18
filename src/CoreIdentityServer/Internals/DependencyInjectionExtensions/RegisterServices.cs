@@ -2,6 +2,7 @@ using CoreIdentityServer.Areas.Access.Services;
 using CoreIdentityServer.Areas.Administration.Services;
 using CoreIdentityServer.Areas.ClientServices.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
+using CoreIdentityServer.Areas.General.Services;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Authorization.Handlers;
 using CoreIdentityServer.Internals.Services;
@@ -41,6 +42,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<RolesService>();
             services.AddScoped<UsersService>();
             services.AddScoped<MFAService>();
+            services.AddScoped<PagesService>();
 
             return services;
         }

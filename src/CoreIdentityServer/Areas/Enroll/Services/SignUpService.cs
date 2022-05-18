@@ -305,7 +305,6 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
                     if (TOTPAccessVerified)
                     {
-                        user.TwoFactorEnabled = true;
                         user.AccountRegistered = true;
                         user.RequiresAuthenticatorReset = false;
 

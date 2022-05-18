@@ -299,6 +299,15 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
         private async Task<string> SignInTOTP(ApplicationUser user)
         {
+            bool twoFactorAuthenticationEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
+
+            if (!twoFactorAuthenticationEnabled)
+            {
+                string redirectRoute = await SignIn(user);
+
+                return redirectRoute;
+            }
+
             await ResetSignInAttempts(user);
 
             string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);

@@ -10,7 +10,6 @@ using CoreIdentityServer.Internals.Services;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Internals.Constants.UserActions;
-using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Tokens;
 using CoreIdentityServer.Internals.Constants.Account;
@@ -195,7 +194,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                         );
 
                         // add query string since IdentityService.ManageTOTPChallengeSuccess method doesn't share this concern
-                        redirectRoute = GenerateRouteUrl(redirectRoute, redirectRouteQueryString);    
+                        redirectRoute = GenerateRouteUrl(redirectRoute, redirectRouteQueryString);
                     }
                     else
                     {
