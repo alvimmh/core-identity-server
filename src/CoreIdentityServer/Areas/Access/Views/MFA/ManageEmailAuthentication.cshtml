@@ -1,0 +1,23 @@
+@model ManageEmailAuthenticationViewModel
+@{
+    int userAction = Model.EmailAuthenticationEnabled ? 0 : 1;
+    string formSubmitButtonColorClass = Model.EmailAuthenticationEnabled ? "btn-danger" : "btn-primary";
+}
+
+<h1>Manage Two Factor Authentication</h1>
+
+
+<p class="mt-5">Two factor authentication via email is @(Model.EmailAuthenticationEnabled ? "enabled" : "disabled").</p>
+
+<form
+    asp-area="Access"
+    asp-controller="MFA"
+    asp-action="ManageEmailAuthentication"
+    method="post"
+>
+    <input asp-for="Enable" value="@userAction" hidden>
+
+    <div class="d-grid col-md-2 col mt-3 me-auto">
+        <button type="submit" class="btn  btn-md @formSubmitButtonColorClass">@(Model.EmailAuthenticationEnabled ? "Disable" : "Enable")</button>
+    </div>
+</form>

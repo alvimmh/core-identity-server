@@ -162,6 +162,17 @@ namespace CoreIdentityServer.Internals.Services.Email
             await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
         }
 
+        // send an email about latest two factor authentication changes
+        public async Task SendNewTwoFactorAuthenticationStatusEmail(string emailFrom, string emailTo, string userName, bool twoFactorEnabled)
+        {
+            string twoFactorAuthenticationStatus = twoFactorEnabled ? "Enabled" : "Disabled";
+
+            string emailSubject = $"Two Factor Authentication {twoFactorAuthenticationStatus}";
+            string emailBody = $"Dear {userName}, two factor authentication via email has been {twoFactorAuthenticationStatus.ToLower()} for your account. Thank you.";
+
+            await SendEmail(emailFrom, emailTo, emailSubject, emailBody);
+        }
+
         // send a TOTP Access recovery code to CIS product owner
         public void SendProductOwnerTOTPAccessRecoveryCodeEmail(string emailFrom, string emailTo, string userName, string recoveryCode)
         {

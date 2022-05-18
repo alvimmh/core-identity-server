@@ -16,6 +16,7 @@
     string resetTOTPAccessUrl = Url.Action("prompt", "resettotpaccess", new { Area = "access" });
     string grantsUrl = Url.Action("index", "grants", new { Area = "access" });
     string administrationDashboardUrl = Url.Action("index", "dashboard", new { Area = "administration" });
+    string manageTwoFactorAuthenticationUrl = Url.Action("manageemailauthentication", "mfa", new { Area = "access" });
 }
 
 @if (userSignedIn)
@@ -26,6 +27,10 @@
 
     <li class="nav-item">
         <a class="nav-link" href="@resetTOTPAccessUrl">Reset TOTP Access</a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="@manageTwoFactorAuthenticationUrl">Manage 2FA</a>
     </li>
 
     <li class="nav-item">

@@ -40,6 +40,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<GrantsService>();
             services.AddScoped<RolesService>();
             services.AddScoped<UsersService>();
+            services.AddScoped<MFAService>();
 
             return services;
         }
