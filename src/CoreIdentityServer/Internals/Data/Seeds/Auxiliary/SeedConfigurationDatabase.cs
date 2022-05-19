@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Duende.IdentityServer.EntityFramework.DbContexts;
@@ -18,12 +19,23 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Auxiliary
 
             services.AddLogging();
 
+            string auxiliaryDbConnectionStringRoot = config.GetConnectionString("AuxiliaryDatabaseConnection");
+
+            if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
+                throw new NullReferenceException("Auxiliary database connection string is missing.");
+
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                config.GetConnectionString("AuxiliaryDatabaseConnection")
+                auxiliaryDbConnectionStringRoot
             );
 
-            dbConnectionBuilder.Username = config["cisdb_auxiliary_username"];
-            dbConnectionBuilder.Password = config["cisdb_auxiliary_password"];
+            string auxiliaryDbUserName = config["cisdb_auxiliary_username"];
+            string auxiliaryDbPassword = config["cisdb_auxiliary_password"];
+
+            if (string.IsNullOrWhiteSpace(auxiliaryDbUserName) || string.IsNullOrWhiteSpace(auxiliaryDbPassword))
+                throw new NullReferenceException("Auxiliary database credentials are missing.");
+
+            dbConnectionBuilder.Username = auxiliaryDbUserName;
+            dbConnectionBuilder.Password = auxiliaryDbPassword;
 
             string databaseConnectionString = dbConnectionBuilder.ConnectionString;
             string migrationsAssemblyName = typeof(Startup).Assembly.FullName;

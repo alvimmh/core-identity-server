@@ -35,7 +35,7 @@ namespace CoreIdentityServer
 
             services.AddProjectAuthorization();
 
-            services.AddProjectServices();
+            services.AddProjectServices(Configuration);
         }
 
         public void Configure(IApplicationBuilder app)
@@ -51,9 +51,16 @@ namespace CoreIdentityServer
 
             app.UseStaticFiles();
 
+            app.UseSession();
+
             app.UseRouting();
+
+            // UseIdentityServer includes a call to UseAuthentication, so it’s not necessary to have both.
+            // Ref: https://docs.duendesoftware.com/identityserver/v6/fundamentals/hosting/
             app.UseIdentityServer();
+
             app.UseAuthorization();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(

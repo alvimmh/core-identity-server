@@ -58,7 +58,7 @@ namespace CoreIdentityServer
                     IdentityProviderRestrictions = { "https://localhost:5001" },
 
                     // match this value with the authentication cookie lifetime
-                    UserSsoLifetime = (int)AuthenticationCookieOptions.CookieDuration.TotalSeconds,
+                    UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,
 
                     // token settings
                     IdentityTokenLifetime = 180,

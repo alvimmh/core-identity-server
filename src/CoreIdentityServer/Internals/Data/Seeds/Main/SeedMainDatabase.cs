@@ -24,12 +24,23 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
             ServiceCollection services = new ServiceCollection();
             services.AddLogging();
 
+            string dbConnectionStringRoot = config.GetConnectionString("MainDatabaseConnection");
+
+            if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
+                throw new NullReferenceException("Main database connection string is missing.");
+
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                config.GetConnectionString("MainDatabaseConnection")
+                dbConnectionStringRoot
             );
 
-            dbConnectionBuilder.Username = config["cisdb_username"];
-            dbConnectionBuilder.Password = config["cisdb_password"];
+            string dbUserName = config["cisdb_username"];
+            string dbPassword = config["cisdb_password"];
+
+            if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
+                throw new NullReferenceException("Main database credentials are missing.");
+
+            dbConnectionBuilder.Username = dbUserName;
+            dbConnectionBuilder.Password = dbPassword;
 
             string databaseConnectionString = dbConnectionBuilder.ConnectionString;
             string migrationsAssemblyName = typeof(Startup).Assembly.FullName;
@@ -54,8 +65,11 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                     DbContext.Database.Migrate();
 
                     UserManager<ApplicationUser> UserManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-                    
+
                     string productOwnerEmail = config["product_owner_email"];
+
+                    if (string.IsNullOrWhiteSpace(productOwnerEmail))
+                        throw new NullReferenceException("Product Owner email is missing.");
 
                     ApplicationUser productOwner = UserManager.FindByEmailAsync(productOwnerEmail).Result;
 

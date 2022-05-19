@@ -4,6 +4,7 @@
     <UserSecretsId>c5534e6a-a1e1-4d37-9b5e-8b48dc0f85f6</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="DNTCaptcha.Core" Version="4.3.3" />
     <PackageReference Include="Duende.IdentityServer.AspNetIdentity" Version="6.0.1" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.0.1" />
     <PackageReference Include="Mapster" Version="7.3.0" />

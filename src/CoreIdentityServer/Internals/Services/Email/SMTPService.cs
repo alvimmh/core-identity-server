@@ -26,9 +26,18 @@ namespace CoreIdentityServer.Internals.Services.Email
 
             // configure SMTP client
             SmtpHost = Config["MailtrapSmtpEmailService:SmtpHost"];
-            SmtpPort = Convert.ToInt32(Config["MailtrapSmtpEmailService:SmtpPort"]);
+            bool isSmtpPortValid = int.TryParse(Config["MailtrapSmtpEmailService:SmtpPort"], out SmtpPort);
             SmtpUsername = Config["MailtrapSmtpEmailService:SmtpUsername"];
             SmtpPassword = Config["MailtrapSmtpEmailService:SmtpPassword"];
+
+            if (
+                string.IsNullOrWhiteSpace(SmtpHost) ||
+                !isSmtpPortValid ||
+                string.IsNullOrWhiteSpace(SmtpUsername) ||
+                string.IsNullOrWhiteSpace(SmtpPassword)
+            ) {
+                throw new NullReferenceException("Mailtrap SMTP credentials are missing");
+            }
 
             SmtpClient = new SmtpClient(SmtpHost, SmtpPort) {
                 Credentials = new NetworkCredential(SmtpUsername, SmtpPassword),
@@ -38,11 +47,24 @@ namespace CoreIdentityServer.Internals.Services.Email
             // add send completed event handler
             SmtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
 
-            // build ApplicationDbContext options for using statement
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(Config.GetConnectionString("MainDatabaseConnection"));
+            string dbConnectionStringRoot = Config.GetConnectionString("MainDatabaseConnection");
 
-            dbConnectionBuilder.Username = Config["cisdb_username"];
-            dbConnectionBuilder.Password = Config["cisdb_password"];
+            if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
+                throw new NullReferenceException("Main database connection string is missing");
+
+            // build ApplicationDbContext options for using statement
+            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
+                dbConnectionStringRoot
+            );
+
+            string dbUserName = Config["cisdb_username"];
+            string dbPassword = Config["cisdb_password"];
+
+            if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
+                throw new NullReferenceException("Main database credentials are missing");
+
+            dbConnectionBuilder.Username = dbUserName;
+            dbConnectionBuilder.Password = dbPassword;
 
             string databaseConnectionString = dbConnectionBuilder.ConnectionString;
 

@@ -16,19 +16,35 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
     {
         public static IServiceCollection AddProjectIdentityServer(this IServiceCollection services, IConfiguration config)
         {
+            string auxiliaryDbConnectionStringRoot = config.GetConnectionString("AuxiliaryDatabaseConnection");
+
+            if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
+                throw new NullReferenceException("Auxiliary database connection string is missing.");
+
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                config.GetConnectionString("AuxiliaryDatabaseConnection")
+                auxiliaryDbConnectionStringRoot
             );
 
-            dbConnectionBuilder.Username = config["cisdb_auxiliary_username"];
-            dbConnectionBuilder.Password = config["cisdb_auxiliary_password"];
+            string auxiliaryDbUserName = config["cisdb_auxiliary_username"];
+            string auxiliaryDbPassword = config["cisdb_auxiliary_password"];
+
+            if (string.IsNullOrWhiteSpace(auxiliaryDbUserName) || string.IsNullOrWhiteSpace(auxiliaryDbPassword))
+                throw new NullReferenceException("Auxiliary database credentials are missing.");
+
+            dbConnectionBuilder.Username = auxiliaryDbUserName;
+            dbConnectionBuilder.Password = auxiliaryDbPassword;
 
             string auxiliaryDbConnectionString = dbConnectionBuilder.ConnectionString;
             string migrationsAssemblyName = typeof(Startup).Assembly.FullName;
 
+            string tokenSigningCredetialPrivateKeyPassphrase = config["cis_token_signing_credential_private_key_passphrase"];
+
+            if (string.IsNullOrWhiteSpace(tokenSigningCredetialPrivateKeyPassphrase))
+                throw new NullReferenceException("Duende Identity Server token signing credential private key passphrase is missing.");
+
             RsaSecurityKey tokenSigningCredentialPrivateKey = GenerateRSAPrivateKeyFromEncryptedPemFile(
                 "keys/cis_sc_rsa_2048.pem",
-                config["cisdb_signing_credential_private_key_passphrase"]
+                tokenSigningCredetialPrivateKeyPassphrase
             );
 
             services.AddIdentityServer(options =>

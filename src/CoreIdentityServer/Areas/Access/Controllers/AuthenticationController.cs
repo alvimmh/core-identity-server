@@ -81,7 +81,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(viewModel);
         }
 
-        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser, ValidateCaptcha]
         public async Task<IActionResult> SignIn([FromForm] SignInInputModel inputModel)
         {
             string redirectRoute = await AuthenticationService.SignIn(inputModel);

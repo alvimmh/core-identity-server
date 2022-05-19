@@ -10,14 +10,17 @@ using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterServices
     {
-        public static IServiceCollection AddProjectServices(this IServiceCollection services)
-        {
+        public static IServiceCollection AddProjectServices(
+            this IServiceCollection services,
+            IConfiguration configuration
+        ) {
             // the ActionContextAccessor to gain access to the current action context
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
@@ -43,6 +46,10 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             services.AddScoped<UsersService>();
             services.AddScoped<MFAService>();
             services.AddScoped<PagesService>();
+
+            services.AddSessionStorage();
+
+            services.AddCaptcha(configuration);
 
             return services;
         }

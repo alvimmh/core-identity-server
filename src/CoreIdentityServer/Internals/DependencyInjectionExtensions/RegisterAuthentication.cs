@@ -38,18 +38,16 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 options.AccessDeniedPath = "/access/authentication/accessdenied";
 
                 // configure authentication cookie options
-                options.Cookie.Domain = "localhost";
-                options.Cookie.HttpOnly = true;
-                options.Cookie.IsEssential = true;
-                options.Cookie.MaxAge = AuthenticationCookieOptions.CookieDuration;
-                options.Cookie.Name = AuthenticationCookieOptions.CookieName;
-                options.Cookie.Path = "/";
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.Cookie.Name = AuthenticationCookieOptions.Name;
+                options.Cookie.Domain = AuthenticationCookieOptions.Domain;
+                options.Cookie.Path = AuthenticationCookieOptions.Path;
+                options.Cookie.HttpOnly = AuthenticationCookieOptions.HttpOnly;
+                options.Cookie.IsEssential = AuthenticationCookieOptions.IsEssential;
+                options.Cookie.SecurePolicy = AuthenticationCookieOptions.SecurePolicy;
+                options.Cookie.SameSite = AuthenticationCookieOptions.SameSite;
+                options.Cookie.MaxAge = AuthenticationCookieOptions.Duration;
 
-                // samesite set to None to allow cross-site requests
-                options.Cookie.SameSite = SameSiteMode.Lax;
-
-                options.ExpireTimeSpan = AuthenticationCookieOptions.CookieDuration;
+                options.ExpireTimeSpan = AuthenticationCookieOptions.Duration;
                 options.SlidingExpiration = false;
             });
 

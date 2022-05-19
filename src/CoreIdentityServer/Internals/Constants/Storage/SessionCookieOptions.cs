@@ -1,11 +1,11 @@
 using System;
 using Microsoft.AspNetCore.Http;
 
-namespace CoreIdentityServer.Internals.Constants.Authentication
+namespace CoreIdentityServer.Internals.Constants.Storage
 {
-    public static class AuthenticationCookieOptions
+    public static class SessionCookieOptions
     {
-        public const string Name = "identity";
+        public const string Name = "session";
         public const string Domain = "localhost";
         public const string Path = "/";
         public const bool HttpOnly = true;
@@ -15,6 +15,6 @@ namespace CoreIdentityServer.Internals.Constants.Authentication
         // samesite set to Lax to allow cross-site requests
         public const SameSiteMode SameSite = SameSiteMode.Lax;
 
-        public static TimeSpan Duration = TimeSpan.FromSeconds(86400);
+        public static TimeSpan Duration = TimeSpan.FromSeconds(1200);
     }
 }

@@ -6,15 +6,16 @@ Initialize user-secrets by running command `dotnet user-secrets init --project s
 
 Add required user-secrets from protected sources for the following keys:
 
-1. "MailtrapSmtpEmailService:SmtpHost"
-2. "MailtrapSmtpEmailService:SmtpPort"
-3. "MailtrapSmtpEmailService:SmtpUsername"
-4. "MailtrapSmtpEmailService:SmtpPassword"
-5. "cisdb_username"
-6. "cisdb_password"
-7. "cisdb_auxiliary_username"
-8. "cisdb_auxiliary_password"
-9. "cisdb_signing_credential_private_key_passphrase"
+1. "product_owner_email"
+2. "MailtrapSmtpEmailService:SmtpHost"
+3. "MailtrapSmtpEmailService:SmtpPort"
+4. "MailtrapSmtpEmailService:SmtpUsername"
+5. "MailtrapSmtpEmailService:SmtpPassword"
+6. "cisdb_username"
+7. "cisdb_password"
+8. "cisdb_auxiliary_username"
+9. "cisdb_auxiliary_password"
+10. "cis_token_signing_credential_private_key_passphrase"
 
 Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
 
