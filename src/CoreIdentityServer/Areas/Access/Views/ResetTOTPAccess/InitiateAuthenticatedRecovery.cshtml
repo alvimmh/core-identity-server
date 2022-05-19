@@ -1,9 +1,16 @@
+
+@{
+    ViewData["Title"] = "Reset TOTP Access";
+}
+
+<p>Reset TOTP access</p>
+
 <p>To keep your account safe, we need to verify its you. Please enter one of the TOTP access recovery codes in the next page to complete verification.</p>
 
 <form
     asp-area="Access"
     asp-controller="ResetTOTPAccess"
-    asp-action="InitiateTOTPAccessRecoveryChallenge"
+    asp-action="InitiateAuthenticatedRecovery"
     method="post"
 >
     <div class="mt-4">

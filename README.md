@@ -2,7 +2,7 @@
 
 ## user-secrets
 
-Initialize user-secrets by running command `dotnet user-secrets init --project src/CoreIdentityServer/` from the root directory.
+Initialize user-secrets by running command `dotnet user-secrets init --project src/CoreIdentityServer/` from the repository root directory.
 
 Add required user-secrets from protected sources for the following keys:
 
@@ -16,6 +16,7 @@ Add required user-secrets from protected sources for the following keys:
 8. "cisdb_auxiliary_username"
 9. "cisdb_auxiliary_password"
 10. "cis_token_signing_credential_private_key_passphrase"
+11. "captcha_encryption_key"
 
 Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
 

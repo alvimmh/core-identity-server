@@ -26,7 +26,7 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View();
         }
 
-        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
+        [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser, ValidateCaptcha]
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel inputModel)
         {
             string redirectRoute = await SignUpService.RegisterProspectiveUser(inputModel);

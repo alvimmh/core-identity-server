@@ -6,6 +6,7 @@ using CoreIdentityServer.Internals.Constants.Routes;
 using CoreIdentityServer.Internals.Models.InputModels;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Filters.ActionFilters;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -25,13 +26,27 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         }
 
         [HttpGet]
-        public IActionResult InitiateTOTPAccessRecoveryChallenge()
+        public IActionResult InitiateUnauthenticatedRecovery()
         {
             return View();
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> InitiateTOTPAccessRecoveryChallenge([FromForm] InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
+        [HttpPost, ValidateAntiForgeryToken, ValidateCaptcha]
+        public async Task<IActionResult> InitiateUnauthenticatedRecovery([FromForm] InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
+        {
+            string redirectRoute = await ResetTOTPAccessService.InitiateTOTPAccessRecoveryChallenge(inputModel);
+
+            return Redirect(redirectRoute);
+        }
+
+        [HttpGet, Authorize, Authorize(Policy = Policies.TOTPChallenge)]
+        public IActionResult InitiateAuthenticatedRecovery()
+        {
+            return View();
+        }
+
+        [HttpPost, ValidateAntiForgeryToken, Authorize, Authorize(Policy = Policies.TOTPChallenge)]
+        public async Task<IActionResult> InitiateAuthenticatedRecovery([FromForm] InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
         {
             string redirectRoute = await ResetTOTPAccessService.InitiateTOTPAccessRecoveryChallenge(inputModel);
 
