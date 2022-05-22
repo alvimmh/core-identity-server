@@ -21,7 +21,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             if (environment.IsDevelopment())
                 dbConnectionStringRoot = configuration.GetConnectionString("DevelopmentMain");
             else if (environment.IsProduction())
-                dbConnectionStringRoot = configuration.GetConnectionString("ProductionMain");
+                dbConnectionStringRoot = configuration["cis_main_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing.");

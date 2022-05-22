@@ -17,6 +17,8 @@ Add required user-secrets from protected sources for the following keys:
 9. "cisdb_auxiliary_password"
 10. "cis_token_signing_credential_private_key_passphrase"
 11. "captcha_encryption_key"
+12. "cis_main_db_connection_string"
+13. "cis_auxiliary_db_connection_string"
 
 Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
 

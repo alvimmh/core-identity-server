@@ -54,7 +54,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             if (environment.IsDevelopment())
                 dbConnectionStringRoot = Config.GetConnectionString("DevelopmentMain");
             else if (environment.IsProduction())
-                dbConnectionStringRoot = Config.GetConnectionString("ProductionMain");
+                dbConnectionStringRoot = Config["cis_main_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing");

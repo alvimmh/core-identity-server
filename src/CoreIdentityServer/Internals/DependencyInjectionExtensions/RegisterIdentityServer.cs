@@ -26,7 +26,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             if (environment.IsDevelopment())
                 auxiliaryDbConnectionStringRoot = config.GetConnectionString("DevelopmentAuxiliary");
             else if (environment.IsProduction())
-                auxiliaryDbConnectionStringRoot = config.GetConnectionString("ProductionAuxiliary");
+                auxiliaryDbConnectionStringRoot = config["cis_auxiliary_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
                 throw new NullReferenceException("Auxiliary database connection string is missing.");
