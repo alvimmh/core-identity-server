@@ -20,11 +20,13 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Configuration;
 using CoreIdentityServer.Internals.Authorization.Handlers;
+using Microsoft.AspNetCore.Hosting;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class AuthenticationService : BaseService, IDisposable
     {
+        private readonly IWebHostEnvironment Environment;
         private readonly IConfiguration Configuration;
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
@@ -37,6 +39,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         private bool ResourcesDisposed;
 
         public AuthenticationService(
+            IWebHostEnvironment environment,
             IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             EmailService emailService,
@@ -46,6 +49,7 @@ namespace CoreIdentityServer.Areas.Access.Services
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             RouteEndpointService routeEndpointService
         ) {
+            Environment = environment;
             Configuration = configuration;
             UserManager = userManager;
             EmailService = emailService;
@@ -248,7 +252,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 viewModel = new SignedOutViewModel
                 {
                     AutomaticRedirectAfterSignOut = AccountOptions.AutomaticRedirectAfterSignOut,
-                    PostLogoutRedirectUri = logoutContext.PostLogoutRedirectUri ?? GenerateAbsoluteLocalUrl("SignIn", "Authentication", "Access", Configuration),
+                    PostLogoutRedirectUri = logoutContext.PostLogoutRedirectUri ?? GenerateAbsoluteLocalUrl(Environment, "SignIn", "Authentication", "Access", Configuration),
                     ClientName = string.IsNullOrWhiteSpace(logoutContext.ClientName) ? logoutContext.ClientId : logoutContext.ClientName,
                     SignOutIFrameUrl = logoutContext.SignOutIFrameUrl,
                     SignOutId = inputModel.SignOutId

@@ -5,6 +5,8 @@ using System.Net.Mail;
 using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -21,7 +23,7 @@ namespace CoreIdentityServer.Internals.Services.Email
         private SmtpClient SmtpClient;
         private DbContextOptionsBuilder<ApplicationDbContext> OptionsBuilder;
 
-        public SMTPService(IConfiguration config) {
+        public SMTPService(IWebHostEnvironment environment, IConfiguration config) {
             Config = config;
 
             // configure SMTP client
@@ -47,7 +49,12 @@ namespace CoreIdentityServer.Internals.Services.Email
             // add send completed event handler
             SmtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
 
-            string dbConnectionStringRoot = Config.GetConnectionString("MainDatabaseConnection");
+            string dbConnectionStringRoot = null;
+
+            if (environment.IsDevelopment())
+                dbConnectionStringRoot = Config.GetConnectionString("DevelopmentMain");
+            else if (environment.IsProduction())
+                dbConnectionStringRoot = Config.GetConnectionString("ProductionMain");
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing");

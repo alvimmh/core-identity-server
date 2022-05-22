@@ -1,8 +1,10 @@
 using System;
 using CoreIdentityServer.Internals.Data;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
@@ -11,9 +13,15 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
     {
         public static IServiceCollection AddProjectDatabases(
             this IServiceCollection services,
+            IWebHostEnvironment environment,
             IConfiguration configuration
         ) {
-            string dbConnectionStringRoot = configuration.GetConnectionString("MainDatabaseConnection");
+            string dbConnectionStringRoot = null;
+
+            if (environment.IsDevelopment())
+                dbConnectionStringRoot = configuration.GetConnectionString("DevelopmentMain");
+            else if (environment.IsProduction())
+                dbConnectionStringRoot = configuration.GetConnectionString("ProductionMain");
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing.");

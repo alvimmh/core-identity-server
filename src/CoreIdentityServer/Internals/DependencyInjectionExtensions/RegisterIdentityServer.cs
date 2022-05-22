@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 
@@ -14,9 +16,17 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterIdentityServer
     {
-        public static IServiceCollection AddProjectIdentityServer(this IServiceCollection services, IConfiguration config)
-        {
-            string auxiliaryDbConnectionStringRoot = config.GetConnectionString("AuxiliaryDatabaseConnection");
+        public static IServiceCollection AddProjectIdentityServer(
+            this IServiceCollection services,
+            IWebHostEnvironment environment,
+            IConfiguration config
+        ){
+            string auxiliaryDbConnectionStringRoot = null;
+
+            if (environment.IsDevelopment())
+                auxiliaryDbConnectionStringRoot = config.GetConnectionString("DevelopmentAuxiliary");
+            else if (environment.IsProduction())
+                auxiliaryDbConnectionStringRoot = config.GetConnectionString("ProductionAuxiliary");
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
                 throw new NullReferenceException("Auxiliary database connection string is missing.");

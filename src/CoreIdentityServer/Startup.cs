@@ -25,13 +25,13 @@ namespace CoreIdentityServer
         {
             services.AddControllersWithViews();
 
-            services.AddProjectDatabases(Configuration);
+            services.AddProjectDatabases(Environment, Configuration);
  
             services.AddProjectIdentity();
 
             services.AddProjectAuthentication();
 
-            services.AddProjectIdentityServer(Configuration);
+            services.AddProjectIdentityServer(Environment, Configuration);
 
             services.AddProjectAuthorization();
 

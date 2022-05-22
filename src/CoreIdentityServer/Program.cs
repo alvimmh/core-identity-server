@@ -45,11 +45,12 @@ namespace CoreIdentityServer
                 {
                     Log.Information("Seeding database...");
 
+                    IWebHostEnvironment environment = host.Services.GetRequiredService<IWebHostEnvironment>();
                     IConfiguration config = host.Services.GetRequiredService<IConfiguration>();
 
-                    SeedMainDatabase.EnsureSeedData(config);
-                    SeedPersistedGrantDatabase.InitializeDatabase(config);
-                    SeedConfigurationDatabase.EnsureSeedData(config);
+                    SeedMainDatabase.EnsureSeedData(environment, config);
+                    SeedPersistedGrantDatabase.InitializeDatabase(environment, config);
+                    SeedConfigurationDatabase.EnsureSeedData(environment, config);
 
                     Log.Information("Done seeding database.");
 

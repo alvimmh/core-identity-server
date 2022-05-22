@@ -14,17 +14,24 @@ using Npgsql;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Main
 {
     public class SeedMainDatabase
     {
-        public static void EnsureSeedData(IConfiguration config)
+        public static void EnsureSeedData(IWebHostEnvironment environment, IConfiguration config)
         {
             ServiceCollection services = new ServiceCollection();
             services.AddLogging();
 
-            string dbConnectionStringRoot = config.GetConnectionString("MainDatabaseConnection");
+            string dbConnectionStringRoot = null;
+
+            if (environment.IsDevelopment())
+                dbConnectionStringRoot = config.GetConnectionString("DevelopmentMain");
+            else if (environment.IsProduction())
+                dbConnectionStringRoot = config.GetConnectionString("ProductionMain");
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing.");
@@ -101,7 +108,7 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                         if (string.IsNullOrWhiteSpace(productOwnerTOTPAccessRecoveryCode))
                             throw new Exception($"Could not create TOTP Access recovery code for {AuthorizedRoles.ProductOwner.ToLower()}.");
 
-                        SMTPService SMTPService = new SMTPService(config);
+                        SMTPService SMTPService = new SMTPService(environment, config);
                         EmailService EmailService = new EmailService(config, DbContext, SMTPService);
 
                         EmailService.SendProductOwnerTOTPAccessRecoveryCodeEmail(

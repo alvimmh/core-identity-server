@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using CoreIdentityServer.Internals.Constants.Account;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Duende.IdentityServer.Services;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace CoreIdentityServer.Internals.Services
 {
@@ -72,9 +74,21 @@ namespace CoreIdentityServer.Internals.Services
             return items;
         }
 
-        private protected string GenerateAbsoluteLocalUrl(string action, string controller, string area, IConfiguration config)
-        {
-            return $"{config["ApplicationUrl"]}/{area}/{controller}/{action}";
+        private protected string GenerateAbsoluteLocalUrl(
+            IWebHostEnvironment environment,
+            string action,
+            string controller,
+            string area,
+            IConfiguration config
+        ) {
+            string rootUrl = null;
+
+            if (environment.IsDevelopment())
+                rootUrl = config.GetSection("ApplicationUrl")["Development"];
+            else if (environment.IsProduction())
+                rootUrl = config.GetSection("ApplicationUrl")["Production"];
+
+            return $"{rootUrl}/{area}/{controller}/{action}";
         }
 
         private protected string GenerateRouteUrl(string action, string controller, string area, string queryString = null)

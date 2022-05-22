@@ -5,18 +5,25 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Npgsql;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Auxiliary
 {
     public class SeedPersistedGrantDatabase
     {
-        public static void InitializeDatabase(IConfiguration config)
+        public static void InitializeDatabase(IWebHostEnvironment environment, IConfiguration config)
         {
             ServiceCollection services = new ServiceCollection();
 
             services.AddLogging();
 
-            string auxiliaryDbConnectionStringRoot = config.GetConnectionString("AuxiliaryDatabaseConnection");
+            string auxiliaryDbConnectionStringRoot = null;
+
+            if (environment.IsDevelopment())
+                auxiliaryDbConnectionStringRoot = config.GetConnectionString("DevelopmentAuxiliary");
+            else if (environment.IsProduction())
+                auxiliaryDbConnectionStringRoot = config.GetConnectionString("ProductionAuxiliary");
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
                 throw new NullReferenceException("Auxiliary database connection string is missing.");
