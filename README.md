@@ -2,7 +2,7 @@
 
 ## configure
 
-Configure settings for the application and clients inside the `src/CoreIdentityServer/Config.cs` file.
+Configure settings for the application and clients inside the `src/CoreIdentityServer/Config.cs` file. And set the ASPNETCORE_ENVIRONMENT & applicationUrl in the `src/CoreIdentityServer/Properties/launchSettings.json` file.
 
 ## user-secrets
 

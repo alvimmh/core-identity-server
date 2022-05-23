@@ -40,6 +40,8 @@ namespace CoreIdentityServer
 
         public void Configure(IApplicationBuilder app)
         {
+            app.UseHttpsRedirection();
+
             if (Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
