@@ -57,8 +57,15 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 tokenSigningCredetialPrivateKeyPassphrase
             );
 
+            string duendeIdentityServerLicenseKey = config["duende_identity_server_license_key"];
+
+            if (string.IsNullOrWhiteSpace(duendeIdentityServerLicenseKey) && environment.IsProduction())
+                throw new NullReferenceException("Duende Identity Server license key is missing.");
+
             services.AddIdentityServer(options =>
             {
+                options.LicenseKey = duendeIdentityServerLicenseKey;
+
                 options.Events.RaiseErrorEvents = true;
                 options.Events.RaiseInformationEvents = true;
                 options.Events.RaiseFailureEvents = true;

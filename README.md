@@ -23,6 +23,7 @@ Add required user-secrets from protected sources for the following keys:
 11. "captcha_encryption_key"
 12. "cis_main_db_connection_string"
 13. "cis_auxiliary_db_connection_string"
+14. "duende_identity_server_license_key"
 
 Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
 
