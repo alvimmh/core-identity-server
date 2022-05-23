@@ -1,5 +1,9 @@
 # Setup
 
+## configure
+
+Configure settings for the application and clients inside the `src/CoreIdentityServer/Config.cs` file.
+
 ## user-secrets
 
 Initialize user-secrets by running command `dotnet user-secrets init --project src/CoreIdentityServer/` from the repository root directory.

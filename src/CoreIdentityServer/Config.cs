@@ -10,6 +10,14 @@ namespace CoreIdentityServer
 {
     public static class Config
     {
+        // change it to localhost for development environment
+        public const string CISApplicationDomain = "bonicinitiatives.biz";
+
+        // change it to local url https://localhost:5001 for development environment
+        public const string CISApplicationUrl = "https://bonicinitiatives.biz";
+
+        // change it to local url for development environment
+        public const string TeamadhaBackendClientUrl = "https://{url_for_team_adha_administrative}";
 
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
@@ -55,7 +63,7 @@ namespace CoreIdentityServer
                     BackChannelLogoutUri = $"{TeamadhaBackendClientUrl}/administration/authentication/signout_oidc",
                     BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
-                    IdentityProviderRestrictions = { "https://localhost:5001" },
+                    IdentityProviderRestrictions = { CISApplicationUrl },
 
                     // match this value with the authentication cookie lifetime
                     UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,

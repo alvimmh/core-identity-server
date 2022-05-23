@@ -81,12 +81,7 @@ namespace CoreIdentityServer.Internals.Services
             string area,
             IConfiguration config
         ) {
-            string rootUrl = null;
-
-            if (environment.IsDevelopment())
-                rootUrl = config.GetSection("ApplicationUrl")["Development"];
-            else if (environment.IsProduction())
-                rootUrl = config.GetSection("ApplicationUrl")["Production"];
+            string rootUrl = Config.CISApplicationUrl;
 
             return $"{rootUrl}/{area}/{controller}/{action}";
         }
