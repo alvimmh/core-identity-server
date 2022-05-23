@@ -17,11 +17,21 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             IConfiguration configuration
         ) {
             string dbConnectionStringRoot = null;
+            string dbUserName = null;
+            string dbPassword = null;
 
             if (environment.IsDevelopment())
+            {
                 dbConnectionStringRoot = configuration.GetConnectionString("DevelopmentMain");
+                dbUserName = configuration["cisdb_username"];
+                dbPassword = configuration["cisdb_password"];
+            }
             else if (environment.IsProduction())
+            {
                 dbConnectionStringRoot = configuration["cis_main_db_connection_string"];
+                dbUserName = configuration["cis_main_db_username"];
+                dbPassword = configuration["cis_main_db_password"];
+            }
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing.");
@@ -29,9 +39,6 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
                 dbConnectionStringRoot
             );
-
-            string dbUserName = configuration["cisdb_username"];
-            string dbPassword = configuration["cisdb_password"];
 
             if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
                 throw new NullReferenceException("Main database credentials are missing.");

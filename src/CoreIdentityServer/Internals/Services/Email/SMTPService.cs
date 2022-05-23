@@ -62,11 +62,21 @@ namespace CoreIdentityServer.Internals.Services.Email
             SmtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
 
             string dbConnectionStringRoot = null;
+            string dbUserName = null;
+            string dbPassword = null;
 
             if (environment.IsDevelopment())
+            {
                 dbConnectionStringRoot = Config.GetConnectionString("DevelopmentMain");
+                dbUserName = Config["cisdb_username"];
+                dbPassword = Config["cisdb_password"];
+            }
             else if (environment.IsProduction())
+            {
                 dbConnectionStringRoot = Config["cis_main_db_connection_string"];
+                dbUserName = Config["cis_main_db_username"];
+                dbPassword = Config["cis_main_db_password"];
+            }
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing");
@@ -75,9 +85,6 @@ namespace CoreIdentityServer.Internals.Services.Email
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
                 dbConnectionStringRoot
             );
-
-            string dbUserName = Config["cisdb_username"];
-            string dbPassword = Config["cisdb_password"];
 
             if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
                 throw new NullReferenceException("Main database credentials are missing");

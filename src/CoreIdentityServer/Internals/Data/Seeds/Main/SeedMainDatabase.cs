@@ -27,11 +27,21 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
             services.AddLogging();
 
             string dbConnectionStringRoot = null;
+            string dbUserName = null;
+            string dbPassword = null;
 
             if (environment.IsDevelopment())
+            {
                 dbConnectionStringRoot = config.GetConnectionString("DevelopmentMain");
+                dbUserName = config["cisdb_username"];
+                dbPassword = config["cisdb_password"];
+            }
             else if (environment.IsProduction())
+            {
                 dbConnectionStringRoot = config["cis_main_db_connection_string"];
+                dbUserName = config["cis_main_db_username"];
+                dbPassword = config["cis_main_db_password"];
+            }
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing.");
@@ -39,9 +49,6 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
                 dbConnectionStringRoot
             );
-
-            string dbUserName = config["cisdb_username"];
-            string dbPassword = config["cisdb_password"];
 
             if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
                 throw new NullReferenceException("Main database credentials are missing.");

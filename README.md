@@ -11,19 +11,19 @@ Initialize user-secrets by running command `dotnet user-secrets init --project s
 Add required user-secrets from protected sources for the following keys:
 
 1. "product_owner_email"
-2. "MailtrapSmtpEmailService:SmtpHost"
-3. "MailtrapSmtpEmailService:SmtpPort"
-4. "MailtrapSmtpEmailService:SmtpUsername"
-5. "MailtrapSmtpEmailService:SmtpPassword"
-6. "cisdb_username"
-7. "cisdb_password"
-8. "cisdb_auxiliary_username"
-9. "cisdb_auxiliary_password"
+2. "MailtrapSmtpEmailService:SmtpHost" for development, "Production:SmtpHost" for production
+3. "MailtrapSmtpEmailService:SmtpPort" for development, "Production:SmtpPort" for production
+4. "MailtrapSmtpEmailService:SmtpUsername" for development, "Production:SmtpUsername" for production
+5. "MailtrapSmtpEmailService:SmtpPassword" for development, "Production:SmtpPassword" for production
+6. "cisdb_username" for development, "cis_main_db_username" for production
+7. "cisdb_password" for development, "cis_main_db_password" for production
+8. "cisdb_auxiliary_username" for development, "cis_auxiliary_db_username" for production
+9. "cisdb_auxiliary_password" for development, "cis_auxiliary_db_password" for production
 10. "cis_token_signing_credential_private_key_passphrase"
 11. "captcha_encryption_key"
-12. "cis_main_db_connection_string"
-13. "cis_auxiliary_db_connection_string"
-14. "duende_identity_server_license_key"
+12. "cis_main_db_connection_string" for production
+13. "cis_auxiliary_db_connection_string" for production
+14. "duende_identity_server_license_key" for production
 
 Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
 
