@@ -458,3 +458,5 @@ AspIdUsers.db
 
 # Signing credentials
 src/CoreIdentityServer/keys/*
+src/CoreIdentityServer/appsettings.Development.json
+src/CoreIdentityServer/appsettings.Production.json

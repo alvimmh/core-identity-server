@@ -15,7 +15,6 @@ using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Main
 {
@@ -26,22 +25,7 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
             ServiceCollection services = new ServiceCollection();
             services.AddLogging();
 
-            string dbConnectionStringRoot = null;
-            string dbUserName = null;
-            string dbPassword = null;
-
-            if (environment.IsDevelopment())
-            {
-                dbConnectionStringRoot = config.GetConnectionString("DevelopmentMain");
-                dbUserName = config["cisdb_username"];
-                dbPassword = config["cisdb_password"];
-            }
-            else if (environment.IsProduction())
-            {
-                dbConnectionStringRoot = config["cis_main_db_connection_string"];
-                dbUserName = config["cis_main_db_username"];
-                dbPassword = config["cis_main_db_password"];
-            }
+            string dbConnectionStringRoot = config["cis_main_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing.");
@@ -49,6 +33,9 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
                 dbConnectionStringRoot
             );
+
+            string dbUserName = config["cis_main_db_username"];
+            string dbPassword = config["cis_main_db_password"];
 
             if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
                 throw new NullReferenceException("Main database credentials are missing.");

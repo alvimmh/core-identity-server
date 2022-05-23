@@ -21,22 +21,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             IWebHostEnvironment environment,
             IConfiguration config
         ){
-            string auxiliaryDbConnectionStringRoot = null;
-            string auxiliaryDbUserName = null;
-            string auxiliaryDbPassword = null;
-
-            if (environment.IsDevelopment())
-            {
-                auxiliaryDbConnectionStringRoot = config.GetConnectionString("DevelopmentAuxiliary");
-                auxiliaryDbUserName = config["cisdb_auxiliary_username"];
-                auxiliaryDbPassword = config["cisdb_auxiliary_password"];
-            }
-            else if (environment.IsProduction())
-            {
-                auxiliaryDbConnectionStringRoot = config["cis_auxiliary_db_connection_string"];
-                auxiliaryDbUserName = config["cis_auxiliary_db_username"];
-                auxiliaryDbPassword = config["cis_auxiliary_db_password"];
-            }
+            string auxiliaryDbConnectionStringRoot = config["cis_auxiliary_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
                 throw new NullReferenceException("Auxiliary database connection string is missing.");
@@ -44,6 +29,9 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
                 auxiliaryDbConnectionStringRoot
             );
+
+            string auxiliaryDbUserName = config["cis_auxiliary_db_username"];
+            string auxiliaryDbPassword = config["cis_auxiliary_db_password"];
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbUserName) || string.IsNullOrWhiteSpace(auxiliaryDbPassword))
                 throw new NullReferenceException("Auxiliary database credentials are missing.");

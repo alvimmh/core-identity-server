@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -29,20 +28,10 @@ namespace CoreIdentityServer.Internals.Services.Email
             bool isSmtpPortValid = false;
 
             // configure SMTP client
-            if (environment.IsDevelopment())
-            {
-                SmtpHost = Config["MailtrapSmtpEmailService:SmtpHost"];
-                isSmtpPortValid = int.TryParse(Config["MailtrapSmtpEmailService:SmtpPort"], out SmtpPort);
-                SmtpUsername = Config["MailtrapSmtpEmailService:SmtpUsername"];
-                SmtpPassword = Config["MailtrapSmtpEmailService:SmtpPassword"];
-            }
-            else if (environment.IsProduction())
-            {
-                SmtpHost = Config["Production:SmtpHost"];
-                isSmtpPortValid = int.TryParse(Config["Production:SmtpPort"], out SmtpPort);
-                SmtpUsername = Config["Production:SmtpUsername"];
-                SmtpPassword = Config["Production:SmtpPassword"];
-            }
+            SmtpHost = Config["SmtpHost"];
+            isSmtpPortValid = int.TryParse(Config["SmtpPort"], out SmtpPort);
+            SmtpUsername = Config["SmtpUsername"];
+            SmtpPassword = Config["SmtpPassword"];
 
             if (
                 string.IsNullOrWhiteSpace(SmtpHost) ||
@@ -61,22 +50,7 @@ namespace CoreIdentityServer.Internals.Services.Email
             // add send completed event handler
             SmtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
 
-            string dbConnectionStringRoot = null;
-            string dbUserName = null;
-            string dbPassword = null;
-
-            if (environment.IsDevelopment())
-            {
-                dbConnectionStringRoot = Config.GetConnectionString("DevelopmentMain");
-                dbUserName = Config["cisdb_username"];
-                dbPassword = Config["cisdb_password"];
-            }
-            else if (environment.IsProduction())
-            {
-                dbConnectionStringRoot = Config["cis_main_db_connection_string"];
-                dbUserName = Config["cis_main_db_username"];
-                dbPassword = Config["cis_main_db_password"];
-            }
+            string dbConnectionStringRoot = Config["cis_main_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
                 throw new NullReferenceException("Main database connection string is missing");
@@ -85,6 +59,9 @@ namespace CoreIdentityServer.Internals.Services.Email
             NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
                 dbConnectionStringRoot
             );
+
+            string dbUserName = Config["cis_main_db_username"];
+            string dbPassword = Config["cis_main_db_password"];
 
             if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
                 throw new NullReferenceException("Main database credentials are missing");

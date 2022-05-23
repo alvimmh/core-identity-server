@@ -8,28 +8,29 @@ Configure settings for the application and clients inside the `src/CoreIdentityS
 
 Initialize user-secrets by running command `dotnet user-secrets init --project src/CoreIdentityServer/` from the repository root directory.
 
-Add required user-secrets from protected sources for the following keys:
+Add required secrets from protected sources for the following keys into appsettings.Development.json or appsettings.Production.json based on the current environment:
 
 1. "product_owner_email"
-2. "MailtrapSmtpEmailService:SmtpHost" for development, "Production:SmtpHost" for production
-3. "MailtrapSmtpEmailService:SmtpPort" for development, "Production:SmtpPort" for production
-4. "MailtrapSmtpEmailService:SmtpUsername" for development, "Production:SmtpUsername" for production
-5. "MailtrapSmtpEmailService:SmtpPassword" for development, "Production:SmtpPassword" for production
-6. "cisdb_username" for development, "cis_main_db_username" for production
-7. "cisdb_password" for development, "cis_main_db_password" for production
-8. "cisdb_auxiliary_username" for development, "cis_auxiliary_db_username" for production
-9. "cisdb_auxiliary_password" for development, "cis_auxiliary_db_password" for production
-10. "cis_token_signing_credential_private_key_passphrase"
-11. "captcha_encryption_key"
-12. "cis_main_db_connection_string" for production
-13. "cis_auxiliary_db_connection_string" for production
+2. "SmtpHost"
+3. "SmtpPort"
+4. "SmtpUsername"
+5. "SmtpPassword"
+6. "captcha_encryption_key"
+7. "cis_main_db_connection_string"
+8. "cis_main_db_username"
+9. "cis_main_db_password"
+10. "cis_auxiliary_db_connection_string"
+11. "cis_auxiliary_db_username"
+12. "cis_auxiliary_db_password"
+13. "cis_token_signing_credential_private_key_passphrase" 
 14. "duende_identity_server_license_key" for production
 
-Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting the user secrets.
+* Note: Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting them as user secrets.
+* Note: The files `appsettings.Development.json` and `appsettings.Production.json` must never be included in the source control.
 
 ## signing key management
 
-Download the RSA private key from LastPass, rename it to remove the .txt extension and place it in src/CoreIdentityServer/keys directory.
+Download the RSA private key from LastPass for the appropirate environment, rename it to remove the .txt extension and place it in src/CoreIdentityServer/keys directory.
 
 The contents of this directory are git ignored. The highest level of security and awareness must be maitained dealing with this key. Information on how to create this key is in the LastPass record.
 
@@ -40,7 +41,6 @@ Run the following commands inside the root directory to initialize & seed the re
 1. `dotnet ef database update --context ApplicationDbContext --project src/CoreIdentityServer/`
 2. `dotnet ef database update --context ConfigurationDbContext --project src/CoreIdentityServer/`
 3. `dotnet ef database update --context PersistedGrantDbContext --project src/CoreIdentityServer/`
-4. `dotnet user-secrets -p src/CoreIdentityServer/ set "product_owner_email" "set product owner email here"`
 4. `dotnet run \/seed --project src/CoreIdentityServer/`
 
 ## run project
