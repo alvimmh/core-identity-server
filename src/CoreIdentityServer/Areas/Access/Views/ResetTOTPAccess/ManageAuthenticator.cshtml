@@ -1,0 +1,36 @@
+@model ManageAuthenticatorViewModel
+@{
+    ViewData["Title"] = "Manage Authenticator";
+    bool userSignedIn = User.Identity.IsAuthenticated;
+}
+
+<h1>Manage Authenticator</h1>
+
+<div class="mt-3">
+    <p>Did you lose access to your authenticator?</p>
+
+    @if (userSignedIn)
+    {
+        <a asp-action="InitiateAuthenticatedRecovery" asp-controller="ResetTOTPAccess" asp-area="Access">Reset Authenticator</a>
+    }
+    else
+    {
+        <a asp-action="InitiateUnauthenticatedRecovery" asp-controller="ResetTOTPAccess" asp-area="Access">Reset Authenticator</a>
+    }
+</div>
+
+<div class="mt-4">
+    @if (userSignedIn)
+    {
+        <p>Authenticator recovery codes left: @Model.RecoveryCodesLeft</p>
+
+        <a
+            class="mt-3"
+            asp-action="ResetTOTPAccessRecoveryCodes"
+            asp-controller="ResetTOTPAccess"
+            asp-area="Access"
+        >
+            Reset Recovery Codes
+        </a>
+    }
+</div>

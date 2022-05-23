@@ -57,7 +57,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
 
             if (existingUser != null && existingUser.AccountRegistered)
             {
-                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
+                redirectRoute = GenerateRouteUrl("ManageAuthenticator", "ResetTOTPAccess", "Access");
 
                 return redirectRoute;
             }
@@ -219,7 +219,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             {
                 // user is completely registered but does not require authenticator reset
 
-                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
+                redirectRoute = GenerateRouteUrl("ManageAuthenticator", "ResetTOTPAccess", "Access");
 
                 result = GenerateArray(model, redirectRoute);
             }
@@ -278,8 +278,8 @@ namespace CoreIdentityServer.Areas.Enroll.Services
             }
             else if (user.AccountRegistered && !user.RequiresAuthenticatorReset)
             {
-                // user exists but doesn't require to reset authenticator, redirect to reset authenticator prompt page
-                redirectRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
+                // user exists but doesn't require to reset authenticator, redirect to manage authenticator page
+                redirectRoute = GenerateRouteUrl("ManageAuthenticator", "ResetTOTPAccess", "Access");
             }
             else if (!user.AccountRegistered || (user.AccountRegistered && user.RequiresAuthenticatorReset))
             {

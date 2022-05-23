@@ -20,9 +20,14 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             ResetTOTPAccessService = resetTOTPAccessService;
         }
 
-        public IActionResult Prompt()
+        public async Task<IActionResult> ManageAuthenticator()
         {
-            return View();
+            ManageAuthenticatorViewModel viewModel = await ResetTOTPAccessService.ManageAuthenticator();
+
+            if (viewModel == null)
+                return View();
+
+            return View(viewModel);
         }
 
         [HttpGet]

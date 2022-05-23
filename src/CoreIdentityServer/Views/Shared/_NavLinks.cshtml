@@ -13,7 +13,7 @@
     string signUpUrl = Url.Action("registerprospectiveuser", "signup", new { Area = "enroll" });
     string signOutUrl = Url.Action("signout", "authentication", new { Area = "access" });
     string profileUrl = Url.Action("index", "profile", new { Area = "vault" });
-    string resetTOTPAccessUrl = Url.Action("prompt", "resettotpaccess", new { Area = "access" });
+    string manageAuthenticatorUrl = Url.Action("manageauthenticator", "resettotpaccess", new { Area = "access" });
     string grantsUrl = Url.Action("index", "grants", new { Area = "access" });
     string administrationDashboardUrl = Url.Action("index", "dashboard", new { Area = "administration" });
     string manageTwoFactorAuthenticationUrl = Url.Action("manageemailauthentication", "mfa", new { Area = "access" });
@@ -26,7 +26,7 @@
     </li>
 
     <li class="nav-item">
-        <a class="nav-link" href="@resetTOTPAccessUrl">Reset TOTP Access</a>
+        <a class="nav-link" href="@manageAuthenticatorUrl">Manage Authenticator</a>
     </li>
 
     <li class="nav-item">

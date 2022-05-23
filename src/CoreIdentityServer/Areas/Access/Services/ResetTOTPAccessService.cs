@@ -39,7 +39,19 @@ namespace CoreIdentityServer.Areas.Access.Services
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
-            RootRoute = GenerateRouteUrl("Prompt", "ResetTOTPAccess", "Access");
+            RootRoute = GenerateRouteUrl("ManageAuthenticator", "ResetTOTPAccess", "Access");
+        }
+
+        public async Task<ManageAuthenticatorViewModel> ManageAuthenticator()
+        {
+            ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+
+            if (user == null)
+                return null;
+
+            int recoveryCodesLeft = await UserManager.CountRecoveryCodesAsync(user);
+
+            return new ManageAuthenticatorViewModel { RecoveryCodesLeft = recoveryCodesLeft };
         }
 
         public async Task<string> InitiateTOTPAccessRecoveryChallenge(InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
