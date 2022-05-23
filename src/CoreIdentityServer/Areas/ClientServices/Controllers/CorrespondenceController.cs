@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CoreIdentityServer.Areas.ClientServices.Controllers
 {
-    [Area(AreaNames.ClientServices)]
+    [Area(AreaNames.ClientServices), SecurityHeaders]
     public class CorrespondenceController : Controller
     {
         private CorrespondenceService CorrespondenceService;
@@ -29,7 +29,7 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
             return Ok();
         }
 
-        [SecurityHeaders, AllowAnonymous]
+        [AllowAnonymous]
         public async Task<IActionResult> Error(string errorType)
         {
             ErrorViewModel viewModel = null;

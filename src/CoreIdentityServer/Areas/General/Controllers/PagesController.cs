@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using CoreIdentityServer.Internals.Constants.Routes;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Areas.General.Services;
+using CoreIdentityServer.Internals.Filters.ActionFilters;
 
 namespace CoreIdentityServer.Areas.General.Controllers
 {
-    [Area(AreaNames.General), Authorize]
+    [Area(AreaNames.General), SecurityHeaders, Authorize]
     public class PagesController : Controller
     {
         private PagesService PagesService;

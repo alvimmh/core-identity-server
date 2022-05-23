@@ -9,7 +9,7 @@ using CoreIdentityServer.Internals.Filters.ActionFilters;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
-    [Area(AreaNames.Access)]
+    [Area(AreaNames.Access), SecurityHeaders]
     public class AuthenticationController : Controller
     {
         private AuthenticationService AuthenticationService;

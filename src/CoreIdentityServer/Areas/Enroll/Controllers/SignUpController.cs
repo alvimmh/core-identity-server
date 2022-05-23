@@ -10,7 +10,7 @@ using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Areas.Enroll.Controllers
 {
-    [Area(AreaNames.Enroll)]
+    [Area(AreaNames.Enroll), SecurityHeaders]
     public class SignUpController : Controller
     {
         private SignUpService SignUpService;

@@ -3,12 +3,13 @@ using CoreIdentityServer.Areas.Vault.Models.Profile;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Filters.ActionFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoreIdentityServer.Areas.Vault.Controllers
 {
-    [Area(AreaNames.Vault), Authorize]
+    [Area(AreaNames.Vault), SecurityHeaders, Authorize]
     public class ProfileController : Controller
     {
         private ProfileService ProfileService;
