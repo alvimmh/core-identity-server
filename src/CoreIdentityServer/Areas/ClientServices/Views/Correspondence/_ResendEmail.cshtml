@@ -3,37 +3,5 @@
 <input id="resend-email-record-id" asp-for="ResendEmailRecordId" value="@Model.ResendEmailRecordId" hidden>
 <a id="trigger-resend-email" class="d-block text-start mt-2">Resend Email</a>
 
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script type="text/javascript">
-    const resendEmailElement = $("#trigger-resend-email");
-    const resendEmailElementInitialText = resendEmailElement.text();
-
-    resendEmailElement.click(() => {
-        const requestVerificationToken = $("input[name='__RequestVerificationToken']").val();
-        const userEmail = $("input[name='Email']").val();
-
-        const requestBody = {
-            Email: userEmail,
-            ResendEmailRecordId: "@Model.ResendEmailRecordId",
-            __RequestVerificationToken: requestVerificationToken
-        };
-
-        $.ajax({
-            url: "/clientservices/correspondence/resendemail",
-            method: "POST",
-            data: requestBody,
-            cache: false,
-            success: () => {
-                resendEmailElement.text("Email resent")
-            },
-            error: (xhr) => {
-                const responseText = xhr.responseText || "Could not resend. Please try again.";
-
-                resendEmailElement.text(responseText);
-            },
-            complete: () => {
-                setTimeout(() => resendEmailElement.text(resendEmailElementInitialText), 5000);
-            }
-        })
-    })
-</script>
+<script type="text/javascript" src="~/lib/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="~/js/resend-email.js"></script>

@@ -26,11 +26,23 @@ namespace CoreIdentityServer.Internals.Services.Email
         public SMTPService(IWebHostEnvironment environment, IConfiguration config) {
             Config = config;
 
+            bool isSmtpPortValid = false;
+
             // configure SMTP client
-            SmtpHost = Config["MailtrapSmtpEmailService:SmtpHost"];
-            bool isSmtpPortValid = int.TryParse(Config["MailtrapSmtpEmailService:SmtpPort"], out SmtpPort);
-            SmtpUsername = Config["MailtrapSmtpEmailService:SmtpUsername"];
-            SmtpPassword = Config["MailtrapSmtpEmailService:SmtpPassword"];
+            if (environment.IsDevelopment())
+            {
+                SmtpHost = Config["MailtrapSmtpEmailService:SmtpHost"];
+                isSmtpPortValid = int.TryParse(Config["MailtrapSmtpEmailService:SmtpPort"], out SmtpPort);
+                SmtpUsername = Config["MailtrapSmtpEmailService:SmtpUsername"];
+                SmtpPassword = Config["MailtrapSmtpEmailService:SmtpPassword"];
+            }
+            else if (environment.IsProduction())
+            {
+                SmtpHost = Config["Production:SmtpHost"];
+                isSmtpPortValid = int.TryParse(Config["Production:SmtpPort"], out SmtpPort);
+                SmtpUsername = Config["Production:SmtpUsername"];
+                SmtpPassword = Config["Production:SmtpPassword"];
+            }
 
             if (
                 string.IsNullOrWhiteSpace(SmtpHost) ||
