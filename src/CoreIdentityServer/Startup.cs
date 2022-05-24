@@ -36,6 +36,8 @@ namespace CoreIdentityServer
             services.AddProjectAuthorization();
 
             services.AddProjectServices(Configuration);
+
+            services.AddForwardedHeadersMiddleware(Environment);
         }
 
         public void Configure(IApplicationBuilder app)
@@ -47,9 +49,13 @@ namespace CoreIdentityServer
                 app.UseDeveloperExceptionPage();
                 app.UseMigrationsEndPoint();
             }
+            else
+            {
+                app.UseExceptionHandler("/clientservices/correspondence/error");
+                app.UseStatusCodePagesWithRedirects("~/clientservices/correspondence/error?errortype={0}");
+            }
 
-            app.UseExceptionHandler("/clientservices/correspondence/error");
-            app.UseStatusCodePagesWithRedirects("~/clientservices/correspondence/error?errortype={0}");
+            app.UseForwardedHeaders();
 
             app.UseStaticFiles();
 
