@@ -42,8 +42,6 @@ namespace CoreIdentityServer
 
         public void Configure(IApplicationBuilder app)
         {
-            app.UseHttpsRedirection();
-
             if (Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -53,7 +51,10 @@ namespace CoreIdentityServer
             {
                 app.UseExceptionHandler("/clientservices/correspondence/error");
                 app.UseStatusCodePagesWithRedirects("~/clientservices/correspondence/error?errortype={0}");
+                app.UseHsts();
             }
+
+            app.UseHttpsRedirection();
 
             app.UseForwardedHeaders();
 
