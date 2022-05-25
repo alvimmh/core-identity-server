@@ -35,19 +35,5 @@
 
 @section scripts {
     <script src="~/lib/qrcode/build/qrcode.js"></script>
-    <script type="text/javascript">
-        const totpAuthQRCodeContainer = document.getElementById("totp-auth-qr-code");
-        QRCode.toCanvas(totpAuthQRCodeContainer, "@Model.AuthenticatorKeyUri", { scale: 2 }, (error) => { if (error) { console.error(error) }})
-
-        const copySecretKeyText = $("#copy-secret-key");
-        const copySecretKeyTextInitialValue = copySecretKeyText.text();
-
-        copySecretKeyText.click(() => {
-            navigator.clipboard.writeText("@Model.AuthenticatorKey")
-                .then(() => copySecretKeyText.text("Copied to clipboard"))
-                .catch(() => copySecretKeyText.text("Couldn't copy! Try again"))
-
-            setTimeout(() => copySecretKeyText.text(copySecretKeyTextInitialValue), 5000);
-        })
-    </script>
+    <script type="text/javascript" src="~/js/generate-qrcode.js"></script>
 }
