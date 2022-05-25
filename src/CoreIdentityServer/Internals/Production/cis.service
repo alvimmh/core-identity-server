@@ -1,0 +1,14 @@
+[Unit]
+Description=CIS App running on Ubuntu
+
+[Service]
+WorkingDirectory=/home/ubuntu/cis_application
+ExecStart=/usr/bin/dotnet /home/ubuntu/cis_application/CoreIdentityServer.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=dotnet-example
+User=ubuntu
+
+[Install]
+WantedBy=multi-user.target

@@ -2,11 +2,9 @@
 
 ## configure
 
-Configure settings for the application and clients inside the `src/CoreIdentityServer/Config.cs` file. And set the ASPNETCORE_ENVIRONMENT & applicationUrl in the `src/CoreIdentityServer/Properties/launchSettings.json` file.
+Configure settings for the application and clients inside the `src/CoreIdentityServer/Config.cs` file. And set the ASPNETCORE_ENVIRONMENT (& applicationUrl for Development environment only) in the `src/CoreIdentityServer/Properties/launchSettings.json` file.
 
 ## user-secrets
-
-Initialize user-secrets by running command `dotnet user-secrets init --project src/CoreIdentityServer/` from the repository root directory.
 
 Add required secrets from protected sources for the following keys into appsettings.Development.json or appsettings.Production.json based on the current environment:
 
@@ -26,6 +24,7 @@ Add required secrets from protected sources for the following keys into appsetti
 14. "duende_identity_server_license_key" for production
 
 * Note: Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting them as user secrets.
+
 * Note: The files `appsettings.Development.json` and `appsettings.Production.json` must never be included in the source control.
 
 ## signing key management
