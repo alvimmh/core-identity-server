@@ -17,7 +17,10 @@ namespace CoreIdentityServer
         public const string CISApplicationUrl = "https://bonicinitiatives.biz";
 
         // change it to local url for development environment
-        public const string TeamadhaBackendClientUrl = "https://{url_for_team_adha_administrative}";
+        public const string TeamadhaBackendClientUrl = "https://administrative.teamadha.com";
+
+        // change it to actual secret for production environment
+        private const string TeamAdhaAdministrativeClientSecret = "secret";
 
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
@@ -42,7 +45,7 @@ namespace CoreIdentityServer
                     Enabled = true,
                     ClientId = "teamadha_administrative",
                     RequireClientSecret = true,
-                    ClientSecrets = { new Secret("secret".Sha256()) },
+                    ClientSecrets = { new Secret(TeamAdhaAdministrativeClientSecret.Sha256()) },
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
