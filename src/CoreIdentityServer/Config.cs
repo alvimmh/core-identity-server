@@ -85,7 +85,6 @@ namespace CoreIdentityServer
 
                     // refresh token settings
                     AbsoluteRefreshTokenLifetime = 3600,
-                    SlidingRefreshTokenLifetime = 900,
                     RefreshTokenUsage = TokenUsage.OneTimeOnly,
                     RefreshTokenExpiration = TokenExpiration.Sliding,
                     UpdateAccessTokenClaimsOnRefresh = true,
@@ -143,7 +142,6 @@ namespace CoreIdentityServer
 
                     // refresh token settings
                     AbsoluteRefreshTokenLifetime = 3600,
-                    SlidingRefreshTokenLifetime = 900,
                     RefreshTokenUsage = TokenUsage.OneTimeOnly,
                     RefreshTokenExpiration = TokenExpiration.Sliding,
                     UpdateAccessTokenClaimsOnRefresh = true,
