@@ -16,11 +16,13 @@ namespace CoreIdentityServer
         // change it to local url https://localhost:5001 for development environment
         public const string CISApplicationUrl = "https://bonicinitiatives.biz";
 
-        // change it to local url for development environment
+        // change them to local urls for development environment
         public const string TeamadhaBackendClientUrl = "https://administrative.teamadha.com";
+        public const string TeamadhaFrontendClientUrl = "https://teamadha.com";
 
-        // change it to actual secret for production environment
+        // change them to actual secrets for production environment
         private const string TeamAdhaAdministrativeClientSecret = "secret";
+        private const string TeamAdhaFrontendClientSecret = "secret";
 
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
@@ -83,6 +85,7 @@ namespace CoreIdentityServer
 
                     // refresh token settings
                     AbsoluteRefreshTokenLifetime = 3600,
+                    SlidingRefreshTokenLifetime = 900,
                     RefreshTokenUsage = TokenUsage.OneTimeOnly,
                     RefreshTokenExpiration = TokenExpiration.Sliding,
                     UpdateAccessTokenClaimsOnRefresh = true,
@@ -94,6 +97,64 @@ namespace CoreIdentityServer
                     ClientName = "Team Adha Administrative",
                     ClientUri = TeamadhaBackendClientUrl,
                     LogoUri = TeamadhaBackendClientUrl,
+                },
+                // Team Adha interactive client using code flow + pkce
+                new Client
+                {
+                    // basic settings
+                    Enabled = true,
+                    ClientId = "teamadha_frontend",
+                    RequireClientSecret = true,
+                    ClientSecrets = { new Secret(TeamAdhaFrontendClientSecret.Sha256()) },
+                    AllowedGrantTypes = GrantTypes.Code,
+                    RequirePkce = true,
+                    AllowPlainTextPkce = false,
+                    RedirectUris = { $"{TeamadhaFrontendClientUrl}/signin-oidc" },
+                    AllowedScopes = new List<string>
+                    {
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Email,
+                        IdentityServerConstants.StandardScopes.OfflineAccess,
+                        "teamadha_api"
+                    },
+                    AllowOfflineAccess = true,
+
+                    // authentication/session management
+                    PostLogoutRedirectUris = { TeamadhaFrontendClientUrl },
+                    FrontChannelLogoutUri = null,
+                    FrontChannelLogoutSessionRequired = false,
+                    BackChannelLogoutUri = $"{TeamadhaBackendClientUrl}/api/v1/authentication/signout_oidc",
+                    BackChannelLogoutSessionRequired = true,
+                    EnableLocalLogin = true,
+                    IdentityProviderRestrictions = { CISApplicationUrl },
+
+                    // match this value with the authentication cookie lifetime
+                    UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,
+
+                    // token settings
+                    IdentityTokenLifetime = 180,
+                    AccessTokenLifetime = 900,
+                    AuthorizationCodeLifetime = 180,
+                    AccessTokenType = AccessTokenType.Jwt,
+                    IncludeJwtId = false,
+                    Claims = null,
+                    AlwaysSendClientClaims = false,
+                    AlwaysIncludeUserClaimsInIdToken = false,
+
+                    // refresh token settings
+                    AbsoluteRefreshTokenLifetime = 3600,
+                    SlidingRefreshTokenLifetime = 900,
+                    RefreshTokenUsage = TokenUsage.OneTimeOnly,
+                    RefreshTokenExpiration = TokenExpiration.Sliding,
+                    UpdateAccessTokenClaimsOnRefresh = true,
+
+                    // consent screen settings
+                    RequireConsent = true,
+                    AllowRememberConsent = true,
+                    ConsentLifetime = 15552000,
+                    ClientName = "Team Adha",
+                    ClientUri = TeamadhaFrontendClientUrl,
+                    LogoUri = TeamadhaFrontendClientUrl,
                 }
             };
     }
