@@ -19,6 +19,7 @@ namespace CoreIdentityServer
         // change them to local urls for development environment
         public const string TeamadhaBackendClientUrl = "https://administrative.teamadha.com";
         public const string TeamadhaFrontendClientUrl = "https://teamadha.com";
+        public const string TeamadhaFrontendClientRedirectUrl = "https://teamadha.com?idp-redirect=true";
 
         // change them to actual secrets for production environment
         private const string TeamAdhaAdministrativeClientSecret = "secret";
@@ -119,7 +120,7 @@ namespace CoreIdentityServer
                     AllowOfflineAccess = true,
 
                     // authentication/session management
-                    PostLogoutRedirectUris = { TeamadhaFrontendClientUrl },
+                    PostLogoutRedirectUris = { TeamadhaFrontendClientRedirectUrl },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
                     BackChannelLogoutUri = $"{TeamadhaBackendClientUrl}/api/v1/authentication/signout_oidc",
