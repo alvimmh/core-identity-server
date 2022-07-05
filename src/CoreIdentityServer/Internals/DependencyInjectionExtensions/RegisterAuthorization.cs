@@ -12,6 +12,18 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 options.AddPolicy(Policies.TOTPChallenge, policy => policy.AddRequirements(new TOTPChallengeRequirement()));
             });
 
+            services.AddAuthorization(options => {
+                options.AddPolicy(Policies.AdministrativeAccessChallenge, policy => policy.AddRequirements(
+                    new AdministrativeAccessChallengeRequirement()
+                ));
+            });
+
+            services.AddAuthorization(options => {
+                options.AddPolicy(Policies.TAAClientCredentialsChallenge, policy => policy.AddRequirements(
+                    new TAAClientCredentialsChallengeRequirement()
+                ));
+            });
+
             return services;
         }
     }

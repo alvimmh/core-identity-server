@@ -35,6 +35,7 @@ namespace CoreIdentityServer
         public static IEnumerable<ApiScope> ApiScopes =>
             new List<ApiScope>
             {
+                new ApiScope("administrative_access", "Administrative Access"),
                 new ApiScope("teamadha_api", "Team Adha API")
             };
 
@@ -58,6 +59,7 @@ namespace CoreIdentityServer
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Email,
                         IdentityServerConstants.StandardScopes.OfflineAccess,
+                        "administrative_access",
                         "teamadha_api"
                     },
                     AllowOfflineAccess = true,

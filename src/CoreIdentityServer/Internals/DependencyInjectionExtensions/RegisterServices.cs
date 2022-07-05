@@ -9,6 +9,7 @@ using CoreIdentityServer.Internals.Services;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,14 +22,19 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             this IServiceCollection services,
             IConfiguration configuration
         ) {
+            // the HttpContextAccessor to gain access to the current HttpContext
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
             // the ActionContextAccessor to gain access to the current action context
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
             // project's email service
             services.AddSingleton<SMTPService>();
 
-            // add TOTPChallenge authorization policy handler
+            // add authorization policy handlers
             services.AddSingleton<IAuthorizationHandler, TOTPChallengeHandler>();
+            services.AddScoped<IAuthorizationHandler, AdministrativeAccessChallengeHandler>();
+            services.AddScoped<IAuthorizationHandler, TAAClientCredentialsChallengeHandler>();
 
             services.AddSingleton<RouteEndpointService>();
 

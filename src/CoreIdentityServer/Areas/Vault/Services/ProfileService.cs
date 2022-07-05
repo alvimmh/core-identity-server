@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Areas.Vault.Models.Profile;
+using CoreIdentityServer.Internals.Constants.Authorization;
 
 namespace CoreIdentityServer.Areas.Vault.Services
 {
@@ -27,6 +28,24 @@ namespace CoreIdentityServer.Areas.Vault.Services
             IdentityService = identityService;
             ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRouteUrl("Index", "Profile", "Vault");
+        }
+
+        public async Task<string> GetUserEmail(UserEmailInputModel inputModel)
+        {
+            if (!ActionContext.ModelState.IsValid)
+                return null;
+            
+            ApplicationUser user = await UserManager.FindByIdAsync(inputModel.user_id);
+
+            if (user == null)
+                return null;
+
+            bool isUserProductOwner = await UserManager.IsInRoleAsync(user, AuthorizedRoles.ProductOwner);
+
+            if (isUserProductOwner)
+                return null;
+
+            return user.Email;
         }
 
         public async Task<object[]> ManageUserProfile()

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CoreIdentityServer.Areas.Vault.Controllers
 {
-    [Area(AreaNames.Vault), SecurityHeaders, Authorize]
+    [Area(AreaNames.Vault), SecurityHeaders]
     public class ProfileController : Controller
     {
         private ProfileService ProfileService;
@@ -19,7 +19,7 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             ProfileService = profileService;
         }
 
-        [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
+        [HttpGet, Authorize, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index()
         {
             // result is an array containing the ViewModel & a redirect to url in consecutive order
@@ -32,7 +32,7 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             return View(result[0]);
         }
 
-        [HttpPost, Authorize(Policy = Policies.TOTPChallenge), ValidateAntiForgeryToken]
+        [HttpPost, Authorize, Authorize(Policy = Policies.TOTPChallenge), ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([FromForm] UserProfileInputModel inputModel)
         {
             string redirectRoute = await ProfileService.UpdateUserProfile(inputModel);
@@ -41,6 +41,17 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
                 return View(inputModel);
 
             return Redirect(redirectRoute);
+        }
+
+        [HttpPost, Authorize(Policy = Policies.AdministrativeAccessChallenge), Authorize(Policy = Policies.TAAClientCredentialsChallenge)]
+        public async Task<IActionResult> UserEmail([FromForm] UserEmailInputModel inputModel)
+        {
+            string userEmail = await ProfileService.GetUserEmail(inputModel);
+
+            if (userEmail == null)
+                return NotFound();
+
+            return Ok(new { email = userEmail });
         }
     }
 }
