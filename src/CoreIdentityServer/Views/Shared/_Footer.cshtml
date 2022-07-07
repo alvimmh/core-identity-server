@@ -1,0 +1,28 @@
+@{
+    string privacyPolicyUrl = Url.Action("privacypolicy", "correspondence", new { Area = "clientservices" });
+    string termsOfServiceUrl = Url.Action("termsofservice", "correspondence", new { Area = "clientservices" });
+}
+
+<div class="footer-wrapper">
+    <div class="bg-light responsive-footer">
+        <div class="container-fluid px-0 pt-2">
+            <div class="container-sm px-4">
+                <footer class="py-3">
+                    <div class="row justify-content-start align-items-center">
+                        <div class="col-auto">
+                            <p class="text-muted m-0">&copy; 2022 Bonic Initiatives Inc.</p>
+                        </div>
+
+                        <div class="col-auto">
+                            <p class="m-0"><a class="font-size-7 text-reset text-decoration-none" href="@privacyPolicyUrl">Privacy Policy</a></p>
+                        </div>
+
+                        <div class="col-auto">
+                            <p class="m-0"><a class="font-size-7 text-reset text-decoration-none" href="@termsOfServiceUrl">Terms of Service</a></p>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+    </div>
+</div>

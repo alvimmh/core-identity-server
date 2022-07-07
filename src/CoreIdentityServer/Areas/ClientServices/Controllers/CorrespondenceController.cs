@@ -18,6 +18,18 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
             CorrespondenceService = correspondenceService;
         }
 
+        [HttpGet, AllowAnonymous]
+        public IActionResult PrivacyPolicy()
+        {
+            return View();
+        }
+
+        [HttpGet, AllowAnonymous]
+        public IActionResult TermsOfService()
+        {
+            return View();
+        }
+
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ResendEmail([FromForm] ResendEmailInputModel inputModel)
         {
