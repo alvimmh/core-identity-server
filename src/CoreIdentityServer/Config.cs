@@ -4,24 +4,20 @@
 using CoreIdentityServer.Internals.Constants.Authentication;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
+using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 
 namespace CoreIdentityServer
 {
     public static class Config
     {
-        private static string Environment = Startup.StaticConfiguration["environment"];
-
-
-
-
         // change it to localhost for development environment
         private const string DevelopmentDomain = "localhost";
         private const string ProductionDomain = "bonicinitiatives.biz";
 
         public static string GetApplicationDomain()
         {
-            return Environment == "Development" ? DevelopmentDomain : ProductionDomain;
+            return Startup.StaticEnvironment.IsDevelopment() ? DevelopmentDomain : ProductionDomain;
         }
 
 
@@ -33,7 +29,7 @@ namespace CoreIdentityServer
 
         public static string GetApplicationUrl()
         {
-            return Environment == "Development" ? DevelopmentUrl : ProductionUrl;
+            return Startup.StaticEnvironment.IsDevelopment() ? DevelopmentUrl : ProductionUrl;
         }
 
 
@@ -45,7 +41,7 @@ namespace CoreIdentityServer
 
         public static string GetTeamadhaBackendClientUrl()
         {
-            return Environment == "Development" ? TeamadhaBackendClientDevelopmentUrl : TeamadhaBackendClientProductionUrl;
+            return Startup.StaticEnvironment.IsDevelopment() ? TeamadhaBackendClientDevelopmentUrl : TeamadhaBackendClientProductionUrl;
         }
         
 
@@ -57,7 +53,7 @@ namespace CoreIdentityServer
 
         public static string GetTeamadhaFrontendClientUrl()
         {
-            return Environment == "Development" ? TeamadhaFrontendClientDevelopmentUrl : TeamadhaFrontendClientProductionUrl;
+            return Startup.StaticEnvironment.IsDevelopment() ? TeamadhaFrontendClientDevelopmentUrl : TeamadhaFrontendClientProductionUrl;
         }
 
         private static string TeamadhaFrontendClientRedirectUrl = $"{Config.GetTeamadhaFrontendClientUrl()}?idp-redirect=true";

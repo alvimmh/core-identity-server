@@ -24,7 +24,6 @@ Add required secrets from protected sources for the following keys into appsetti
 14. "cis_token_signing_credential_private_key_passphrase" 
 15. "duende_identity_server_license_key" for production
 16. "static_configuration": {
-        "environment"
         "teamadha_backend_client_secret"
         "teamadha_frontend_client_secret"
     }

@@ -15,12 +15,14 @@ namespace CoreIdentityServer
         public IWebHostEnvironment Environment { get; }
         public IConfiguration Configuration { get; }
         public static IConfigurationSection StaticConfiguration { get; private set; }
+        public static IWebHostEnvironment StaticEnvironment { get; private set; }
 
         public Startup(IWebHostEnvironment environment, IConfiguration configuration)
         {
             Environment = environment;
             Configuration = configuration;
             StaticConfiguration = configuration.GetSection("static_configuration");
+            StaticEnvironment = environment;
         }
 
         public void ConfigureServices(IServiceCollection services)
