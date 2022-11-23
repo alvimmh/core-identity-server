@@ -6,7 +6,7 @@ namespace CoreIdentityServer.Internals.Constants.Storage
     public static class SessionCookieOptions
     {
         public const string Name = "session";
-        public const string Domain = Config.CISApplicationDomain;
+        public static string Domain = Config.GetApplicationDomain();
         public const string Path = "/";
         public const bool HttpOnly = true;
         public const bool IsEssential = true;

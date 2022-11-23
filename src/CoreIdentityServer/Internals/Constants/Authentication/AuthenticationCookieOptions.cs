@@ -6,7 +6,7 @@ namespace CoreIdentityServer.Internals.Constants.Authentication
     public static class AuthenticationCookieOptions
     {
         public const string Name = "identity";
-        public const string Domain = Config.CISApplicationDomain;
+        public static string Domain = Config.GetApplicationDomain();
         public const string Path = "/";
         public const bool HttpOnly = true;
         public const bool IsEssential = true;

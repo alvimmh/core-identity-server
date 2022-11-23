@@ -4,26 +4,30 @@
 
 Configure settings for the application and clients inside the `src/CoreIdentityServer/Config.cs` file. And set the ASPNETCORE_ENVIRONMENT (& applicationUrl for Development environment only) in the `src/CoreIdentityServer/Properties/launchSettings.json` file.
 
-## user-secrets
+## secrets
 
 Add required secrets from protected sources for the following keys into appsettings.Development.json or appsettings.Production.json based on the current environment:
 
 1. "product_owner_email"
-2. "SmtpHost"
-3. "SmtpPort"
-4. "SmtpUsername"
-5. "SmtpPassword"
-6. "captcha_encryption_key"
-7. "cis_main_db_connection_string"
-8. "cis_main_db_username"
-9. "cis_main_db_password"
-10. "cis_auxiliary_db_connection_string"
-11. "cis_auxiliary_db_username"
-12. "cis_auxiliary_db_password"
-13. "cis_token_signing_credential_private_key_passphrase" 
-14. "duende_identity_server_license_key" for production
-
-* Note: Use command `dotnet user-secrets set "{key}" '{value}' --project src/CoreIdentityServer/` for setting them as user secrets.
+2. "https_port
+3. "smtp_host"
+4. "smtp_port"
+5. "smtp_username"
+6. "smtp_password"
+7. "captcha_encryption_key"
+8. "cis_main_db_connection_string"
+9. "cis_main_db_username"
+10. "cis_main_db_password"
+11. "cis_auxiliary_db_connection_string"
+12. "cis_auxiliary_db_username"
+13. "cis_auxiliary_db_password"
+14. "cis_token_signing_credential_private_key_passphrase" 
+15. "duende_identity_server_license_key" for production
+16. "static_configuration": {
+        "environment"
+        "teamadha_backend_client_secret"
+        "teamadha_frontend_client_secret"
+    }
 
 * Note: The files `appsettings.Development.json` and `appsettings.Production.json` must never be included in the source control.
 

@@ -81,7 +81,7 @@ namespace CoreIdentityServer.Internals.Services
             string area,
             IConfiguration config
         ) {
-            string rootUrl = Config.CISApplicationUrl;
+            string rootUrl = Config.GetApplicationUrl();
 
             return $"{rootUrl}/{area}/{controller}/{action}";
         }

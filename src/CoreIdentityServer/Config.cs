@@ -10,20 +10,67 @@ namespace CoreIdentityServer
 {
     public static class Config
     {
+        private static string Environment = Startup.StaticConfiguration["environment"];
+
+
+
+
         // change it to localhost for development environment
-        public const string CISApplicationDomain = "bonicinitiatives.biz";
+        private const string DevelopmentDomain = "localhost";
+        private const string ProductionDomain = "bonicinitiatives.biz";
+
+        public static string GetApplicationDomain()
+        {
+            return Environment == "Development" ? DevelopmentDomain : ProductionDomain;
+        }
+
+
+
 
         // change it to local url https://localhost:5001 for development environment
-        public const string CISApplicationUrl = "https://bonicinitiatives.biz";
+        private const string DevelopmentUrl = "https://localhost:5001";
+        private const string ProductionUrl = "https://bonicinitiatives.biz";
 
-        // change them to local urls for development environment
-        public const string TeamadhaBackendClientUrl = "https://administrative.teamadha.com";
-        public const string TeamadhaFrontendClientUrl = "https://teamadha.com";
-        public const string TeamadhaFrontendClientRedirectUrl = "https://teamadha.com?idp-redirect=true";
+        public static string GetApplicationUrl()
+        {
+            return Environment == "Development" ? DevelopmentUrl : ProductionUrl;
+        }
 
-        // change them to actual secrets for production environment
-        private const string TeamAdhaAdministrativeClientSecret = "secret";
-        private const string TeamAdhaFrontendClientSecret = "secret";
+
+
+
+        // change TeamadhaBackendClientDevelopmentUrl to local url for development environment
+        private const string TeamadhaBackendClientDevelopmentUrl = "";
+        private const string TeamadhaBackendClientProductionUrl = "https://administrative.teamadha.com";
+
+        public static string GetTeamadhaBackendClientUrl()
+        {
+            return Environment == "Development" ? TeamadhaBackendClientDevelopmentUrl : TeamadhaBackendClientProductionUrl;
+        }
+        
+
+
+
+        // change TeamadhaFrontendClientDevelopmentUrl to local url for development environment
+        private const string TeamadhaFrontendClientDevelopmentUrl = "https://localhost:3000";
+        private const string TeamadhaFrontendClientProductionUrl = "https://teamadha.com";
+
+        public static string GetTeamadhaFrontendClientUrl()
+        {
+            return Environment == "Development" ? TeamadhaFrontendClientDevelopmentUrl : TeamadhaFrontendClientProductionUrl;
+        }
+
+        private static string TeamadhaFrontendClientRedirectUrl = $"{Config.GetTeamadhaFrontendClientUrl()}?idp-redirect=true";
+
+
+
+
+        // set them to the appsettings.environment.json files
+        private static string TeamadhaBackendClientSecret = Startup.StaticConfiguration["teamadha_backend_client_secret"];
+        private static string TeamadhaFrontendClientSecret = Startup.StaticConfiguration["teamadha_frontend_client_secret"];
+
+
+
 
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
@@ -32,12 +79,18 @@ namespace CoreIdentityServer
                 new IdentityResources.Email()
             };
 
+
+
+
         public static IEnumerable<ApiScope> ApiScopes =>
             new List<ApiScope>
             {
                 new ApiScope("administrative_access", "Administrative Access"),
                 new ApiScope("teamadha_api", "Team Adha API")
             };
+
+
+
 
         public static IEnumerable<Client> Clients =>
             new List<Client>
@@ -49,11 +102,11 @@ namespace CoreIdentityServer
                     Enabled = true,
                     ClientId = "teamadha_administrative",
                     RequireClientSecret = true,
-                    ClientSecrets = { new Secret(TeamAdhaAdministrativeClientSecret.Sha256()) },
+                    ClientSecrets = { new Secret(TeamadhaBackendClientSecret.Sha256()) },
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { $"{TeamadhaBackendClientUrl}/administration/authentication/signin_oidc" },
+                    RedirectUris = { $"{Config.GetTeamadhaBackendClientUrl()}/administration/authentication/signin_oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -65,13 +118,13 @@ namespace CoreIdentityServer
                     AllowOfflineAccess = true,
 
                     // authentication/session management
-                    PostLogoutRedirectUris = { TeamadhaBackendClientUrl },
+                    PostLogoutRedirectUris = { Config.GetTeamadhaBackendClientUrl() },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
-                    BackChannelLogoutUri = $"{TeamadhaBackendClientUrl}/administration/authentication/signout_oidc",
+                    BackChannelLogoutUri = $"{Config.GetTeamadhaBackendClientUrl()}/administration/authentication/signout_oidc",
                     BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
-                    IdentityProviderRestrictions = { CISApplicationUrl },
+                    IdentityProviderRestrictions = { Config.GetApplicationUrl() },
 
                     // match this value with the authentication cookie lifetime
                     UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,
@@ -97,9 +150,13 @@ namespace CoreIdentityServer
                     AllowRememberConsent = true,
                     ConsentLifetime = 15552000,
                     ClientName = "Team Adha Administrative",
-                    ClientUri = TeamadhaBackendClientUrl,
-                    LogoUri = TeamadhaBackendClientUrl,
+                    ClientUri = Config.GetTeamadhaBackendClientUrl(),
+                    LogoUri = Config.GetTeamadhaBackendClientUrl(),
                 },
+
+
+
+                
                 // Team Adha interactive client using code flow + pkce
                 new Client
                 {
@@ -107,11 +164,11 @@ namespace CoreIdentityServer
                     Enabled = true,
                     ClientId = "teamadha_frontend",
                     RequireClientSecret = true,
-                    ClientSecrets = { new Secret(TeamAdhaFrontendClientSecret.Sha256()) },
+                    ClientSecrets = { new Secret(TeamadhaFrontendClientSecret.Sha256()) },
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { $"{TeamadhaFrontendClientUrl}/signin-oidc" },
+                    RedirectUris = { $"{Config.GetTeamadhaFrontendClientUrl()}/signin-oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
@@ -125,10 +182,10 @@ namespace CoreIdentityServer
                     PostLogoutRedirectUris = { TeamadhaFrontendClientRedirectUrl },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
-                    BackChannelLogoutUri = $"{TeamadhaBackendClientUrl}/api/v1/authentication/signout_oidc",
+                    BackChannelLogoutUri = $"{Config.GetTeamadhaBackendClientUrl()}/api/v1/authentication/signout_oidc",
                     BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
-                    IdentityProviderRestrictions = { CISApplicationUrl },
+                    IdentityProviderRestrictions = { Config.GetApplicationUrl() },
 
                     // match this value with the authentication cookie lifetime
                     UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,
@@ -154,8 +211,8 @@ namespace CoreIdentityServer
                     AllowRememberConsent = true,
                     ConsentLifetime = 15552000,
                     ClientName = "Team Adha",
-                    ClientUri = TeamadhaFrontendClientUrl,
-                    LogoUri = TeamadhaFrontendClientUrl,
+                    ClientUri = Config.GetTeamadhaFrontendClientUrl(),
+                    LogoUri = Config.GetTeamadhaFrontendClientUrl(),
                 }
             };
     }

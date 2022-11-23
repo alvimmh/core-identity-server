@@ -28,10 +28,10 @@ namespace CoreIdentityServer.Internals.Services.Email
             bool isSmtpPortValid = false;
 
             // configure SMTP client
-            SmtpHost = Config["SmtpHost"];
-            isSmtpPortValid = int.TryParse(Config["SmtpPort"], out SmtpPort);
-            SmtpUsername = Config["SmtpUsername"];
-            SmtpPassword = Config["SmtpPassword"];
+            SmtpHost = Config["smtp_host"];
+            isSmtpPortValid = int.TryParse(Config["smtp_port"], out SmtpPort);
+            SmtpUsername = Config["smtp_username"];
+            SmtpPassword = Config["smtp_password"];
 
             if (
                 string.IsNullOrWhiteSpace(SmtpHost) ||
