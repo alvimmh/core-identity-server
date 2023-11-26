@@ -6,27 +6,7 @@ Configure settings for the application and clients inside the `src/CoreIdentityS
 
 ## secrets
 
-Add required secrets from protected sources for the following keys into appsettings.Development.json or appsettings.Production.json based on the current environment:
-
-1. "product_owner_email"
-2. "https_port
-3. "smtp_host"
-4. "smtp_port"
-5. "smtp_username"
-6. "smtp_password"
-7. "captcha_encryption_key"
-8. "cis_main_db_connection_string"
-9. "cis_main_db_username"
-10. "cis_main_db_password"
-11. "cis_auxiliary_db_connection_string"
-12. "cis_auxiliary_db_username"
-13. "cis_auxiliary_db_password"
-14. "cis_token_signing_credential_private_key_passphrase" 
-15. "duende_identity_server_license_key" for production
-16. "static_configuration": {
-        "teamadha_backend_client_secret"
-        "teamadha_frontend_client_secret"
-    }
+Add required secrets from protected sources for the keys in appsettings.[environment].json based on the current environment.
 
 * Note: The files `appsettings.Development.json` and `appsettings.Production.json` must never be included in the source control.
 

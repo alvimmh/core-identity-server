@@ -11,62 +11,31 @@ namespace CoreIdentityServer
 {
     public static class Config
     {
-        // change it to localhost for development environment
-        private const string DevelopmentDomain = "localhost";
-        private const string ProductionDomain = "bonicinitiatives.biz";
+        // set values to Startup.StaticConfiguration in the appsettings.[environment].json files
+
+        private static string ApplicationDomain = Startup.StaticConfiguration["application_domain"];
+        private static string ApplicationUrl = Startup.StaticConfiguration["application_url"];
+
+        private static string Client1Id = Startup.StaticConfiguration["client1_id"];
+        private static string Client1Name = Startup.StaticConfiguration["client1_name"];
+        private static string Client1Secret = Startup.StaticConfiguration["client1_secret"];
+        private static string Client1Url = Startup.StaticConfiguration["client1_url"];
+        
+        private static string Client2Id = Startup.StaticConfiguration["client2_id"];
+        private static string Client2Name = Startup.StaticConfiguration["client2_name"];
+        private static string Client2Secret = Startup.StaticConfiguration["client2_secret"];
+        private static string Client2Url = Startup.StaticConfiguration["client2_url"];
+        private static string Client2RedirectUrl = $"{Client2Url}?idp-redirect=true";
 
         public static string GetApplicationDomain()
         {
-            return Startup.StaticEnvironment.IsDevelopment() ? DevelopmentDomain : ProductionDomain;
+            return ApplicationDomain;
         }
-
-
-
-
-        // change it to local url https://localhost:5001 for development environment
-        private const string DevelopmentUrl = "https://localhost:5001";
-        private const string ProductionUrl = "https://bonicinitiatives.biz";
 
         public static string GetApplicationUrl()
         {
-            return Startup.StaticEnvironment.IsDevelopment() ? DevelopmentUrl : ProductionUrl;
+            return ApplicationUrl;
         }
-
-
-
-
-        // change TeamadhaBackendClientDevelopmentUrl to local url for development environment
-        private const string TeamadhaBackendClientDevelopmentUrl = "";
-        private const string TeamadhaBackendClientProductionUrl = "https://administrative.teamadha.com";
-
-        public static string GetTeamadhaBackendClientUrl()
-        {
-            return Startup.StaticEnvironment.IsDevelopment() ? TeamadhaBackendClientDevelopmentUrl : TeamadhaBackendClientProductionUrl;
-        }
-        
-
-
-
-        // change TeamadhaFrontendClientDevelopmentUrl to local url for development environment
-        private const string TeamadhaFrontendClientDevelopmentUrl = "https://localhost:3000";
-        private const string TeamadhaFrontendClientProductionUrl = "https://teamadha.com";
-
-        public static string GetTeamadhaFrontendClientUrl()
-        {
-            return Startup.StaticEnvironment.IsDevelopment() ? TeamadhaFrontendClientDevelopmentUrl : TeamadhaFrontendClientProductionUrl;
-        }
-
-        private static string TeamadhaFrontendClientRedirectUrl = $"{Config.GetTeamadhaFrontendClientUrl()}?idp-redirect=true";
-
-
-
-
-        // set them to the appsettings.environment.json files
-        private static string TeamadhaBackendClientSecret = Startup.StaticConfiguration["teamadha_backend_client_secret"];
-        private static string TeamadhaFrontendClientSecret = Startup.StaticConfiguration["teamadha_frontend_client_secret"];
-
-
-
 
         public static IEnumerable<IdentityResource> IdentityResources =>
             new List<IdentityResource>
@@ -75,52 +44,46 @@ namespace CoreIdentityServer
                 new IdentityResources.Email()
             };
 
-
-
-
         public static IEnumerable<ApiScope> ApiScopes =>
             new List<ApiScope>
             {
-                new ApiScope("administrative_access", "Administrative Access"),
-                new ApiScope("teamadha_api", "Team Adha API")
+                new ApiScope("client1_administrative_access", "Administrative Access"),
+                new ApiScope("client1_resource_api", "Resource API")
             };
-
-
-
 
         public static IEnumerable<Client> Clients =>
             new List<Client>
             {
-                // Team Adha Administrative interactive client using code flow + pkce
+                // client 1 - interactive client using code flow + pkce
                 new Client
                 {
                     // basic settings
                     Enabled = true,
-                    ClientId = "teamadha_administrative",
+                    ClientId = Client1Id,
                     RequireClientSecret = true,
-                    ClientSecrets = { new Secret(TeamadhaBackendClientSecret.Sha256()) },
+                    ClientSecrets = { new Secret(Client1Secret.Sha256()) },
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { $"{Config.GetTeamadhaBackendClientUrl()}/administration/authentication/signin_oidc" },
+                    RedirectUris = { $"{Client1Url}/administration/authentication/signin_oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Email,
                         IdentityServerConstants.StandardScopes.OfflineAccess,
-                        "administrative_access",
-                        "teamadha_api"
+                        "client1_administrative_access",
+                        "client1_resource_api"
                     },
                     AllowOfflineAccess = true,
 
                     // authentication/session management
-                    PostLogoutRedirectUris = { Config.GetTeamadhaBackendClientUrl() },
+                    PostLogoutRedirectUris = { Client1Url },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
-                    BackChannelLogoutUri = $"{Config.GetTeamadhaBackendClientUrl()}/administration/authentication/signout_oidc",
+                    BackChannelLogoutUri = $"{Client1Url}/administration/authentication/signout_oidc",
                     BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
-                    IdentityProviderRestrictions = { Config.GetApplicationUrl() },
+                    IdentityProviderRestrictions = { ApplicationUrl },
 
                     // match this value with the authentication cookie lifetime
                     UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,
@@ -145,44 +108,44 @@ namespace CoreIdentityServer
                     RequireConsent = true,
                     AllowRememberConsent = true,
                     ConsentLifetime = 15552000,
-                    ClientName = "Team Adha Administrative",
-                    ClientUri = Config.GetTeamadhaBackendClientUrl(),
-                    LogoUri = Config.GetTeamadhaBackendClientUrl(),
+                    ClientName = Client1Name,
+                    ClientUri = Client1Url,
+                    LogoUri = Client1Url,
                     CoordinateLifetimeWithUserSession = false,
                 },
 
 
 
                 
-                // Team Adha interactive client using code flow + pkce
+                // client 2 - interactive client using code flow + pkce
                 new Client
                 {
                     // basic settings
                     Enabled = true,
-                    ClientId = "teamadha_frontend",
+                    ClientId = Client2Id,
                     RequireClientSecret = true,
-                    ClientSecrets = { new Secret(TeamadhaFrontendClientSecret.Sha256()) },
+                    ClientSecrets = { new Secret(Client2Secret.Sha256()) },
                     AllowedGrantTypes = GrantTypes.Code,
                     RequirePkce = true,
                     AllowPlainTextPkce = false,
-                    RedirectUris = { $"{Config.GetTeamadhaFrontendClientUrl()}/signin-oidc" },
+                    RedirectUris = { $"{Client2Url}/signin-oidc" },
                     AllowedScopes = new List<string>
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Email,
                         IdentityServerConstants.StandardScopes.OfflineAccess,
-                        "teamadha_api"
+                        "client1_resource_api"
                     },
                     AllowOfflineAccess = true,
 
                     // authentication/session management
-                    PostLogoutRedirectUris = { TeamadhaFrontendClientRedirectUrl },
+                    PostLogoutRedirectUris = { Client2RedirectUrl },
                     FrontChannelLogoutUri = null,
                     FrontChannelLogoutSessionRequired = false,
-                    BackChannelLogoutUri = $"{Config.GetTeamadhaBackendClientUrl()}/api/v1/authentication/signout_oidc",
+                    BackChannelLogoutUri = $"{Client1Url}/api/v1/authentication/signout_oidc",
                     BackChannelLogoutSessionRequired = true,
                     EnableLocalLogin = true,
-                    IdentityProviderRestrictions = { Config.GetApplicationUrl() },
+                    IdentityProviderRestrictions = { ApplicationUrl },
 
                     // match this value with the authentication cookie lifetime
                     UserSsoLifetime = (int)AuthenticationCookieOptions.Duration.TotalSeconds,
@@ -207,9 +170,9 @@ namespace CoreIdentityServer
                     RequireConsent = true,
                     AllowRememberConsent = true,
                     ConsentLifetime = 15552000,
-                    ClientName = "Team Adha",
-                    ClientUri = Config.GetTeamadhaFrontendClientUrl(),
-                    LogoUri = Config.GetTeamadhaFrontendClientUrl(),
+                    ClientName = Client2Name,
+                    ClientUri = Client2Url,
+                    LogoUri = Client2Url,
                     CoordinateLifetimeWithUserSession = false,
                 }
             };
