@@ -11,8 +11,6 @@ namespace CoreIdentityServer.Internals.Filters.ActionFilters
         {
             ValidateDNTCaptchaAttribute captchaAttributeInstance = new ValidateDNTCaptchaAttribute
             {
-                CaptchaGeneratorDisplayMode = DisplayMode.NumberToWord,
-                CaptchaGeneratorLanguage = Language.English,
                 ErrorMessage = ErrorMessage
             };
 

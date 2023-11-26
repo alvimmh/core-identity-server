@@ -148,6 +148,7 @@ namespace CoreIdentityServer
                     ClientName = "Team Adha Administrative",
                     ClientUri = Config.GetTeamadhaBackendClientUrl(),
                     LogoUri = Config.GetTeamadhaBackendClientUrl(),
+                    CoordinateLifetimeWithUserSession = false,
                 },
 
 
@@ -209,6 +210,7 @@ namespace CoreIdentityServer
                     ClientName = "Team Adha",
                     ClientUri = Config.GetTeamadhaFrontendClientUrl(),
                     LogoUri = Config.GetTeamadhaFrontendClientUrl(),
+                    CoordinateLifetimeWithUserSession = false,
                 }
             };
     }

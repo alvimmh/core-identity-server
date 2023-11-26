@@ -36,7 +36,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
                 .AbsoluteExpiration(minutes: 7)
                 .ShowThousandsSeparators(false)
-                .WithNoise(pixelsDensity: 25, linesCount: 3)
+                .WithNoise(baseFrequencyX: 0.015f, baseFrequencyY: 0.015f, numOctaves: 1, seed: 0.0f)
                 .WithEncryptionKey(captchaEncryptionKey)
                 
                 // This is optional. Change it if you don't like the default names.

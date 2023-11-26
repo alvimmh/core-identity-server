@@ -43,7 +43,7 @@ Run the following commands inside the root directory to initialize & seed the re
 1. `dotnet ef database update --context ApplicationDbContext --project src/CoreIdentityServer/`
 2. `dotnet ef database update --context ConfigurationDbContext --project src/CoreIdentityServer/`
 3. `dotnet ef database update --context PersistedGrantDbContext --project src/CoreIdentityServer/`
-4. `dotnet run \/seed --project src/CoreIdentityServer/`
+4. `dotnet run seed --project src/CoreIdentityServer/`
 
 ## run project
 
