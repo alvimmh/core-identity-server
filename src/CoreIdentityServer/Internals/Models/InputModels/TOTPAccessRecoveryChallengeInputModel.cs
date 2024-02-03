@@ -5,7 +5,7 @@ namespace CoreIdentityServer.Internals.Models.InputModels
     public class TOTPAccessRecoveryChallengeInputModel
     {
         [Required]
-        [StringLength(8)]
+        [StringLength(11)]
         public string VerificationCode { get; set; }
 
         [Required]
