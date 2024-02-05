@@ -10,10 +10,23 @@ namespace CoreIdentityServer.Internals.TokenProviders.GenericTOTPTokenProvider
 {
     public static class RFC6238AuthenticationService
     {
-        // timestep for TOTP code generation
-        private static readonly TimeSpan TimeStep = TimeSpan.FromMinutes(1);
+        // timestepSpan for TOTP code generation
+        private static readonly TimeSpan TimeStepSpan = TimeSpan.FromMinutes(1);
         private static readonly Encoding Encoding = new UTF8Encoding(false, true);
 
+
+        /// <summary>
+        ///     byte[] GenerateRandomKey();
+        ///     
+        ///     1. This function creates a new byte array.
+        ///     
+        ///     2. Fills the byte array with random bytes using the RandomNumberGenerator function.
+        /// 
+        ///     For testing purpose.
+        /// </summary>
+        /// 
+        /// <returns>The random bytes[] to serve as a securityToken.</returns>
+        /// 
         public static byte[] GenerateRandomKey()
         {
             byte[] bytes = new byte[20];
@@ -23,10 +36,121 @@ namespace CoreIdentityServer.Internals.TokenProviders.GenericTOTPTokenProvider
             return bytes;
         }
 
+
+        /// <summary>
+        ///     byte[] ApplyModifier(byte[] input, string modifier);
+        /// 
+        ///     1. Encodes the modifier, then stores them in the modifierAsBytes array.
+        ///     
+        ///     2. Copies a specified number of bytes from a source array (the input param) starting at a particular offset (0) to a 
+        ///     destination array (combinedResult variable) starting at a particular offset (0).
+        ///     
+        ///     3. Then, copies a specified number of bytes from a source array (modifiedAsBytes variable) starting at a particular
+        ///     offset (0) to a destination array (combinedResult variable) starting at a particular offset (input.Length).
+        /// </summary>
+        /// 
+        /// <param name="input">
+        ///     The input byte array on which to apply the modifier
+        /// </param>
+        /// 
+        /// <param name="modifier">
+        ///     String to use as a modifier
+        /// </param>
+        ///  
+        /// <returns>
+        ///     Modified input byte array (the combinedResult variable)
+        /// </returns>
+        ///
+        private static byte[] ApplyModifier(byte[] input, string modifier)
+        {
+            if (string.IsNullOrWhiteSpace(modifier))
+                return input;
+            
+            byte[] modifierAsBytes = Encoding.GetBytes(modifier);
+            byte[] combinedResult = new byte[checked(input.Length + modifierAsBytes.Length)];
+
+            // combine input and modifier bytes
+            Buffer.BlockCopy(input, 0, combinedResult, 0, input.Length);
+            Buffer.BlockCopy(modifierAsBytes, 0, combinedResult, input.Length, modifierAsBytes.Length);
+
+            return combinedResult;
+        }
+
+
+        /// <summary>
+        ///     ulong GetCurrentTimeStepNumber();
+        /// 
+        ///     1. Calculates the timespan from Unix epoch till now in UTC, stored in the delta variable.
+        ///     
+        ///     2. Then, calculates the total time steps: dividing total ticks in delta by total ticks in TimeStepSpan.
+        ///     
+        ///     More info: https://tools.ietf.org/html/rfc6238#section-4
+        /// </summary>
+        /// 
+        /// <returns>
+        ///     The timesSteps variable in ulong form
+        /// </returns>
+        ///
+        private static ulong GetCurrentTimeStepNumber()
+        {
+            TimeSpan delta = DateTimeOffset.UtcNow - DateTimeOffset.UnixEpoch;
+            
+            long timeSteps = delta.Ticks / TimeStepSpan.Ticks;
+
+            return (ulong)timeSteps;
+        }
+
+
+        /// <summary>
+        ///     int ComputeTOTP(HashAlgorithm hashAlgorithm, ulong timeStepNumber, string modifier);
+        ///     
+        ///     1. Sets the length of the TOTP code in the mod variable, represented by the number of zeroes in it.
+        ///     
+        ///     2. Modifies the timeStepNumber param by converting it from Host Byte Order to Network Byte order.
+        ///     Then converts the modifiedTimeStep as bytes inside the timeStepAsBytes variable.
+        ///     
+        ///     3. Modifies the timeStepAsBytes with the modifier param using the function ApplyModifier and takes it
+        ///     as the hash source, stored in the modifiedHashSource variable.
+        ///     
+        ///     4. Then computes the hash from the hash source (modifiedHashSource variable) using the ComputeHash function
+        ///     of the hashAlgorithm (hashAlgorithm param).
+        ///     
+        ///     5. Creates an offset (the offset variable) by calculating the bitwise AND of the last byte of the
+        ///     hash array and 0xf (binary 1111). A debug assertion is included so the offset does not go out of
+        ///     bounds of the hash array, for development environments.
+        ///     
+        ///     6. The binary TOTP code in integer form (the binaryCode variable) is calculated by following these steps:
+        ///         
+        ///         i. Calculates the bitwise AND of the last byte of the hash array and 0x7f (binary 0111 1111). Then
+        ///             left-shifts the result by 24 bits. Using 0x7f ensures the most significant bit is positive.
+        ///         
+        ///         ii. Calculates the bitwise AND of the 2nd last byte of the hash array and 0xff (binary 1111 1111).
+        ///             Then left-shifts the result by 16 bits.
+        ///         
+        ///         iii. Calculates the bitwise AND of the 3rd last byte of the hash array and 0xff (binary 1111 1111).
+        ///             Then left-shifts the result by 8 bits.
+        ///         
+        ///         iv. Calculates the bitwise AND of the 4th last byte of the hash array and 0xff (binary 1111 1111).
+        ///         
+        ///         v. Calculates the bitwise OR of the result of step i, ii, iii and iv.
+        ///         
+        ///     In the above procedure, left-shifting the results of bitwise AND operations by 24, 16 and 8 bits are
+        ///     necessary to form the final 32 bit integer number.
+        ///         
+        ///     7. Gets the TOTP code (TOTPCode variable) by calculating the modulus of the binary code (binaryCode variable)
+        ///     and the mod (mod variable). This ensures the TOTP code has a length equal to the number of zeroes in the mod.
+        /// </summary>
+        /// 
+        /// <param name="hashAlgorithm"></param>
+        /// <param name="timeStepNumber"></param>
+        /// <param name="modifier"></param>
+        ///
+        /// <returns>The TOTP code</returns>
+        /// 
         internal static int ComputeTOTP(HashAlgorithm hashAlgorithm, ulong timeStepNumber, string modifier)
         {
             // # of 0's = length of pin
-            const int Mod = 1000000;
+            const int mod = 1000000;
 
             // See https://tools.ietf.org/html/rfc4226
             // We can add an optional modifier
@@ -45,31 +169,9 @@ namespace CoreIdentityServer.Internals.TokenProviders.GenericTOTPTokenProvider
                                 | (hash[offset + 2] & 0xff) << 8
                                 | (hash[offset + 3] & 0xff);
 
-            return binaryCode % Mod;
-        }
+            int TOTPCode = binaryCode % mod;
 
-        // modify an input with given modifier
-        private static byte[] ApplyModifier(byte[] input, string modifier)
-        {
-            if (string.IsNullOrWhiteSpace(modifier))
-                return input;
-            
-            byte[] modifierAsBytes = Encoding.GetBytes(modifier);
-            byte[] combinedResult = new byte[checked(input.Length + modifierAsBytes.Length)];
-
-            // combine input and modifier bytes
-            Buffer.BlockCopy(input, 0, combinedResult, 0, input.Length);
-            Buffer.BlockCopy(modifierAsBytes, 0, combinedResult, input.Length, modifierAsBytes.Length);
-
-            return combinedResult;
-        }
-
-        // More info: https://tools.ietf.org/html/rfc6238#section-4
-        private static ulong GetCurrentTimeStepNumber()
-        {
-            TimeSpan delta = DateTimeOffset.UtcNow - DateTimeOffset.UnixEpoch;
-
-            return (ulong)(delta.Ticks / TimeStep.Ticks);
+            return TOTPCode;
         }
 
         public static int GenerateCode(byte[] securityToken, string modifier = null)
@@ -97,7 +199,7 @@ namespace CoreIdentityServer.Internals.TokenProviders.GenericTOTPTokenProvider
 
             ulong currentTimeStep = GetCurrentTimeStepNumber();
 
-            using(HMACSHA1 hashAlgorithm = new HMACSHA1(securityToken))
+            using (HMACSHA1 hashAlgorithm = new HMACSHA1(securityToken))
             {
                 // allow a variance of no greater than 3 minutes in either direction
                 for (int i = -2; i <= 2; i++)
