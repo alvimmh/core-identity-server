@@ -310,13 +310,13 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
 
             await ResetSignInAttempts(user);
 
-            string sessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
+            string emailVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
             string resendEmailRecordId = await EmailService.SendNewSessionVerificationEmail(
                 AutomatedEmails.NoReply,
                 user.Email,
                 user.UserName,
-                sessionVerificationCode
+                emailVerificationCode
             );
 
             TempData[TempDataKeys.UserEmail] = user.Email;

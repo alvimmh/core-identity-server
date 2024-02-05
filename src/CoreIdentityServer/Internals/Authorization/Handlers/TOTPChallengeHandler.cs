@@ -40,9 +40,10 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
         {
             // claim used to store expiry DateTime of TOTP authorization period
             Claim totpAuthorizationExpiryClaim = GetTOTPAuthorizationExpiryClaim(user);
+            // claim used to store the last authentication time of the user
             Claim authenticationTimeClaim = GetAuthenticationTimeClaim(user);
 
-            // check if the current time is within the duration of the TOTPAuthorizationExpiry claim's value
+            // check if the current time is within the duration of the TOTPAuthorizationExpiry claim
             if (totpAuthorizationExpiryClaim != null)
             {
                 DateTime authorizationExpiryDateTime = DateTime.Parse(totpAuthorizationExpiryClaim.Value);
@@ -51,7 +52,7 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
                     return true;
             }
 
-            // check if authentication was performed within the duration of the TOTPAuthorizationExpiry claim's value
+            // check if authentication was performed within the duration of AccountOptions.TOTPAuthorizationDurationInSeconds
             if (authenticationTimeClaim != null)
             {
                 long unixAuthenticationTime = long.Parse(authenticationTimeClaim.Value);

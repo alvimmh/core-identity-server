@@ -301,7 +301,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                         inputModel.TOTPCode
                     );
 
-                    string newSessionVerificationCode = null;
+                    string renewedSessionVerificationCode = null;
 
                     if (TOTPAccessVerified)
                     {
@@ -334,7 +334,7 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                             // update user failed, user can retry
 
                             // session still valid, generate new session verification code
-                            newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
+                            renewedSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
                             Console.WriteLine("Update user failed when registering TOTP Access");
 
@@ -349,14 +349,14 @@ namespace CoreIdentityServer.Areas.Enroll.Services
                     else
                     {
                         // session still valid, generate new session verification code
-                        newSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
+                        renewedSessionVerificationCode = await UserManager.GenerateTwoFactorTokenAsync(user, CustomTokenOptions.GenericTOTPTokenProvider);
 
                         // TOTP access verification failed, adding erros to ModelState
                         ActionContext.ModelState.AddModelError(string.Empty, "Invalid TOTP code");
                     }
 
-                    if (newSessionVerificationCode != null)
-                        inputModel.SessionVerificationTOTPCode = newSessionVerificationCode;
+                    if (renewedSessionVerificationCode != null)
+                        inputModel.SessionVerificationTOTPCode = renewedSessionVerificationCode;
                 }
                 else
                 {

@@ -20,6 +20,21 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
             TokenValidator = tokenValidator;
         }
 
+
+        /// <summary>
+        ///     HandleRequirementAsync(
+        ///         AuthorizationHandlerContext authorizationHandlerContext,
+        ///         AdministrativeAccessChallengeRequirement requirement
+        ///     )
+        ///     
+        ///     This authorization handler is used to authorize users of the clients
+        ///     of the identity server by checking if their access token has the
+        ///     administrative_access scope.
+        /// </summary>
+        /// <param name="authorizationHandlerContext"></param>
+        /// <param name="requirement"></param>
+        /// <returns></returns>
+        /// 
         protected override async Task HandleRequirementAsync(
             AuthorizationHandlerContext authorizationHandlerContext,
             AdministrativeAccessChallengeRequirement requirement

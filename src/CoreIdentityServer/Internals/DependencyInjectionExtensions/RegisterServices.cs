@@ -34,7 +34,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             // add authorization policy handlers
             services.AddSingleton<IAuthorizationHandler, TOTPChallengeHandler>();
             services.AddScoped<IAuthorizationHandler, AdministrativeAccessChallengeHandler>();
-            services.AddScoped<IAuthorizationHandler, TAAClientCredentialsChallengeHandler>();
+            services.AddScoped<IAuthorizationHandler, ClientCredentialsChallengeHandler>();
 
             services.AddSingleton<RouteEndpointService>();
 

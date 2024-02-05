@@ -19,8 +19,8 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             });
 
             services.AddAuthorization(options => {
-                options.AddPolicy(Policies.TAAClientCredentialsChallenge, policy => policy.AddRequirements(
-                    new TAAClientCredentialsChallengeRequirement()
+                options.AddPolicy(Policies.ClientCredentialsChallenge, policy => policy.AddRequirements(
+                    new ClientCredentialsChallengeRequirement()
                 ));
             });
 

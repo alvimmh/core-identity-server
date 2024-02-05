@@ -5,7 +5,7 @@ namespace CoreIdentityServer.Internals.Filters.ActionFilters
 {
     public class ValidateCaptcha : ActionFilterAttribute
     {
-        public string ErrorMessage { get; private set; } = "Please enter the captcha code as a number.";
+        public string ErrorMessage { get; private set; } = "Please enter the number shown in the captcha";
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {

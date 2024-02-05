@@ -43,7 +43,7 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpPost, Authorize(Policy = Policies.AdministrativeAccessChallenge), Authorize(Policy = Policies.TAAClientCredentialsChallenge)]
+        [HttpPost, Authorize(Policy = Policies.AdministrativeAccessChallenge), Authorize(Policy = Policies.ClientCredentialsChallenge)]
         public async Task<IActionResult> UserEmail([FromForm] UserEmailInputModel inputModel)
         {
             string userEmail = await ProfileService.GetUserEmail(inputModel);
