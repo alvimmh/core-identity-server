@@ -19,6 +19,28 @@ namespace CoreIdentityServer.Internals.Services
             TempData[TempDataKeys.TempDataExpiryDateTime] = expiryDateTime;
         }
 
+
+        /// <summary>
+        ///     bool IsValidReturnUrl(
+        ///         string returnUrl,
+        ///         IIdentityServerInteractionService duendeServerInteractionService,
+        ///         List<string> routeEndpoints
+        ///     )
+        ///     
+        ///     Checks whether a return url is valid for redirect.
+        ///     
+        ///     1. Initially it checks if the return url is empty and if Duende Server Interaction
+        ///         service validates the return url.
+        ///     
+        ///     2. If this check fails, it checks against the list of route endpoints of this application
+        ///     
+        ///     3. If this check fails, then the return url is stripped off of its query string and any route
+        ///         attributes and checked again.
+        /// </summary>
+        /// <param name="returnUrl"></param>
+        /// <param name="duendeServerInteractionService"></param>
+        /// <param name="routeEndpoints"></param>
+        /// <returns>boolean for the validity of the return url</returns>
         private protected bool IsValidReturnUrl(
             string returnUrl,
             IIdentityServerInteractionService duendeServerInteractionService,
@@ -43,9 +65,6 @@ namespace CoreIdentityServer.Internals.Services
                 
                 if (returnUrlQueryStringStartIndex == -1)
                 {
-                    // remove trailing '/' character
-                    string returnUrlWithoutUnnecessaryCharacters = returnUrl.TrimEnd('/');
-
                     // check for route attributes
                     int returnUrlRouteAttributeStartIndex = returnUrl.LastIndexOf('/');
 
@@ -75,11 +94,9 @@ namespace CoreIdentityServer.Internals.Services
         }
 
         private protected string GenerateAbsoluteLocalUrl(
-            IWebHostEnvironment environment,
             string action,
             string controller,
-            string area,
-            IConfiguration config
+            string area
         ) {
             string rootUrl = Config.GetApplicationUrl();
 

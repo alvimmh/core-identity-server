@@ -36,6 +36,27 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
             return user.FindFirst(JwtClaimTypes.AuthenticationTime);
         }
 
+        /// <summary>
+        ///     public static bool IsUserAuthorized(ClaimsPrincipal user)
+        ///     
+        ///     Checks if the user has access to endpoints or resources requiring TOTP authenticator based authorization. 
+        ///     
+        ///     1. Gets the ProjectClaimTypes.TOTPAuthorizationExpiry claim from the user's claims.
+        ///     
+        ///     2. Gets the JwtClaimTypes.AuthenticationTime claim from the user's claims.
+        ///     
+        ///     3. If the ProjectClaimTypes.TOTPAuthorizationExpiry claim is not empty, the claim's value is
+        ///         parsed as a DateTime object and checked if the DateTime is greater than the DateTime.UtcNow.
+        ///             If it is, it means the user is still in their TOTP authorization period and the function returns true.
+        ///                 If not, the code advances.
+        ///             
+        ///     4. If the JwtClaimTypes.AuthenticationTime claim is not empty, the claims value is parsed to a DateTime object
+        ///         and checked if the DateTime is greater than DateTime.UtcNow by AccountOptions.TOTPAuthorizationDurationInSeconds seconds.
+        ///             If it is, then the user is authorized not too long ago and doesn't require a TOTP challenge, and the function
+        ///                 returns true. If not, the function ultimately returns false meaning the user requires a TOTP challenge.
+        /// </summary>
+        /// <param name="user">The ClaimsPrincipal object (user)</param>
+        /// <returns>True or false depending on the user's TOTP authorization status.</returns>
         public static bool IsUserAuthorized(ClaimsPrincipal user)
         {
             // claim used to store expiry DateTime of TOTP authorization period

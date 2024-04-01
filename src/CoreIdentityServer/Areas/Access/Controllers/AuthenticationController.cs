@@ -19,6 +19,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             AuthenticationService = authenticationService;
         }
 
+
+        /// The HTTP GET action to show the Access Denied page
         [HttpGet]
         public IActionResult AccessDenied([FromQuery] string returnUrl)
         {
@@ -30,25 +32,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
-        [HttpGet, Authorize]
-        public IActionResult TOTPChallenge([FromQuery] string returnUrl)
-        {
-            TOTPChallengeInputModel viewModel = AuthenticationService.ManageTOTPChallenge(returnUrl);
 
-            return View(viewModel);
-        }
-
-        [HttpPost, Authorize, ValidateAntiForgeryToken]
-        public async Task<IActionResult> TOTPChallenge([FromForm] TOTPChallengeInputModel inputModel)
-        {
-            string redirectRoute = await AuthenticationService.ManageTOTPChallengeVerification(inputModel);
-
-            if (redirectRoute == null)
-                return View(inputModel);
-            
-            return Redirect(redirectRoute);
-        }
-
+        // The HTTP GET action to show the Email Challenge page
         [HttpGet, RedirectAuthenticatedUser]
         public async Task<IActionResult> EmailChallenge([FromQuery] string returnUrl)
         {
@@ -62,6 +47,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
+
+        // The HTTP POST action to from the Email Challenge page
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {
@@ -73,6 +60,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        // The HTTP GET action to show the Sign In page
         [HttpGet, RedirectAuthenticatedUser]
         public IActionResult SignIn([FromQuery] string returnUrl)
         {
@@ -81,6 +70,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(viewModel);
         }
 
+
+        // The HTTP POST action from the Sign In page
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser, ValidateCaptcha]
         public async Task<IActionResult> SignIn([FromForm] SignInInputModel inputModel)
         {
@@ -92,6 +83,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        // The HTTP GET action to show the Sign Out page
         [HttpGet]
         public async Task<IActionResult> SignOut([FromQuery] string signOutId)
         {
@@ -104,6 +97,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(viewModel);
         }
 
+
+        // The HTTP POST action from the Sign Out page
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> SignOut([FromForm] SignOutInputModel inputModel)
         {
@@ -112,12 +107,37 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        // The HTTP GET action to show the Signed Out page
         [HttpGet, RedirectAuthenticatedUser]
         public IActionResult SignedOut()
         {
             SignedOutViewModel viewModel = AuthenticationService.ManageSignedOut();
 
             return View(viewModel);
+        }
+
+
+        // The HTTP GET action to show the TOTP Challenge page
+        [HttpGet, Authorize]
+        public IActionResult TOTPChallenge([FromQuery] string returnUrl)
+        {
+            TOTPChallengeInputModel viewModel = AuthenticationService.ManageTOTPChallenge(returnUrl);
+
+            return View(viewModel);
+        }
+
+
+        // The HTTP POST action from the TOTP Challenge page
+        [HttpPost, Authorize, ValidateAntiForgeryToken]
+        public async Task<IActionResult> TOTPChallenge([FromForm] TOTPChallengeInputModel inputModel)
+        {
+            string redirectRoute = await AuthenticationService.ManageTOTPChallengeVerification(inputModel);
+
+            if (redirectRoute == null)
+                return View(inputModel);
+            
+            return Redirect(redirectRoute);
         }
     }
 }

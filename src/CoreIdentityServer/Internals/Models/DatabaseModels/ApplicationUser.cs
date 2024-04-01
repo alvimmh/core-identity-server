@@ -27,6 +27,11 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
         // field to indicate if user is soft-deleted or not
         public bool Archived { get; private set; }
 
+        /// <summary>
+        ///     public void UpdateLastSignedInTimeStamp()
+        ///     
+        ///     Updates the LastSignedInAt property of the user.
+        /// </summary>
         public void UpdateLastSignedInTimeStamp()
         {
             DateTime currentDateTime = DateTime.UtcNow;
