@@ -52,7 +52,7 @@ namespace CoreIdentityServer.Areas.Access.Services
         /// <summary>
         ///     public string ManageAccessDenied(string returnUrl)    
         /// 
-        ///     Manages the AccessDenied GET action and returns an appropriate redirect route.
+        ///     Manages the AccessDenied GET action.
         ///     
         ///     1. Checks if the return url is available. If not, null is returned.
         ///     

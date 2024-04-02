@@ -48,7 +48,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         }
 
 
-        // The HTTP POST action to from the Email Challenge page
+        // The HTTP POST action from the Email Challenge page
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> EmailChallenge([FromForm] EmailChallengeInputModel inputModel)
         {

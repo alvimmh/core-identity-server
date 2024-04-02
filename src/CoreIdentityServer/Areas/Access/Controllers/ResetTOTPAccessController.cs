@@ -20,6 +20,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             ResetTOTPAccessService = resetTOTPAccessService;
         }
 
+        /// The HTTP GET action to show the Manage Authenticator page
+        [HttpGet]
         public async Task<IActionResult> ManageAuthenticator()
         {
             ManageAuthenticatorViewModel viewModel = await ResetTOTPAccessService.ManageAuthenticator();
@@ -30,12 +32,14 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(viewModel);
         }
 
+        /// The HTTP GET action to show the Initiate Unauthenticated Recovery page
         [HttpGet]
         public IActionResult InitiateUnauthenticatedRecovery()
         {
             return View();
         }
 
+        /// The HTTP POST action from the Initiate Unauthenticated Recovery page
         [HttpPost, ValidateAntiForgeryToken, ValidateCaptcha]
         public async Task<IActionResult> InitiateUnauthenticatedRecovery([FromForm] InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
         {
@@ -44,12 +48,14 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
+        /// The HTTP GET action to show the Initiate Authenticated Recovery page
         [HttpGet, Authorize, Authorize(Policy = Policies.TOTPChallenge)]
         public IActionResult InitiateAuthenticatedRecovery()
         {
             return View();
         }
 
+        /// The HTTP POST action from the Initiate Authenticated Recovery page
         [HttpPost, ValidateAntiForgeryToken, Authorize, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> InitiateAuthenticatedRecovery([FromForm] InitiateTOTPAccessRecoveryChallengeInputModel inputModel)
         {
@@ -58,6 +64,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
+        /// The HTTP GET action to show the Recover TOTP Access Challenge page
         [HttpGet]
         public async Task<IActionResult> RecoverTOTPAccessChallenge()
         {
@@ -71,6 +78,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
+        /// The HTTP POST action from the Recover TOTP Access Challenge page
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RecoverTOTPAccessChallenge([FromForm] TOTPAccessRecoveryChallengeInputModel inputModel)
         {
@@ -82,6 +90,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return Redirect(redirectRoute);
         }
 
+        /// The HTTP GET action to show the Reset TOTP Access Recovery Codes page
         [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> ResetTOTPAccessRecoveryCodes()
         {
@@ -95,6 +104,7 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
+        /// The HTTP POST action from the Reset TOTP Access Recovery Codes page
         [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> ResetTOTPAccessRecoveryCodes([FromForm] ResetTOTPAccessRecoveryCodesInputModel inputModel)
         {

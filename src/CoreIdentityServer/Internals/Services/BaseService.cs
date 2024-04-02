@@ -12,6 +12,11 @@ namespace CoreIdentityServer.Internals.Services
 {
     public abstract class BaseService
     {
+        /// <summary>
+        ///     Sets a DateTime object in the TempData that acts as the expiry
+        ///         date/time for the TempData.
+        /// </summary>
+        /// <param name="TempData">The ITempDataDictionary TempData</param>
         private protected void SetTempDataExpiryDateTime(ITempDataDictionary TempData)
         {
             DateTime expiryDateTime = DateTime.UtcNow.AddSeconds(AccountOptions.TempDataLifetimeInSeconds);

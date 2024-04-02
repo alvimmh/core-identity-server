@@ -64,11 +64,36 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             UrlEncoder = urlEncoder;
         }
 
+
+        /// <summary>
+        ///     public async Task<object[]> ManageTOTPAccessRecoveryChallenge(string defaultRoute)
+        ///     
+        ///     Manages the RecoverTOTPAccessChallenge GET action for the
+        ///         ResetTOTPAccessService.ManageTOTPAccessRecoveryChallenge() method.
+        ///         
+        ///     1. Checks if the current user is signed in. If signed in, the user is fetched using
+        ///         the UserManager.GetUserAsync() method.
+        ///         
+        ///     2. If not signed in, the user email is retreived from the TempData.
+        ///     
+        ///     3. In case the user or the user's email was found, a view model is created by
+        ///         calling the GenerateTOTPAccessRecoveryChallengeInputModel() method which. And all
+        ///             existing TempData are kept so they persist on page reload. Finally, the method
+        ///                 returns an array of objects containing the view model and null.
+        ///                 
+        ///     4. In case the user or the user's email was not found, the method returns an array of
+        ///         objects containing null and the defaultRoute param.
+        /// </summary>
+        /// <param name="defaultRoute">
+        ///     The default route to redirect the application in case the user or user email was not found.
+        /// </param>
+        /// <returns>An array of objects containing
+        ///     the view model and null
+        ///         or,
+        ///             null and the default route param.
+        /// </returns>
         public async Task<object[]> ManageTOTPAccessRecoveryChallenge(string defaultRoute)
         {
-            TOTPAccessRecoveryChallengeInputModel model = null;
-            string redirectRoute = defaultRoute;
-
             // check if user is signed in
             bool userEmailExists = false;
             bool currentUserSignedIn = CheckActiveSession();
@@ -87,10 +112,17 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             }
             else
             {
-                userEmailExists = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
+                bool userEmailExistsInTempData = TempData.TryGetValue(TempDataKeys.UserEmail, out object userEmailTempData);
 
-                if (userEmailExists)
+                if (userEmailExistsInTempData)
+                {
                     userEmail = userEmailTempData.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(userEmail))
+                    {
+                        userEmailExists = true;
+                    }
+                }
             }
 
             if (userEmailExists)
@@ -98,17 +130,52 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // retain TempData so page reload keeps user on the same page
                 TempData.Keep();
 
-                if (!string.IsNullOrWhiteSpace(userEmail))
-                {
-                    model = await GenerateTOTPAccessRecoveryChallengeInputModel(userEmail, user);
-                }
-            }
+                TOTPAccessRecoveryChallengeInputModel model = await GenerateTOTPAccessRecoveryChallengeInputModel(userEmail, user);
 
-            return GenerateArray(model, redirectRoute);
+                return GenerateArray(model, null);
+            }
+            else
+            {
+                return GenerateArray(null, defaultRoute);
+            }
         }
 
-        private async Task<TOTPAccessRecoveryChallengeInputModel> GenerateTOTPAccessRecoveryChallengeInputModel(string userEmail, ApplicationUser challengedUser = null)
-        {
+
+        /// <summary>
+        ///     private async Task<TOTPAccessRecoveryChallengeInputModel> GenerateTOTPAccessRecoveryChallengeInputModel(
+        ///         string userEmail,
+        ///         ApplicationUser challengedUser = null
+        ///     )
+        ///     
+        ///     1. Checks if the user email is null or whitespace. If so, the method returns null. If not, the
+        ///         method continues.
+        ///     
+        ///     2. If the user param is null, fetches the user using the UserManager.FindByEmailAsync() method.
+        ///         In case the user is not found, the method returns null.
+        ///         
+        ///     3. If the user is found, and the user has a confirmed email but did not complete
+        ///         account registration, an email is sent to the user to request to complete account
+        ///             registration. Then the method returns null.
+        ///             
+        ///     4. If the user has a confirmed email and the user did complete account registration,
+        ///         an input model containing the user's email is created and the method returns
+        ///             this input model.
+        ///             
+        ///     5. For all other scenarios, the method returns null.
+        /// </summary>
+        /// <param name="userEmail">The user's email supplied by the calling function</param>
+        /// <param name="challengedUser">
+        ///     The ApplicationUser object, optionally provided by the calling function
+        /// </param>
+        /// <returns>
+        ///     The created input model (TOTPAccessRecoveryChallengeInputModel)
+        ///         or,
+        ///             null if creation of the input model is not possible.
+        /// </returns>
+        private async Task<TOTPAccessRecoveryChallengeInputModel> GenerateTOTPAccessRecoveryChallengeInputModel(
+            string userEmail,
+            ApplicationUser challengedUser = null
+        ) {
             if (!string.IsNullOrWhiteSpace(userEmail))
             {
                 ApplicationUser user = challengedUser ?? await UserManager.FindByEmailAsync(userEmail);
@@ -314,7 +381,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         ///     2. These contexts are (i) UserActionContexts.ConfirmEmailChallenge,
         ///         (ii) UserActionContexts.SignInTOTPChallenge - sign in TOTP challenge is successful,
         ///             (iii) UserActionContexts.SignInEmailChallenge - sign in email challenge is successful,
-        ///                 (iv) UserActionContexts.ResetTOTPAccessRecoveryChallenge,
+        ///                 (iv) UserActionContexts.TOTPAccessRecoveryChallenge - TOTP access recovery challenge is successful,
         ///                     (v) UserActionContexts.TOTPChallenge - dedicated TOTP challenge is successful,
         ///                         (vi) The default context means there is a mismatch of supplied vs available contexts
         ///                             and a generic error message for the user is added..
@@ -353,7 +420,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 case UserActionContexts.SignInEmailChallenge:
                     redirectRoute = await SignIn(user);
                     break;
-                case UserActionContexts.ResetTOTPAccessRecoveryChallenge:
+                case UserActionContexts.TOTPAccessRecoveryChallenge:
                     redirectRoute = await AcknowledgeResetTOTPAccessRequest(user);
                     break;
                 case UserActionContexts.TOTPChallenge:
@@ -546,10 +613,34 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             }
         }
 
+
+        /// <summary>
+        ///     private async Task<string> AcknowledgeResetTOTPAccessRequest(ApplicationUser user)
+        ///     
+        ///     Acknowledges the user's need to reset TOTP authenticator.
+        /// 
+        ///     1. Updates the user's RequiresAuthenticatorReset property to true. If the update
+        ///         fails, all errors are printed to the console. And an error message is added to the
+        ///             ModelState for the user. Then the method returns null.
+        ///             
+        ///     2. In case the update succeeded, the user is signed out by calling the SignOut() method.
+        ///     
+        ///     3. The user's email is set in the TempData so it persists after a page redirect. An
+        ///         expiry DateTime is also set in the TempData using the SetTempDataExpiryDateTime() method.
+        ///             Any attempt to register a new TOTP authenticator after the expiry DateTime has
+        ///                 passed will be blocked.
+        ///     
+        ///     4. Finally, the method returns a redirect route to the Register TOTP Access page.
+        /// </summary>
+        /// <param name="user">The ApplicationUser object</param>
+        /// <returns>
+        ///     The route to redirect the application upon successful acknowledgement of
+        ///         user's authenticator reset status
+        ///             or,
+        ///                 null if acknowledgement fails.
+        /// </returns>
         private async Task<string> AcknowledgeResetTOTPAccessRequest(ApplicationUser user)
         {
-            string redirectRoute = null;
-
             user.RequiresAuthenticatorReset = true;
 
             IdentityResult updateUser = await UserManager.UpdateAsync(user);
@@ -564,7 +655,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 ActionContext.ModelState.AddModelError(string.Empty, "Something went wrong. Please try again with a different recovery code.");
 
                 // reset TOTP access request acknowledgement failed, return null to return ViewModel
-                return redirectRoute;
+                return null;
             }
 
             // sign out user
@@ -1070,6 +1161,22 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return verificationResult;
         }
 
+
+        /// <summary>
+        ///     public async Task<bool> VerifyTOTPAccessRecoveryCode(ApplicationUser user, string verificationCode)
+        ///     
+        ///     Verifies the TOTP access recovery code.
+        ///     
+        ///     1. Verifies the user submitted recovery code using the UserManager.RedeemTwoFactorRecoveryCodeAsync()
+        ///         method.
+        ///         
+        ///     2. If the verification fails, all errors are printed to the console and the method returns false.
+        ///     
+        ///     3. If the verification succeeds, the method returns true.
+        /// </summary>
+        /// <param name="user">The ApplicationUser object</param>
+        /// <param name="verificationCode">The user submitted TOTP access recovery code</param>
+        /// <returns>The TOTP access recovery code verification result as a boolean</returns>
         public async Task<bool> VerifyTOTPAccessRecoveryCode(ApplicationUser user, string verificationCode)
         {
             // verify TOTP access recovery code
