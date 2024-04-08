@@ -378,7 +378,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         /// 
         ///     1. The flow is controlled using defined contexts based on the user's action.
         ///     
-        ///     2. These contexts are (i) UserActionContexts.ConfirmEmailChallenge,
+        ///     2. These contexts are (i) UserActionContexts.ConfirmEmailChallenge - confirm email challenge is successful,
         ///         (ii) UserActionContexts.SignInTOTPChallenge - sign in TOTP challenge is successful,
         ///             (iii) UserActionContexts.SignInEmailChallenge - sign in email challenge is successful,
         ///                 (iv) UserActionContexts.TOTPAccessRecoveryChallenge - TOTP access recovery challenge is successful,
@@ -435,15 +435,46 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         }
 
 
+        /// <summary>
+        ///     private async Task<string> ConfirmUserEmail(ApplicationUser user)
+        ///     
+        ///     Confirms the user's email address.
+        ///     
+        ///     1. Sets the EmailConfirmed property of the user to true.
+        ///     
+        ///     2. Updates the user so the change is persisted in the database using the
+        ///         UserManager.UpdateAsync() method.
+        ///         
+        ///     3. If the update fails, all errors are added to the ModelState for the
+        ///         user and the method returns null.
+        ///         
+        ///     4. If the update succeeds, an email is sent to the user notifying them
+        ///         about the successful confirmation of their email address.
+        ///         
+        ///        The user's email address is stored in TempData with an expiry DateTime.
+        ///        
+        ///        Then the method returns a redirect route to the Register TOTP Access
+        ///         page.
+        /// </summary>
+        /// <param name="user">The ApplicationUser object</param>
+        /// <returns>The route to redirect the application or null</returns>
         private async Task<string> ConfirmUserEmail(ApplicationUser user)
         {
-            string redirectRoute = null;
-
             user.EmailConfirmed = true;
 
             IdentityResult updateUser = await UserManager.UpdateAsync(user);
 
             if (updateUser.Succeeded)
+            {
+                Console.WriteLine($"Error updating user");
+
+                // add errors to ModelState
+                foreach (IdentityError error in updateUser.Errors)
+                    ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+
+                return null;
+            }
+            else
             {
                 // temporarily disabling this email
                 // await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
@@ -451,18 +482,10 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 TempData[TempDataKeys.UserEmail] = user.Email;
                 SetTempDataExpiryDateTime(TempData);
 
-                redirectRoute = GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");
-            }
-            else
-            {
-                Console.WriteLine($"Error updating user");
+                string redirectRoute = GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");
 
-                // add errors to ModelState
-                foreach (IdentityError error in updateUser.Errors)
-                    ActionContext.ModelState.AddModelError(string.Empty, error.Description);
+                return redirectRoute;
             }
-
-            return redirectRoute;
         }
 
 
@@ -950,6 +973,28 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await SignInManager.RefreshSignInAsync(user);
         }
 
+
+        /// <summary>
+        ///     public async Task<List<string>> GenerateTOTPRecoveryCodes(
+        ///         ApplicationUser user, int numberOfRecoveryCodes
+        ///     )
+        ///     
+        ///     Generates TOTP access recovery codes for the user.
+        ///     
+        ///     1. Using a while loop, the method keeps creating TOTP access recovery
+        ///         codes for the user until an attempt creates the number of desired
+        ///             recovery codes. This is because the method used to create these
+        ///                 codes - UserManager.GenerateNewTwoFactorRecoveryCodesAsync()
+        ///                     removes any duplicate codes created per attempt.
+        ///                     
+        ///        Since we need at least "numberOfRecoveryCodes" different codes, we have
+        ///         to use the while loop.
+        ///         
+        ///        Finally, the method returns the created recovery codes.
+        /// </summary>
+        /// <param name="user">The ApplicationUser object</param>
+        /// <param name="numberOfRecoveryCodes">The number of recovery codes to create</param>
+        /// <returns>A list of strings containing the TOTP access recovery codes</returns>
         public async Task<List<string>> GenerateTOTPRecoveryCodes(ApplicationUser user, int numberOfRecoveryCodes)
         {
             List<string> recoveryCodes = new List<string>();
@@ -1195,6 +1240,15 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return true;
         }
 
+
+        /// <summary>
+        ///     public string GenerateQRCodeUri(string email, string authenticatorKey)
+        ///     
+        ///     Generates the QR code uri for the user's authenticator key.
+        /// </summary>
+        /// <param name="email">An email address for the user</param>
+        /// <param name="authenticatorKey">The authenticator key of the user</param>
+        /// <returns>A stringified QR code uri for the user's authenticator key</returns>
         public string GenerateQRCodeUri(string email, string authenticatorKey)
         {
             const string AuthenticatorKeyUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";

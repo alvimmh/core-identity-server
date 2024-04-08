@@ -10,6 +10,8 @@ namespace CoreIdentityServer.Internals.Constants.UserActions
 
         // TOTP access recovery challenge is successful
         public const string TOTPAccessRecoveryChallenge = "TOTPAccessRecoveryChallenge";
+
+        // confirm email challenge is successful
         public const string ConfirmEmailChallenge = "ConfirmEmailChallenge";
 
         // dedicated TOTP challenge is successful

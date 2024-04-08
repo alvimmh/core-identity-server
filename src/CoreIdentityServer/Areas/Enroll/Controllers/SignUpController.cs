@@ -20,12 +20,16 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             SignUpService = signUpService;
         }
 
+
+        // The HTTP GET action to show the Register Prospective User page
         [HttpGet, RedirectAuthenticatedUser]
         public IActionResult RegisterProspectiveUser()
         {
             return View();
         }
 
+
+        // The HTTP POST action from the Register Prospective User page
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser, ValidateCaptcha]
         public async Task<IActionResult> RegisterProspectiveUser([FromForm] ProspectiveUserInputModel inputModel)
         {
@@ -37,6 +41,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        // The HTTP GET action to show the Confirm Email page
         [HttpGet, RedirectAuthenticatedUser]
         public async Task<IActionResult> ConfirmEmail()
         {
@@ -50,6 +56,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View(result[0]);
         }
 
+
+        // The HTTP POST action from the Confirm Email page
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> ConfirmEmail([FromForm] EmailChallengeInputModel inputModel)
         {
@@ -61,6 +69,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        // The HTTP GET action to show the Register TOTP Access page
         [HttpGet, RedirectAuthenticatedUser]
         public async Task<IActionResult> RegisterTOTPAccess()
         {
@@ -74,6 +84,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return View(result[0]);
         }
 
+
+        // The HTTP POST action from the Register TOTP Access page
         [HttpPost, ValidateAntiForgeryToken, RedirectAuthenticatedUser]
         public async Task<IActionResult> RegisterTOTPAccess([FromForm] RegisterTOTPAccessInputModel inputModel)
         {
@@ -85,6 +97,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        // The HTTP GET action to show the Register TOTP Access Successful page
         [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> RegisterTOTPAccessSuccessful([FromQuery] bool resetAccess)
         {
