@@ -965,6 +965,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             }
         }
 
+
+        /// <summary>
+        ///     public async Task RefreshUserSignIn(ApplicationUser user)
+        ///     
+        ///     Refreshes the user's current session.
+        /// </summary>
+        /// <param name="user">The ApplicationUser object</param>
+        /// <returns>void</returns>
         public async Task RefreshUserSignIn(ApplicationUser user)
         {
             // delete all TempData
@@ -1179,7 +1187,13 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return true;
         }
 
-        // check if there is a current user logged in, if so redirect to an authorized page
+
+        /// <summary>
+        ///     public bool CheckActiveSession()
+        ///     
+        ///     Checks if the current user is signed in.
+        /// </summary>
+        /// <returns>boolean</returns>
         public bool CheckActiveSession()
         {
             return SignInManager.IsSignedIn(ActionContext.HttpContext.User);

@@ -19,6 +19,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             MFAService = mfaService;
         }
 
+
+        /// The HTTP GET action to show the Manage Email Authentication page
         [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> ManageEmailAuthentication()
         {
@@ -32,6 +34,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(result[0]);
         }
 
+
+        /// The HTTP POST action from the Manage Email Authentication page
         [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> ManageEmailAuthentication([FromForm] SetEmailAuthenticationInputModel inputModel)
         {

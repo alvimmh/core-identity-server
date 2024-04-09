@@ -40,19 +40,48 @@ namespace CoreIdentityServer.Areas.Access.Services
             RootRoute = GenerateRouteUrl("Dashboard", "Pages", "General");
         }
 
+
+        /// <summary>
+        ///     public async Task<object[]> ManageEmailAuthentication()
+        ///     
+        ///     Manages the ManageEmailAuthentication GET action.
+        ///     
+        ///     1. Checks if the current user is signed in. If not, returns an array of
+        ///         objects containing null and the RootRoute - the Dashboard page.
+        ///         
+        ///     2. If the current user is signed in, fetches the user using the
+        ///         UserManager.GetUserAsync() method. If the user was not found, the
+        ///             method returns an array of objects containing null and the RootRoute.
+        ///             
+        ///     3. If the user was found, checks if two factor authentication is enabled for
+        ///         the user using the method UserManager.GetTwoFactorEnabledAsync() method.
+        ///         
+        ///     4. Creates a view model containing a boolean which indicates if 2FA is enabled
+        ///         for the user. Finally, the method returns an array of objects containing
+        ///             the view model and null.
+        /// </summary>
+        /// <returns>
+        ///     An array of objects containing
+        ///         the view model and null
+        ///             or,
+        ///                 null and a redirect route.
+        /// </returns>
         public async Task<object[]> ManageEmailAuthentication()
         {
             object[] result = GenerateArray(null, RootRoute);
 
-            ApplicationUser user = null;
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
-            if (currentUserSignedIn)
+            if (!currentUserSignedIn)
             {
-                user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
+                return GenerateArray(null, RootRoute);
+            }
+            else
+            {
+                ApplicationUser user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
 
                 if (user == null)
-                    return result;
+                    return GenerateArray(null, RootRoute);
 
                 bool twoFactorAuthenticationEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
 
@@ -61,25 +90,73 @@ namespace CoreIdentityServer.Areas.Access.Services
 
                 return GenerateArray(viewModel, null);
             }
-            else
-            {
-                return result;
-            }
         }
 
+
+        /// <summary>
+        ///     public async Task<string> SetEmailAuthentication(
+        ///         SetEmailAuthenticationInputModel inputModel
+        ///     )
+        ///     
+        ///     Manages the ManageEmailAuthentication POST action.
+        ///     
+        ///     1. Checks if the ModelState is valid. If not, returns a redirect route
+        ///         to the Manage Email Authentication page.
+        ///         
+        ///     2. Checks if the current user is signed in using the
+        ///         IdentityService.CheckActiveSession() method. If not, the method returns the
+        ///             RootRoute.
+        ///             
+        ///     3. If the user is signed in, fetches the user using the UserManager.GetUserAsync()
+        ///         method. If the user was not found, the method returns the RootRoute.
+        ///         
+        ///     4. Checks if two factor authentication is enabled for the user. In this application,
+        ///         2FA means a user has turned on email based authentication in addition to the basic
+        ///             TOTP authenticator based default option. If 2FA status is the same as the one
+        ///                 the user wants to change to, then the method returns a redirect route to
+        ///                     the Manage Email Authentication page. Otherwise, the method continues.
+        ///     
+        ///     5. Checks if the user is the Product Owner of this application. If the user is, and
+        ///         wants to disable 2FA, the method sets an error message in the TempData for the
+        ///             user and returns a redirect route to the Manage Email Authentication page.
+        ///                 This is because Product Owner cannot disable 2FA in this application.
+        ///                 
+        ///     6. If the user is not the Product Owner, the method updates the user's 2FA preference
+        ///         using the UserManager.SetTwoFactorEnabledAsync() method. If the update failed,
+        ///             all errors are printed to the console and an error message is set in the
+        ///                 TempData for the user. Then the method returns a redirect route to the
+        ///                     Manage Email Authentication page.
+        ///                     
+        ///     7. If the update succeeded, the user's session is refreshed using the
+        ///         IdentityService.RefreshUserSignIn() method. Additionally, a notification regarding
+        ///             the 2FA status change is set in the TempData for the user. An email is also
+        ///                 sent to the user notifying them about the 2FA status change. Finally, the
+        ///                     method returns a redirect route to the Manage Email Authentication page.
+        /// </summary>
+        /// <param name="inputModel">The input model containing the user's 2FA status preference</param>
+        /// <returns>A route to redirect the application</returns>
         public async Task<string> SetEmailAuthentication(SetEmailAuthenticationInputModel inputModel)
         {
-            string redirectRoute = GenerateRouteUrl("ManageEmailAuthentication", "MFA", "Access");
             ApplicationUser user = null;
 
             if (!ActionContext.ModelState.IsValid)
+            {
+                string redirectRoute = GenerateRouteUrl("ManageEmailAuthentication", "MFA", "Access");
+
                 return redirectRoute;
+            }
 
             bool enableEmailAuthentication = Convert.ToBoolean(inputModel.Enable);
             bool currentUserSignedIn = IdentityService.CheckActiveSession();
 
-            if (currentUserSignedIn)
+            if (!currentUserSignedIn)
             {
+                return RootRoute;
+            }
+            else
+            {
+                string redirectRoute = GenerateRouteUrl("ManageEmailAuthentication", "MFA", "Access");
+
                 user = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
 
                 if (user == null)
@@ -88,7 +165,9 @@ namespace CoreIdentityServer.Areas.Access.Services
                 bool twoFactorAuthenticationEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
 
                 if (twoFactorAuthenticationEnabled == enableEmailAuthentication)
+                {
                     return redirectRoute;
+                }
                 
                 string userChoice = enableEmailAuthentication ? "enable" : "disable";
 
@@ -132,10 +211,6 @@ namespace CoreIdentityServer.Areas.Access.Services
                 );
 
                 return redirectRoute;
-            }
-            else
-            {
-                return RootRoute;
             }
         }
 
