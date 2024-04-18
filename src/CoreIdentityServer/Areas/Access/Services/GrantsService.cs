@@ -47,6 +47,13 @@ namespace CoreIdentityServer.Areas.Access.Services
             ActionContext = actionContextAccessor.ActionContext;
         }
 
+
+        /// <summary>
+        ///     public async Task<GrantsViewModel> ManageGrants()
+        ///     
+        ///     Manages the Index GET action. This utilizes the BuildViewModelAsync() method.
+        /// </summary>
+        /// <returns>A view model containing all of the user's grants</returns>
         public async Task<GrantsViewModel> ManageGrants()
         {
             GrantsViewModel viewModel = await BuildViewModelAsync();
@@ -54,6 +61,16 @@ namespace CoreIdentityServer.Areas.Access.Services
             return viewModel;
         }
 
+
+        /// <summary>
+        ///     public async Task RevokeGrant(RevokeGrantInputModel inputModel)
+        ///     
+        ///     Manages the Index POST action. This method revokes a specific grant by the user.
+        /// </summary>
+        /// <param name="inputModel">
+        ///     The object containing the client id for which the grant is being revoked
+        /// </param>
+        /// <returns>void</returns>
         public async Task RevokeGrant(RevokeGrantInputModel inputModel)
         {
             if (ActionContext.ModelState.IsValid)
@@ -86,6 +103,13 @@ namespace CoreIdentityServer.Areas.Access.Services
 
         }
 
+
+        /// <summary>
+        ///     private async Task<GrantsViewModel> BuildViewModelAsync()
+        ///     
+        ///     Creates the view model for the ManageGrants() method.
+        /// </summary>
+        /// <returns>A view model object containing all the grants of the user</returns>
         private async Task<GrantsViewModel> BuildViewModelAsync()
         {
             IEnumerable<Grant> grants = await InteractionService.GetAllUserGrantsAsync();

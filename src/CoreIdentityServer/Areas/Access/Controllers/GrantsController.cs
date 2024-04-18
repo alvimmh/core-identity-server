@@ -23,6 +23,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             GrantsService = grantsService;
         }
 
+
+        /// The HTTP GET action to show the Grant's Controller's Index page
         [HttpGet, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index()
         {
@@ -31,7 +33,9 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View(viewModel);
         }
 
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Policy = Policies.TOTPChallenge)]
+
+        /// The HTTP POST action from the Grant's Controller's Index page
+        /// Used to revoke grants.
         public async Task<IActionResult> Index([FromForm] RevokeGrantInputModel inputModel)
         {
             await GrantsService.RevokeGrant(inputModel);

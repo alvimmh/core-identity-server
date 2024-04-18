@@ -18,18 +18,24 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
             CorrespondenceService = correspondenceService;
         }
 
+
+        /// The HTTP GET action to show the Privacy Policy page
         [HttpGet, AllowAnonymous]
         public IActionResult PrivacyPolicy()
         {
             return View();
         }
 
+
+        /// The HTTP GET action to show the Terms of Service page
         [HttpGet, AllowAnonymous]
         public IActionResult TermsOfService()
         {
             return View();
         }
 
+
+        /// The HTTP POST action from the _ResendEmail partial page
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ResendEmail([FromForm] ResendEmailInputModel inputModel)
         {
@@ -41,6 +47,8 @@ namespace CoreIdentityServer.Areas.ClientServices.Controllers
             return Ok();
         }
 
+
+        /// The HTTP GET action to show the Error page. This page is triggered by errors in the application.
         [AllowAnonymous]
         public async Task<IActionResult> Error(string errorType)
         {

@@ -16,6 +16,9 @@ namespace CoreIdentityServer.Areas.General.Controllers
             PagesService = pagesService;
         }
 
+
+        /// The HTTP GET action to show the Dashboard page
+        [HttpGet]
         public IActionResult Dashboard([FromQuery] string returnUrl)
         {
             string redirectRoute = PagesService.ManageDashboard(returnUrl);

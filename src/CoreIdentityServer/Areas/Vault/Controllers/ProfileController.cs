@@ -19,6 +19,8 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             ProfileService = profileService;
         }
 
+
+        /// The HTTP GET action to show the Index page
         [HttpGet, Authorize, Authorize(Policy = Policies.TOTPChallenge)]
         public async Task<IActionResult> Index()
         {
@@ -32,6 +34,8 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             return View(result[0]);
         }
 
+
+        /// The HTTP POST action from the Index page
         [HttpPost, Authorize, Authorize(Policy = Policies.TOTPChallenge), ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([FromForm] UserProfileInputModel inputModel)
         {
@@ -43,6 +47,8 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        /// The HTTP POST action from one of the identity server clients to get a user's email address
         [HttpPost, Authorize(Policy = Policies.AdministrativeAccessChallenge), Authorize(Policy = Policies.ClientCredentialsChallenge)]
         public async Task<IActionResult> UserEmail([FromForm] UserEmailInputModel inputModel)
         {

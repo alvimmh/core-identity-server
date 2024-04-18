@@ -23,6 +23,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             ConsentService = consentService;
         }
 
+
+        /// The HTTP GET action to show the Consent Controller's Index page
         [HttpGet]
         public async Task<IActionResult> Index(string returnUrl)
         {
@@ -34,6 +36,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             return View("~/Areas/ClientServices/Views/Correspondence/Error.cshtml");
         }
 
+
+        /// The HTTP POST action from the Consent Controller's Index page
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ConsentInputModel inputModel)
         {
