@@ -2,8 +2,13 @@ namespace CoreIdentityServer.Internals.Constants.Authorization
 {
     public class Policies
     {
+        // policy name for TOTP challenge authorization
         public const string TOTPChallenge = "TOTPChallenge";
-        public const string ClientCredentialsChallenge = "ClientCredentialsChallenge";
-        public const string AdministrativeAccessChallenge = "AdministrativeAccessChallenge";
+
+        // policy name for client credentials authorization
+        public const string ClientCredentials = "ClientCredentials";
+        
+        // policy name for administrative access authorization
+        public const string AdministrativeAccess = "AdministrativeAccess";
     }
 }

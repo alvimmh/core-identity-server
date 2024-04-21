@@ -2,8 +2,9 @@
 // See LICENSE in the project root for license information.
 
 
-namespace CoreIdentityServer.Internals.Constants.Consent
+namespace CoreIdentityServer.Internals.Constants.Account
 {
+    // options for user consent
     public class ConsentOptions
     {
         public static bool EnableOfflineAccess = true;

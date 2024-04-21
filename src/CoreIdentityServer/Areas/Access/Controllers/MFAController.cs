@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using CoreIdentityServer.Internals.Filters.ActionFilters;
-using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Filters.ResultFilters;
+using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Areas.Access.Services;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Areas.Access.Models.MFA;

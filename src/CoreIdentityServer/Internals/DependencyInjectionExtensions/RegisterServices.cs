@@ -18,6 +18,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterServices
     {
+        // registers project services to the DI
         public static IServiceCollection AddProjectServices(
             this IServiceCollection services,
             IConfiguration configuration
@@ -33,8 +34,8 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
             // add authorization policy handlers
             services.AddSingleton<IAuthorizationHandler, TOTPChallengeHandler>();
-            services.AddScoped<IAuthorizationHandler, AdministrativeAccessChallengeHandler>();
-            services.AddScoped<IAuthorizationHandler, ClientCredentialsChallengeHandler>();
+            services.AddScoped<IAuthorizationHandler, AdministrativeAccessHandler>();
+            services.AddScoped<IAuthorizationHandler, ClientCredentialsHandler>();
 
             services.AddSingleton<RouteEndpointService>();
 

@@ -5,7 +5,6 @@ using System.Net.Mail;
 using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
@@ -22,7 +21,19 @@ namespace CoreIdentityServer.Internals.Services.Email
         private SmtpClient SmtpClient;
         private DbContextOptionsBuilder<ApplicationDbContext> OptionsBuilder;
 
-        public SMTPService(IWebHostEnvironment environment, IConfiguration config) {
+
+        /// <summary>
+        ///     public SMTPService(IConfiguration config)
+        ///     
+        ///     Constructs and configures the SMTPService and
+        ///         adds event handler for send completed event.
+        /// </summary>
+        /// <param name="config">Configuration for this application</param>
+        /// <exception cref="NullReferenceException">
+        ///     Throws this exception when SMTP credentials are missing,
+        ///         or, when the database connection and credentials are missing.
+        /// </exception>
+        public SMTPService(IConfiguration config) {
             Config = config;
 
             bool isSmtpPortValid = false;
@@ -39,7 +50,7 @@ namespace CoreIdentityServer.Internals.Services.Email
                 string.IsNullOrWhiteSpace(SmtpUsername) ||
                 string.IsNullOrWhiteSpace(SmtpPassword)
             ) {
-                throw new NullReferenceException("Mailtrap SMTP credentials are missing");
+                throw new NullReferenceException("SMTP credentials are missing");
             }
 
             SmtpClient = new SmtpClient(SmtpHost, SmtpPort) {
@@ -75,6 +86,24 @@ namespace CoreIdentityServer.Internals.Services.Email
             OptionsBuilder.UseNpgsql(databaseConnectionString);
         }
 
+
+        /// <summary>
+        ///     private async void SendCompletedCallback(object sender, AsyncCompletedEventArgs eventArgs)
+        ///     
+        ///     Callback method when an email is send operation completes.
+        ///     
+        ///     1. Checks the event arguments if the email send operation was cancelled. If so, logs
+        ///         the event and marks the associated email record as cancelled if the email was recorded.
+        ///         
+        ///     2. In case the email send operation was not cancelled but encountered an error, logs
+        ///         the event and marks the associated email record as cancelled if the email was recorded.
+        ///         
+        ///     3. In case the email send operation was not cancelled neither encountered an error, it
+        ///         means the email send operation was successful. Then the event is logged, and the
+        ///             associated email record is marked as sent if the email was recorded.
+        /// </summary>
+        /// <param name="sender">Source of the event</param>
+        /// <param name="eventArgs">Event data</param>
         private async void SendCompletedCallback(object sender, AsyncCompletedEventArgs eventArgs)
         {
             // get the event id for this asynchronous operation
@@ -124,6 +153,19 @@ namespace CoreIdentityServer.Internals.Services.Email
             }
         }
 
+
+        /// <summary>
+        ///     public void SendAsync(
+        ///         string smtpFrom, string smtpTo, string subject, string body, string sendEmailEventId
+        ///     )
+        ///     
+        ///     Sends an asynchronous email.
+        /// </summary>
+        /// <param name="smtpFrom">From email address</param>
+        /// <param name="smtpTo">To email address</param>
+        /// <param name="subject">Email subject</param>
+        /// <param name="body">Email body</param>
+        /// <param name="sendEmailEventId">Id for the email send event which is the email record id</param>
         public void SendAsync(string smtpFrom, string smtpTo, string subject, string body, string sendEmailEventId)
         {
             if (string.IsNullOrEmpty(sendEmailEventId))
@@ -138,6 +180,16 @@ namespace CoreIdentityServer.Internals.Services.Email
             SmtpClient.SendAsync(smtpFrom, smtpTo, subject, body, sendEmailEventId);
         }
 
+
+        /// <summary>
+        ///     public void Send(string smtpFrom, string smtpTo, string subject, string body)
+        ///     
+        ///     Sends an email.
+        /// </summary>
+        /// <param name="smtpFrom">From email address</param>
+        /// <param name="smtpTo">To email address</param>
+        /// <param name="subject">Email subject</param>
+        /// <param name="body">Email body</param>
         public void Send(string smtpFrom, string smtpTo, string subject, string body)
         {
             Console.WriteLine("Sending unrecorded email");
@@ -147,6 +199,15 @@ namespace CoreIdentityServer.Internals.Services.Email
             Console.WriteLine("Email sent");
         }
 
+
+        /// <summary>
+        ///     private async Task MarkEmailRecordSent(string recordId, DateTime sentDateTime)
+        ///     
+        ///     Marks the email record associated with an email as sent.
+        /// </summary>
+        /// <param name="recordId">Id of the record</param>
+        /// <param name="sentDateTime">Sent DateTime</param>
+        /// <returns>void</returns>
         private async Task MarkEmailRecordSent(string recordId, DateTime sentDateTime)
         {
             using (ApplicationDbContext dbContext = new ApplicationDbContext(OptionsBuilder.Options))
@@ -166,6 +227,15 @@ namespace CoreIdentityServer.Internals.Services.Email
             }
         }
 
+
+        /// <summary>
+        ///     private async Task MarkEmailRecordCancelled(string recordId, DateTime dateTime)
+        ///     
+        ///     Marks the email record associated with an email as cancelled.
+        /// </summary>
+        /// <param name="recordId">Id of the email record</param>
+        /// <param name="dateTime">Cancellation DateTime</param>
+        /// <returns>void</returns>
         private async Task MarkEmailRecordCancelled(string recordId, DateTime dateTime)
         {
             using (ApplicationDbContext dbContext = new ApplicationDbContext(OptionsBuilder.Options))

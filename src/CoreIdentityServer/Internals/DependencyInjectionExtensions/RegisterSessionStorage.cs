@@ -6,6 +6,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterSessionStorage
     {
+        // adds and configures services for the application session storage
         public static IServiceCollection AddSessionStorage(this IServiceCollection services)
         {
             services.AddSession(options =>

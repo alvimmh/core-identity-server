@@ -1,6 +1,6 @@
-using CoreIdentityServer.Internals.Constants.Authorization;
-using CoreIdentityServer.Internals.Constants.Routes;
-using CoreIdentityServer.Internals.Filters.ActionFilters;
+using CoreIdentityServer.Internals.Constants.Administration;
+using CoreIdentityServer.Internals.Constants.Routing;
+using CoreIdentityServer.Internals.Filters.ResultFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

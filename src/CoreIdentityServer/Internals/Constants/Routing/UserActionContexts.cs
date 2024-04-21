@@ -1,5 +1,6 @@
-namespace CoreIdentityServer.Internals.Constants.UserActions
+namespace CoreIdentityServer.Internals.Constants.Routing
 {
+    // actions by users, named to manage application flow
     public class UserActionContexts
     {
         // sign in email challenge is successful

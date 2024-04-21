@@ -7,12 +7,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace CoreIdentityServer.Internals.Authorization.Handlers
 {
-    public class AdministrativeAccessChallengeHandler : AuthorizationHandler<AdministrativeAccessChallengeRequirement>
+    public class AdministrativeAccessHandler : AuthorizationHandler<AdministrativeAccessRequirement>
     {
         private HttpContext HttpContext;
         private readonly ITokenValidator TokenValidator;
 
-        public AdministrativeAccessChallengeHandler(
+        public AdministrativeAccessHandler(
             IHttpContextAccessor httpContextAccessor,
             ITokenValidator tokenValidator
         ) {
@@ -22,22 +22,21 @@ namespace CoreIdentityServer.Internals.Authorization.Handlers
 
 
         /// <summary>
-        ///     HandleRequirementAsync(
+        ///     protected override async Task HandleRequirementAsync(
         ///         AuthorizationHandlerContext authorizationHandlerContext,
-        ///         AdministrativeAccessChallengeRequirement requirement
+        ///         AdministrativeAccessRequirement requirement
         ///     )
         ///     
         ///     This authorization handler is used to authorize users of the clients
-        ///     of the identity server by checking if their access token has the
+        ///     of this identity server by checking if their access token has the
         ///     administrative_access scope.
         /// </summary>
-        /// <param name="authorizationHandlerContext"></param>
-        /// <param name="requirement"></param>
-        /// <returns></returns>
-        /// 
+        /// <param name="authorizationHandlerContext">Context for the handler</param>
+        /// <param name="requirement">The requirement for the authorization handler</param>
+        /// <returns>void</returns>
         protected override async Task HandleRequirementAsync(
             AuthorizationHandlerContext authorizationHandlerContext,
-            AdministrativeAccessChallengeRequirement requirement
+            AdministrativeAccessRequirement requirement
         ) {
             string authorizationHeader = HttpContext.Request.Headers["Authorization"];
 

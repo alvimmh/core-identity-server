@@ -5,8 +5,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace CoreIdentityServer.Internals.Filters.ActionFilters
+namespace CoreIdentityServer.Internals.Filters.ResultFilters
 {
+    // filter to add security headers to the response before the result executes
     public class SecurityHeadersAttribute : ActionFilterAttribute
     {
         public override void OnResultExecuting(ResultExecutingContext context)

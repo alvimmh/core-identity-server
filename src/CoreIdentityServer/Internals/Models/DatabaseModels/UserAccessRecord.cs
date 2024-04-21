@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
 {
+    // Class representing records of user data access by administrative users
     [Index(nameof(UserId)), Index(nameof(AccessorId))]
     public class UserAccessRecord
     {

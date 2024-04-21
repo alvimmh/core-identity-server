@@ -12,9 +12,10 @@ using Microsoft.AspNetCore.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Auxiliary
 {
+    // seeds the configuration database portion in the auxiliary database
     public class SeedConfigurationDatabase
     {
-        public static void EnsureSeedData(IWebHostEnvironment environment, IConfiguration config)
+        public static void EnsureSeedData(IConfiguration config)
         {            
             ServiceCollection services = new ServiceCollection();
 

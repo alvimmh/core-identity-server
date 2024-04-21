@@ -11,7 +11,8 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Auxiliary
 {
     public class SeedPersistedGrantDatabase
     {
-        public static void InitializeDatabase(IWebHostEnvironment environment, IConfiguration config)
+        // migrates the persisted grants database portion in the auxiliary database
+        public static void InitializeDatabase(IConfiguration config)
         {
             ServiceCollection services = new ServiceCollection();
 

@@ -1,6 +1,7 @@
 // note the namespace
 namespace CoreIdentityServer.Internals.Constants.Storage
 {
+    // TempData keys used in this application
     public class TempDataKeys
     {
         public const string UserEmail = "userEmail";

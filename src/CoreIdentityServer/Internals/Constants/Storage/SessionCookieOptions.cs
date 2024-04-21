@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace CoreIdentityServer.Internals.Constants.Storage
 {
+    // options for the session cookie
     public static class SessionCookieOptions
     {
         public const string Name = "session";

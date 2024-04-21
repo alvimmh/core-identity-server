@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Constants.Routing;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Areas.General.Services;
-using CoreIdentityServer.Internals.Filters.ActionFilters;
+using CoreIdentityServer.Internals.Filters.ResultFilters;
 
 namespace CoreIdentityServer.Areas.General.Controllers
 {

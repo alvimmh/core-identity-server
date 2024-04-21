@@ -7,31 +7,28 @@ using Microsoft.AspNetCore.Identity;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
 {
-    // Add profile data for application users by adding properties to the ApplicationUser class
+    // Class representing the users of the application
     public class ApplicationUser : IdentityUser
     {
-        // field to indicate if user has completed registration for Core Identity Server, i.e, email is confirmed & TOTP access is registered
+        // Field to indicate if user has completed registration for Core Identity Server, i.e, email is confirmed & TOTP access is registered
         public bool AccountRegistered { get; set; }
 
-        // field to indicate if user needs to reset their authenticator
+        // Field to indicate if user needs to reset their authenticator
         public bool RequiresAuthenticatorReset { get; set; }
+
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastSignedInAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
         
-        // field to indicate if user is blocked from using CIS or not
+        // Field to indicate if user is blocked from the application
         public bool Blocked { get; private set; }
 
-        // field to indicate if user is soft-deleted or not
+        // Field to indicate if user is soft-deleted or not
         public bool Archived { get; private set; }
 
-        /// <summary>
-        ///     public void UpdateLastSignedInTimeStamp()
-        ///     
-        ///     Updates the LastSignedInAt property of the user.
-        /// </summary>
+        // Updates the LastSignedInAt property of the user.
         public void UpdateLastSignedInTimeStamp()
         {
             DateTime currentDateTime = DateTime.UtcNow;
@@ -40,12 +37,14 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = currentDateTime;
         }
 
+        // Sets the block status for the user
         public void SetBlock(bool block)
         {
             Blocked = block;
             UpdatedAt = DateTime.UtcNow;
         }
 
+        // Soft-deletes the user
         public void Archive()
         {
             Archived = true;

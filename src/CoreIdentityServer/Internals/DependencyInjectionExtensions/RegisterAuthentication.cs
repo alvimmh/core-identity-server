@@ -1,5 +1,5 @@
 using System;
-using CoreIdentityServer.Internals.Constants.Authentication;
+using CoreIdentityServer.Internals.Constants.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +9,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterAuthentication
     {
+        // registers and configures services for authentication
         public static IServiceCollection AddProjectAuthentication(this IServiceCollection services)
         {
             // Duende Identity Server adds two cookie authentication schemes by default
@@ -17,8 +18,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             //
             // since external identity providers are not used, they are overriden below to use the application scheme
             //
-            // to avoid any possible misconfiguration, all schemes are set to IdentityConstants.ApplicationScheme as default below
-            //
+            // to avoid any possible misconfiguration, all schemes are set to IdentityConstants.ApplicationScheme as default
             services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
                 options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
@@ -59,7 +59,6 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             //
             // so post configuring this cookie option to override it to 'Lax' again as this application uses
             // back-channel logout
-            //
             services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options => {
                 options.Cookie.SameSite = SameSiteMode.Lax;
             });

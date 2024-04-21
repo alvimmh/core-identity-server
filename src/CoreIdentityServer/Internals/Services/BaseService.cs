@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using CoreIdentityServer.Internals.Constants.Account;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Duende.IdentityServer.Services;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 
 namespace CoreIdentityServer.Internals.Services
 {
@@ -93,11 +90,33 @@ namespace CoreIdentityServer.Internals.Services
             }
         }
 
+
+        /// <summary>
+        ///     private protected object[] GenerateArray(params object[] items)
+        ///     
+        ///     Generates an array of objects from the provided parameters.
+        /// </summary>
+        /// <param name="items">Parameters/objects</param>
+        /// <returns>An array of the parameters</returns>
         private protected object[] GenerateArray(params object[] items)
         {
             return items;
         }
 
+
+        /// <summary>
+        ///     private protected string GenerateAbsoluteLocalUrl(
+        ///         string action,
+        ///         string controller,
+        ///         string area
+        ///     )
+        ///     
+        ///     Generates an absolute url with the provided information.
+        /// </summary>
+        /// <param name="action">Action name</param>
+        /// <param name="controller">Controller name</param>
+        /// <param name="area">Area name</param>
+        /// <returns>A string representing an absolute url</returns>
         private protected string GenerateAbsoluteLocalUrl(
             string action,
             string controller,
@@ -108,6 +127,19 @@ namespace CoreIdentityServer.Internals.Services
             return $"{rootUrl}/{area}/{controller}/{action}";
         }
 
+
+        /// <summary>
+        ///     private protected string GenerateRouteUrl(
+        ///         string action, string controller, string area, string queryString = null
+        ///     )
+        ///     
+        ///     Generates a url with the provided parameters.
+        /// </summary>
+        /// <param name="action">Action name</param>
+        /// <param name="controller">Controller name</param>
+        /// <param name="area">Area name</param>
+        /// <param name="queryString">Query string to be added to the url</param>
+        /// <returns>A string representing a url</returns>
         private protected string GenerateRouteUrl(string action, string controller, string area, string queryString = null)
         {
             string routeUrl = $"~/{area}/{controller}/{action}";
@@ -115,11 +147,22 @@ namespace CoreIdentityServer.Internals.Services
             return AddQueryString(routeUrl, queryString);
         }
 
+
+        /// <summary>
+        ///     private protected string GenerateRouteUrl(string route, string queryString)
+        ///     
+        ///     Generates a url with the provided parameters. This is an overload method.
+        /// </summary>
+        /// <param name="route">Route for the url</param>
+        /// <param name="queryString">Query string to be added to the url</param>
+        /// <returns>A string representing a url</returns>
         private protected string GenerateRouteUrl(string route, string queryString)
         {
             return AddQueryString(route, queryString);
         }
 
+
+        // Adds a query string to the url.
         private string AddQueryString(string routeUrl, string queryString)
         {
             if (!string.IsNullOrWhiteSpace(queryString))

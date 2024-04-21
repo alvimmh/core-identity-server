@@ -16,11 +16,12 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterIdentityServer
     {
+        // registers and configures Duende Identity Server as the identity server for the application
         public static IServiceCollection AddProjectIdentityServer(
             this IServiceCollection services,
             IWebHostEnvironment environment,
             IConfiguration config
-        ){
+        ) {
             string auxiliaryDbConnectionStringRoot = config["cis_auxiliary_db_connection_string"];
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))

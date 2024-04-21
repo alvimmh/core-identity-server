@@ -1,6 +1,5 @@
 using System;
 using CoreIdentityServer.Internals.Data;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,11 +7,11 @@ using Npgsql;
 
 namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
+    // registers the main database for the application
     public static class RegisterDatabases
     {
         public static IServiceCollection AddProjectDatabases(
             this IServiceCollection services,
-            IWebHostEnvironment environment,
             IConfiguration configuration
         ) {
             string dbConnectionStringRoot = configuration["cis_main_db_connection_string"];

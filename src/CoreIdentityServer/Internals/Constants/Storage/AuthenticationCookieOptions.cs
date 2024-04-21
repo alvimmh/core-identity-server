@@ -1,8 +1,9 @@
 using System;
 using Microsoft.AspNetCore.Http;
 
-namespace CoreIdentityServer.Internals.Constants.Authentication
+namespace CoreIdentityServer.Internals.Constants.Storage
 {
+    // options for the authentication cookie
     public static class AuthenticationCookieOptions
     {
         public const string Name = "identity";

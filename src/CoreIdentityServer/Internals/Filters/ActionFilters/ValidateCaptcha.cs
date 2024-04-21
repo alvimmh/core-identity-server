@@ -7,6 +7,8 @@ namespace CoreIdentityServer.Internals.Filters.ActionFilters
     {
         public string ErrorMessage { get; private set; } = "Please enter the number shown in the captcha";
 
+
+        // filter to validate captcha before action executes
         public override void OnActionExecuting(ActionExecutingContext context)
         {
             ValidateDNTCaptchaAttribute captchaAttributeInstance = new ValidateDNTCaptchaAttribute

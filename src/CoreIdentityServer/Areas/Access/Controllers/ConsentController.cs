@@ -5,11 +5,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Filters.ActionFilters;
+using CoreIdentityServer.Internals.Filters.ResultFilters;
 using CoreIdentityServer.Areas.Access.Models.Consent;
 using CoreIdentityServer.Internals.Extensions;
 using CoreIdentityServer.Areas.Access.Services;
-using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Constants.Routing;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {

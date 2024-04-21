@@ -1,6 +1,7 @@
 // note the namespace
-namespace CoreIdentityServer.Internals.Constants.Routes
+namespace CoreIdentityServer.Internals.Constants.Routing
 {
+    // area names for available routes in this application
     public class AreaNames
     {
         public const string Access = "access";

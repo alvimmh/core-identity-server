@@ -13,13 +13,14 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
-using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Administration;
 using Microsoft.AspNetCore.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Main
 {
     public class SeedMainDatabase
     {
+        // seeds the main database
         public static void EnsureSeedData(IWebHostEnvironment environment, IConfiguration config)
         {
             ServiceCollection services = new ServiceCollection();

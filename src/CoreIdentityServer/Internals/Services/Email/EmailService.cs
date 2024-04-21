@@ -3,23 +3,40 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services.Email
 {
     public class EmailService : IDisposable
     {
-        private IConfiguration Config;
         private ApplicationDbContext DbContext;
         private SMTPService SMTPService;
 
-        public EmailService(IConfiguration config, ApplicationDbContext dbContext, SMTPService smtpService)
+        public EmailService(ApplicationDbContext dbContext, SMTPService smtpService)
         {
-            Config = config;
             DbContext = dbContext;
             SMTPService = smtpService;
         }
 
+
+        /// <summary>
+        ///     private async Task<string> SendEmail(
+        ///         string smtpFrom, string smtpTo, string subject, string body, bool recordEmail = false
+        ///     )
+        ///     
+        ///     Sends emails for the application.
+        ///     
+        ///     1. Checks if the email to be sent needs to be recorded for resending purpose. If true,
+        ///         a new email record is created and saved in the database. The id of the record is
+        ///             used as an event for logging purposes.
+        ///         
+        ///     2. Then the email is sent using the SMTPService.SendAsync() method.
+        /// </summary>
+        /// <param name="smtpFrom">From email address</param>
+        /// <param name="smtpTo">To email address</param>
+        /// <param name="subject">Subject of the email</param>
+        /// <param name="body">Body of the email</param>
+        /// <param name="recordEmail">Boolean indicating if the email needs to be recorded</param>
+        /// <returns>the id of the email record or null</returns>
         private async Task<string> SendEmail(string smtpFrom, string smtpTo, string subject, string body, bool recordEmail = false)
         {
             EmailRecord emailRecord = null;
@@ -40,12 +57,36 @@ namespace CoreIdentityServer.Internals.Services.Email
             return sendEmailEventId;
         }
 
+
+        /// <summary>
+        ///     public void ResendEmail(EmailRecord emailRecord)
+        ///     
+        ///     Resends an email using the SMTPService.SendAsync() method.
+        /// </summary>
+        /// <param name="emailRecord">Email record containing data for the resend email</param>
         public void ResendEmail(EmailRecord emailRecord)
         {
             SMTPService.SendAsync(emailRecord.SentFrom, emailRecord.SentTo, emailRecord.Subject, emailRecord.Body, emailRecord.Id);
         }
 
-        // delete an email record as it has served its purpose
+        
+        /// <summary>
+        ///     public async Task DeleteEmailRecord(string resendEmailRecordId, ApplicationUser user)
+        ///     
+        ///     Deletes an email record.
+        ///     
+        ///     1. Fetches the email record using the id. If record is not found, an error message
+        ///         is printed to the console mentioning the record id.
+        ///         
+        ///     2. Checks if the record's 'to' address matches the user's email address. If it doesn't
+        ///         match, the record belongs to someone else, so it can't be deleted.
+        ///     
+        ///     3. Using a try-catch block, the email record is deleted, or if fails to delete, any
+        ///         exception is caught, and the error is logged or thrown depending on the type.
+        /// </summary>
+        /// <param name="resendEmailRecordId">Id of the email record</param>
+        /// <param name="user">The ApplicationUser object</param>
+        /// <returns>void</returns>
         public async Task DeleteEmailRecord(string resendEmailRecordId, ApplicationUser user)
         {
             EmailRecord emailRecord = await DbContext.EmailRecords.FindAsync(resendEmailRecordId);

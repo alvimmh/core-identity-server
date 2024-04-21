@@ -7,28 +7,21 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services
 {
+    // Class facilitating route enumeration
     public class RouteEndpointService : IDisposable
     {
-        private IConfiguration Config;
-        private EndpointDataSource EndpointDataSource;
-        private ActionContext ActionContext;
         private IUrlHelper UrlHelper;
         public List<string> EndpointRoutes { get; private set; }
         public List<string> EndpointRoutesRequiringTOTPChallenge { get; private set; }
 
         public RouteEndpointService(
-            IConfiguration config,
             EndpointDataSource endpointDataSource,
             IActionContextAccessor actionContextAccessor,
             IUrlHelperFactory urlHelperFactory
         ) {
-            Config = config;
-            EndpointDataSource = endpointDataSource;
-            ActionContext = actionContextAccessor.ActionContext;
             UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
 
             EndpointRoutes = new List<string>();
@@ -37,6 +30,19 @@ namespace CoreIdentityServer.Internals.Services
             PopulateEndpointRoutes(endpointDataSource);
         }
 
+
+        /// <summary>
+        ///     private void PopulateEndpointRoutes(EndpointDataSource endpointDataSource)
+        ///     
+        ///     Enumerates all routes and saves them in the class for usage.
+        ///         The class is registered as a singleton service for the application.
+        ///     
+        ///     1. Loops over all endpoints and adds them to the EndpointRoutes property of
+        ///         this class. Routes are lower-cased before adding.
+        ///         
+        ///     2. Endpoints that require a TOTP challenge are stored in a separate property.
+        /// </summary>
+        /// <param name="endpointDataSource">Source for endpoint instances</param>
         private void PopulateEndpointRoutes(EndpointDataSource endpointDataSource)
         {
             IEnumerable<RouteEndpoint> dataSourceRouteEndpoints = endpointDataSource.Endpoints.Cast<RouteEndpoint>();
@@ -66,8 +72,6 @@ namespace CoreIdentityServer.Internals.Services
                 }
             };
 
-            EndpointDataSource = null;
-            ActionContext = null;
             UrlHelper = null;
         }
 

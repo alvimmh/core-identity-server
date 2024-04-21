@@ -1,5 +1,6 @@
-namespace CoreIdentityServer.Internals.Constants.Tokens
+namespace CoreIdentityServer.Internals.Constants.Authorization
 {
+    // options for custom tokens in this application
     public class CustomTokenOptions
     {
         public const string GenericTOTPTokenProvider = "GenericTOTPTokenProvider";

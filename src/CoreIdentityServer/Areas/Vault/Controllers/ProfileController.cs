@@ -2,8 +2,8 @@ using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Vault.Models.Profile;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Constants.Authorization;
-using CoreIdentityServer.Internals.Constants.Routes;
-using CoreIdentityServer.Internals.Filters.ActionFilters;
+using CoreIdentityServer.Internals.Constants.Routing;
+using CoreIdentityServer.Internals.Filters.ResultFilters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,7 +49,7 @@ namespace CoreIdentityServer.Areas.Vault.Controllers
 
 
         /// The HTTP POST action from one of the identity server clients to get a user's email address
-        [HttpPost, Authorize(Policy = Policies.AdministrativeAccessChallenge), Authorize(Policy = Policies.ClientCredentialsChallenge)]
+        [HttpPost, Authorize(Policy = Policies.AdministrativeAccess), Authorize(Policy = Policies.ClientCredentials)]
         public async Task<IActionResult> UserEmail([FromForm] UserEmailInputModel inputModel)
         {
             string userEmail = await ProfileService.GetUserEmail(inputModel);

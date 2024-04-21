@@ -4,8 +4,9 @@ using CoreIdentityServer.Areas.Access.Models.Authentication;
 using CoreIdentityServer.Areas.Access.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using CoreIdentityServer.Internals.Constants.Routes;
+using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Filters.ActionFilters;
+using CoreIdentityServer.Internals.Filters.ResultFilters;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Constants.Tokens;
+using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Models.InputModels;
 using Duende.IdentityServer;
 using IdentityModel;
@@ -11,21 +11,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services
 {
+    // Class to facilitate creation of OIDC standard JWT tokens
     public class OIDCTokenService : IDisposable
     {
-        private IConfiguration Config;
         private IdentityServerTools Tools { get; set; }
         public bool ResourcesDisposed;
 
-        public OIDCTokenService(
-            IConfiguration config,
-            IdentityServerTools tools
-        ) {
-            Config = config;
+        public OIDCTokenService(IdentityServerTools tools) {
             Tools = tools;
         }
 
-        // create JWT token
+        // Creates a JWT token
         public async Task<string> CreateTokenAsync(CreateTokenInputModel inputModel, string tokenEvent)
         {
             IEnumerable<Claim> claims = await CreateClaimsForTokenAsync(inputModel, tokenEvent);
@@ -38,7 +34,7 @@ namespace CoreIdentityServer.Internals.Services
             return await Tools.IssueJwtAsync(CustomTokenOptions.DefaultTokenLifetimeInSeconds, claims);
         }
 
-        // Create claims for the token.
+        // Creates claims for the token
         protected Task<IEnumerable<Claim>> CreateClaimsForTokenAsync(CreateTokenInputModel inputModel, string tokenEvent)
         {
             string eventJSON = "{\"" + tokenEvent + "\":{} }";
@@ -66,7 +62,6 @@ namespace CoreIdentityServer.Internals.Services
                 return;
 
             Tools = null;
-            Config = null;
             ResourcesDisposed = true;
         }
     }

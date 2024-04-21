@@ -4,6 +4,7 @@ using CoreIdentityServer.Areas.ClientServices.Models.Correspondence;
 
 namespace CoreIdentityServer.Internals.Models.DatabaseModels
 {
+    // Class representing records of emails sent to users
     public class EmailRecord
     {
         public string Id { get; private set; }
@@ -29,6 +30,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             CreatedAt = DateTime.UtcNow;
         }
 
+        // Sets the details for the email record
         public void SetRecordDetails(string sentFrom, string sentTo, string subject, string body, DateTime sentAtUTC)
         {
             SentFrom = sentFrom;
@@ -38,6 +40,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = DateTime.UtcNow;
         }
 
+        // Sets the send/resend DateTime for the email record
         public void SetSentDateTime(DateTime dateTime)
         {           
             if (SentAt == null)
@@ -54,6 +57,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = DateTime.UtcNow;
         }
 
+        // Sets the cancel DateTime for the email record
         public void SetCancelledDateTime(DateTime dateTime)
         {
             string cancelledDateTimeString = dateTime.ToString();
@@ -63,6 +67,7 @@ namespace CoreIdentityServer.Internals.Models.DatabaseModels
             UpdatedAt = DateTime.UtcNow;
         }
 
+        // Determines if the email associated with the record can be resent
         public bool CanResendEmail(ResendEmailInputModel inputModel)
         {
             if (SentTo != inputModel.Email)

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace CoreIdentityServer.Internals.Filters.ActionFilters
 {
+    // filter to redirect authenticated users to the Dashboard page before the action executes
     public class RedirectAuthenticatedUser : ActionFilterAttribute
     {
         public override void OnActionExecuting(ActionExecutingContext context)

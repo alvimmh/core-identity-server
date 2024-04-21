@@ -11,16 +11,14 @@ namespace CoreIdentityServer.Internals.Extensions
 {
     public static class Extensions
     {
-        /// <summary>
-        /// Checks if the redirect URI is for a native client.
-        /// </summary>
-        /// <returns></returns>
+        // Checks if the redirect URI is for a native client
         public static bool IsNativeClient(this AuthorizationRequest context)
         {
             return !context.RedirectUri.StartsWith("https", StringComparison.Ordinal)
                && !context.RedirectUri.StartsWith("http", StringComparison.Ordinal);
         }
 
+        // Configures the Loading Page action result and returns the specified (Redirect.cshtml) view
         public static IActionResult LoadingPage(this Controller controller, string viewName, string redirectUri)
         {
             controller.HttpContext.Response.StatusCode = 200;

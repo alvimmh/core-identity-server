@@ -7,6 +7,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterCaptchaProvider
     {
+        // Registers DNTCaptcha as the captcha provider for the application
         public static IServiceCollection AddCaptcha(this IServiceCollection services, IConfiguration config)
         {
             string captchaEncryptionKey = config["captcha_encryption_key"];

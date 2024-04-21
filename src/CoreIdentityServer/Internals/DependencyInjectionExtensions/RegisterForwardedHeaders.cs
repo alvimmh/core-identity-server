@@ -8,6 +8,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 {
     public static class RegisterForwardedHeaders
     {
+        // configures the headers to forward
         public static IServiceCollection AddForwardedHeadersMiddleware(this IServiceCollection services, IWebHostEnvironment environment)
         {
             if (environment.IsProduction())

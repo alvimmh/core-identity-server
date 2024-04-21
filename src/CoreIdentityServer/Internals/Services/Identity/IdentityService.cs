@@ -11,9 +11,8 @@ using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Models.InputModels;
-using CoreIdentityServer.Internals.Constants.Tokens;
-using CoreIdentityServer.Internals.Constants.UserActions;
 using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Constants.Account;
 using IdentityModel;
@@ -24,7 +23,7 @@ using CoreIdentityServer.Internals.Constants.Events;
 using CoreIdentityServer.Internals.Models.ViewModels;
 using Mapster;
 using System.Net.Http;
-using CoreIdentityServer.Internals.Constants.Authentication;
+using CoreIdentityServer.Internals.Constants.Administration;
 using CoreIdentityServer.Internals.Constants.Errors;
 
 namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
@@ -1049,6 +1048,14 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 await EmailService.SendAccountLockedOutEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
         }
 
+
+        /// <summary>
+        ///     private Claim CreateMFATypeAMRClaim()
+        ///     
+        ///     Creates a new claim of the type JwtClaimTypes.AuthenticationMethod
+        ///         and value ProjectClaimValues.AMRTypeMFA.
+        /// </summary>
+        /// <returns>The created claim</returns>
         private Claim CreateMFATypeAMRClaim()
         {
             return new Claim(JwtClaimTypes.AuthenticationMethod, ProjectClaimValues.AMRTypeMFA);
