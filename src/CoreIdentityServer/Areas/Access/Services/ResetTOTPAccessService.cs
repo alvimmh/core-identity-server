@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Areas.Access.Models.ResetTOTPAccess;
-using CoreIdentityServer.Internals.Constants.UserActions;
+using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;

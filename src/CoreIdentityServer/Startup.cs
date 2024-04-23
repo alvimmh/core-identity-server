@@ -29,7 +29,7 @@ namespace CoreIdentityServer
         {
             services.AddControllersWithViews();
 
-            services.AddProjectDatabases(Environment, Configuration);
+            services.AddProjectDatabases(Configuration);
  
             services.AddProjectIdentity();
 

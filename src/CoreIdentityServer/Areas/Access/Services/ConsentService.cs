@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Collections.Generic;
 using Duende.IdentityServer.Validation;
-using CoreIdentityServer.Internals.Constants.Consent;
+using CoreIdentityServer.Internals.Constants.Account;
 using IdentityModel;
 using Duende.IdentityServer.Events;
 using CoreIdentityServer.Internals.Extensions;

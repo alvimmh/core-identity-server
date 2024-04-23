@@ -9,7 +9,7 @@ using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Administration;
 using CoreIdentityServer.Areas.Access.Models.MFA;
 using CoreIdentityServer.Internals.Constants.Emails;
 

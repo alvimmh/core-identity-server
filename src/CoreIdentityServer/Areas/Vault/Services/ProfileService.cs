@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using CoreIdentityServer.Areas.Vault.Models.Profile;
-using CoreIdentityServer.Internals.Constants.Authorization;
+using CoreIdentityServer.Internals.Constants.Administration;
 
 namespace CoreIdentityServer.Areas.Vault.Services
 {

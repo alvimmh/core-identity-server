@@ -103,8 +103,8 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                         if (string.IsNullOrWhiteSpace(productOwnerTOTPAccessRecoveryCode))
                             throw new Exception($"Could not create TOTP Access recovery code for {AuthorizedRoles.ProductOwner.ToLower()}.");
 
-                        SMTPService SMTPService = new SMTPService(environment, config);
-                        EmailService EmailService = new EmailService(config, DbContext, SMTPService);
+                        SMTPService SMTPService = new SMTPService(config);
+                        EmailService EmailService = new EmailService(DbContext, SMTPService);
 
                         EmailService.SendProductOwnerTOTPAccessRecoveryCodeEmail(
                             AutomatedEmails.NoReply,

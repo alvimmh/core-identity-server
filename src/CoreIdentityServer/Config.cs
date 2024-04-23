@@ -1,7 +1,7 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-using CoreIdentityServer.Internals.Constants.Authentication;
+using CoreIdentityServer.Internals.Constants.Storage;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Microsoft.Extensions.Hosting;

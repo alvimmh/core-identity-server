@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -49,8 +48,8 @@ namespace CoreIdentityServer
                     IConfiguration config = host.Services.GetRequiredService<IConfiguration>();
 
                     SeedMainDatabase.EnsureSeedData(environment, config);
-                    SeedPersistedGrantDatabase.InitializeDatabase(environment, config);
-                    SeedConfigurationDatabase.EnsureSeedData(environment, config);
+                    SeedPersistedGrantDatabase.InitializeDatabase(config);
+                    SeedConfigurationDatabase.EnsureSeedData(config);
 
                     Log.Information("Done seeding database.");
 
