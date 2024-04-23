@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using CoreIdentityServer.Areas.Administration.Models.Users;
 using CoreIdentityServer.Internals.Constants.Administration;
-using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Constants.Errors;
 using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Data;
@@ -51,6 +50,24 @@ namespace CoreIdentityServer.Areas.Administration.Services
             RootRoute = GenerateRouteUrl("Index", "Users", "Administration");
         }
 
+
+        /// <summary>
+        ///     public async Task<IndexViewModel> ManageIndex(string page)
+        ///     
+        ///     Manages the Index action to show all users.
+        ///     
+        ///     1. Counts all users of this application. Then calculates the total
+        ///         pages required to view all users, each page containing a number
+        ///             of viewModel.ResultsInPage users.
+        ///             
+        ///     2. Fetches users ordered by the CreatedAt DateTime, then skips a
+        ///         number of users in case the request is for a specific page,
+        ///             and takes viewModel.ResultsInPage number of users after the
+        ///                 last skipped user. Finally, the result is added to the
+        ///                     view model and the method returns this view model.
+        /// </summary>
+        /// <param name="page">Current page number if the request was for a specific page</param>
+        /// <returns>View model containing a list of users to show in the current page</returns>
         public async Task<IndexViewModel> ManageIndex(string page)
         {
             IndexViewModel viewModel = new IndexViewModel();
@@ -87,6 +104,41 @@ namespace CoreIdentityServer.Areas.Administration.Services
             return viewModel;
         }
 
+
+        /// <summary>
+        ///     public async Task<IndexViewModel> ManageSearch(SearchUsersInputModel inputModel)
+        ///
+        ///     Manages the Search action to find users.
+        ///     
+        ///     1. Checks if all search parameters are empty. If they are empty, an error
+        ///         message is added to the ModelState and the method returns the view model
+        ///             with an empty list of users.
+        ///             
+        ///     2. If the search was done by id, the user is fetched using the method
+        ///         UserManager.FindByIdAsync(). If the user is found, the user is added
+        ///             to the searchResults array and the method returns a view model
+        ///                 containing this array.
+        ///             
+        ///     3. If the search was done by email, the user is fetched using the
+        ///         method UserManager.FindByEmailAsync(). If the user is found, the
+        ///             user is added to the searchResults array and the method returns
+        ///                 this array as part of the view model.
+        ///                 
+        ///     4. If the search was done by either the first or last name, a search filter
+        ///         is created for the database query using the method GenerateNamesFilter().
+        ///             Using this filter, the search result is procured and paginated before
+        ///                 adding to the view model. Finally, the method returns the view model
+        ///                     containing the result.
+        ///                 
+        ///     5. In case no users were found for a given search parameter, an empty view
+        ///         model is returned from the method.
+        /// </summary>
+        /// <param name="inputModel">
+        ///     Input model containing search parameters and pagination data
+        /// </param>
+        /// <returns>
+        ///     View model containing the search result and pagination data
+        /// </returns>
         public async Task<IndexViewModel> ManageSearch(SearchUsersInputModel inputModel)
         {
             List<UserViewModel> searchResults = new List<UserViewModel>();
@@ -170,17 +222,44 @@ namespace CoreIdentityServer.Areas.Administration.Services
             return new IndexViewModel() { Users = searchResults };
         }
 
+
+        /// <summary>
+        ///     public async Task<object[]> ManageDetails(string userId)
+        ///     
+        ///     Manages the Details action.
+        ///     
+        ///     1. Searches the user by the userId param. If the user is not
+        ///         found, the method returns an array of objects containing
+        ///             null and the RootRoute.
+        ///             
+        ///     2. If the user is found, the current administrative user's action
+        ///         of accessing this user's details is recorded using the method
+        ///             RecordUserAccess().
+        ///             
+        ///     3. If the user access recording is successful, the method creates
+        ///         a view model with the user's data and returns an array of
+        ///             objects containing the created view model and null.
+        ///             
+        ///     4. In case the user access recording failed, an error message is
+        ///         added for the administrative user and the method returns an
+        ///             array of objects containing null and the RootRoute.
+        /// </summary>
+        /// <param name="userId">The id of the user whose details is being accessed</param>
+        /// <returns>
+        ///     An array of objects containing
+        ///         the view model and null
+        ///             or,
+        ///                 null and the RootRoute.
+        /// </returns>
         public async Task<object[]> ManageDetails(string userId)
         {
-            object[] result = GenerateArray(null, RootRoute);
-
             ApplicationUser user = await UserManager.FindByIdAsync(userId);
 
             if (user == null)
             {
                 TempData[TempDataKeys.ErrorMessage] = "User not found.";
 
-                return result;
+                return GenerateArray(null, RootRoute);
             }
             else
             {
@@ -190,48 +269,106 @@ namespace CoreIdentityServer.Areas.Administration.Services
                 {
                     UserDetailsViewModel viewModel = user.Adapt<UserDetailsViewModel>();
 
-                    return GenerateArray(viewModel, RootRoute);
+                    return GenerateArray(viewModel, null);
                 }
                 else
                 {
                     TempData[TempDataKeys.ErrorMessage] = "Could not access user. Please try again.";
 
-                    return result;
+                    return GenerateArray(null, RootRoute);
                 }
             }
         }
 
+
+        /// <summary>
+        ///     public async Task<object[]> ManageEdit(string userId)
+        ///     
+        ///     Manages the Edit action to show the edit page which
+        ///         contains sensitive data of a user.
+        ///         
+        ///     1. Finds the user by the userId param. If the user is not found,
+        ///         the method returns an array of objects containing null and
+        ///             the RootRoute.
+        ///             
+        ///     2. If the user is found, the action of the administrative user
+        ///         accessing this user's data is recorded using the method
+        ///             RecordUserAccess(). If the recording fails, the method
+        ///                 returns an array of objects containing null and the
+        ///                     RootRoute.
+        ///                     
+        ///     3. If the user access is recorded, the method returns a view model
+        ///         containing data about the user.
+        /// </summary>
+        /// <param name="userId">Id of the user whose information is being accessed</param>
+        /// <returns>
+        ///     An array of objects containing
+        ///         the view model and null
+        ///             or,
+        ///                 null and the RootRoute.
+        /// </returns>
         public async Task<object[]> ManageEdit(string userId)
         {
-            object[] result = GenerateArray(null, RootRoute);
-
             ApplicationUser user = await UserManager.FindByIdAsync(userId);
 
             if (user == null)
             {
                 TempData[TempDataKeys.ErrorMessage] = "User not found.";
 
-                return result;
+                return GenerateArray(null, RootRoute);
             }
             else
             {
                 bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Edit);
 
-                if (userAccessRecorded)
+                if (!userAccessRecorded)
+                {
+                    TempData[TempDataKeys.ErrorMessage] = "Could not access user. Please try again.";
+
+                    return GenerateArray(null, RootRoute);
+                }
+                else
                 {
                     EditUserInputModel viewModel = user.Adapt<EditUserInputModel>();
 
                     return GenerateArray(viewModel, RootRoute);
                 }
-                else
-                {
-                    TempData[TempDataKeys.ErrorMessage] = "Could not access user. Please try again.";
-
-                    return result;
-                }
             }
         }
 
+
+        /// <summary>
+        ///     public async Task<string> ManageUpdate(EditUserInputModel inputModel)
+        ///     
+        ///     Manages the Edit action to update a user's details.
+        ///     
+        ///     1. Checks if the ModelState is valid. If not, the method returns null.
+        ///     
+        ///     2. Fetches the user by the id. If the user is not found, the method
+        ///         returns the RootRoute.
+        ///         
+        ///     3. If the user is found and the user's first name and last name are
+        ///         the same as the ones found in the input model, the method returns
+        ///             null as the user's details are already up to date.
+        ///             
+        ///     4. Otherwise, a database transaction is started.
+        ///     
+        ///        In this transaction, the action of the administrative user's accessing
+        ///         the user's data is recorded first. If the recording fails, the
+        ///             transaction is rolled back, an error message is added for the
+        ///                 administrative user and the method returns null.
+        ///                 
+        ///        If the recording succeeded, the user is then updated. If the udpate fails,
+        ///         the transaction is rolled back and any errors are added to the ModelState.
+        ///             Then the method returns null.
+        ///             
+        ///        If the update succeeded, the transaction is committed and the method returns
+        ///         a url to the user's details page.
+        /// </summary>
+        /// <param name="inputModel">
+        ///     Input model containing user's data that needs to be changed
+        /// </param>
+        /// <returns>A url to the user's details page or null</returns>
         public async Task<string> ManageUpdate(EditUserInputModel inputModel)
         {
             if (!ActionContext.ModelState.IsValid)
@@ -260,7 +397,15 @@ namespace CoreIdentityServer.Areas.Administration.Services
 
                 bool userAccessRecorded = await RecordUserAccess(user, UserAccessPurposes.Update);
 
-                if (userAccessRecorded)
+                if (!userAccessRecorded)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData[TempDataKeys.ErrorMessage] = "Could not update user. Please try again.";
+
+                    return null;
+                }
+                else
                 {
                     IdentityResult updateUser = await UserManager.UpdateAsync(user);
 
@@ -283,17 +428,61 @@ namespace CoreIdentityServer.Areas.Administration.Services
                         return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
                     }
                 }
-                else
-                {
-                    await transaction.RollbackAsync();
-
-                    TempData[TempDataKeys.ErrorMessage] = "Could not update user. Please try again.";
-
-                    return null;
-                }
             }
         }
 
+
+        /// <summary>
+        ///     public async Task<string> ManageBlock(
+        ///         BlockUserInputModel inputModel, bool blockUser
+        ///     )
+        ///     
+        ///     Manages the Block and Unblock actions.
+        ///     
+        ///     1. Checks if the ModelState is valid. If not, the method returns
+        ///         the RootRoute.
+        ///         
+        ///     2. Finds the user by the id. If the user is not found, the method
+        ///         returns the RootRoute.
+        ///         
+        ///     3. Checks if the user is the Product Owner. If so, the method
+        ///         returns a url to the user's details page because the Product
+        ///             Owner cannot be blocked.
+        ///             
+        ///     4. Updates the block status of the user according to the blockUser
+        ///         boolean.
+        ///         
+        ///     5. Starts a transaction to commit further changes.
+        ///     
+        ///     6. Records the action of the administrative user blocking/unblocking
+        ///         the user using the RecordUserAccess() method.
+        ///         
+        ///        If the recording fails, the transaction is rolled back, an error
+        ///         message is added for the administrative user and the method returns
+        ///             a url for the user's details page.
+        ///                     
+        ///     7. If the recording succeeds, the details are updated in order
+        ///         to block/unblock the user.
+        ///         
+        ///        If the update fails, the transaction is rolled back and all errors are
+        ///         printed to the console. An error message is added for the administrative
+        ///             user. And the method returns a url to the user's details page.
+        ///             
+        ///     8. If the update succeeded, the transaction is committed. A back-channel
+        ///         notification to all identity server clients is sent so they can logout
+        ///             the user from their end. This is done using the method
+        ///                 IdentityService.SendBackChannelLogoutNotificationsForUserAsync().
+        ///                     Finally, the method returns a url to the user's details page.
+        /// </summary>
+        /// <param name="inputModel">
+        ///     The input model containing the user's id who will be blocked/unblocked
+        /// </param>
+        /// <param name="blockUser">
+        ///     Boolean indicating if the user will be blocked or unblocked
+        /// </param>
+        /// <returns>
+        ///     A url to the RootRoute or the user's details page
+        /// </returns>
         public async Task<string> ManageBlock(BlockUserInputModel inputModel, bool blockUser)
         {
             if (!ActionContext.ModelState.IsValid)
@@ -331,13 +520,24 @@ namespace CoreIdentityServer.Areas.Administration.Services
 
                 bool userAccessRecorded = await RecordUserAccess(user, blockAction);
 
-                if (userAccessRecorded)
+                if (!userAccessRecorded)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData[TempDataKeys.ErrorMessage] = $"Could not {blockActionLowerCase} user. Please try again.";
+
+                    return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
+                }
+                else
                 {
                     IdentityResult updateBlockedStatus = null;
                     
                     if (blockUser)
                     {
-                        // update blocked status and the security stamp of user in CIS
+                        // passing the method with a changed user object saves this change
+                        // when updating the security stamp of the user
+                        // more information:
+                        // https://github.com/dotnet/aspnetcore/blob/main/src/Identity/Extensions.Core/src/UserManager.cs#L844
                         updateBlockedStatus = await UserManager.UpdateSecurityStampAsync(user);
                     }
                     else
@@ -373,17 +573,82 @@ namespace CoreIdentityServer.Areas.Administration.Services
                         return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
                     }
                 }
-                else
-                {
-                    await transaction.RollbackAsync();
-
-                    TempData[TempDataKeys.ErrorMessage] = $"Could not {blockActionLowerCase} user. Please try again.";
-
-                    return UrlHelper.Action("Details", "Users", new { Area = "Administration", Id = inputModel.Id });
-                }
+                
             }
         }
 
+
+        /// <summary>
+        ///     public async Task<string> ManageDelete(DeleteUserInputModel inputModel)
+        ///     
+        ///     Manages the Delete action to delete a user.
+        ///     
+        ///     1. Checks if the ModelState is valid. If not, returns the RootRoute.
+        ///     
+        ///     2. Finds the user by the id. If the user is not found, the method returns
+        ///         RootRoute.
+        ///         
+        ///     3. If the user is found, the method checks if the user is a Product Owner.
+        ///         If the user is a Product Owner, the method returns a url of the user
+        ///             details page.
+        ///             
+        ///     4. Starts a database transaction.
+        ///     
+        ///     5. Records the administrative user's action of 'archiving' the user using the
+        ///         method RecordUserAccess(). If the recording fails, the transaction is
+        ///             rolled back and the method returns a url of the user details page.
+        ///             
+        ///     6. If the recording succeeds, the user is archived (soft-deleted) and the
+        ///         user's security stamp is updated to logout the user from all logged in
+        ///             instances.
+        ///             
+        ///     7. If this update fails, the transaction is rolled back and
+        ///                 all errors are printed to the console. An error message is added
+        ///                     for the administrative user and the method returns a url of
+        ///                         the user details page.
+        ///                         
+        ///     8. If the update succeeds, a save point is created in the transaction. This
+        ///         helps if hard deletion of the user fails, the user will still remain soft
+        ///             deleted.
+        ///             
+        ///     9. Records the action of the administrative user 'deleting' the user. If the
+        ///         recording fails, the transaction is rolled back to the previous save point.
+        ///             An error message is added for the administrative user and the method
+        ///                 returns a url of the user details page.
+        ///                 
+        ///     10. If the recording succeeds, the user is deleted using the method
+        ///             UserManager.DeleteAsync(). If the deletion fails, the transaction is
+        ///                 rolled back to the previous save point. All errors are printed
+        ///                     to the console and an error message is added for the
+        ///                         administrative user. Then the method returns a url for
+        ///                             the user details page.
+        ///                             
+        ///     11. If the deletion is successful, a back-channel delete notification is sent
+        ///         to all identity server clients so they delete the user on their ends. The
+        ///             method IdentityService.SendBackChannelDeleteNotificationsForUserAsync()
+        ///                 is used to send this notification.
+        ///                 
+        ///     12. If deleting the user from the identity server clients failed, and there
+        ///         were errors reported from the clients, the transaction is rolled back to the
+        ///             previous save point. And this save point is committed. A back-channel
+        ///                 logout notification is sent to all identity server clients so they
+        ///                     logout the user on their ends. An error message is added for the
+        ///                         administrative user. And the method returns the url for the
+        ///                             user details page.
+        ///                         
+        ///         In case there were no errors in from the identity server after trying to
+        ///             delete the user from the clients, but the deletion failed from their ends
+        ///                 anyway, the transaction is rolled back 'completely' to the 'starting' point.
+        ///                     An error message is added for the administrative user telling them to
+        ///                         try again as deletion has completely failed. The method then
+        ///                             returns a url for the user details page.
+        ///                         
+        ///     13. In case the clients successfully deleted the user from their ends, the
+        ///         transaction is committed. A success message is added for the administrative
+        ///             user, and the method returns the RootRoute.
+        /// </summary>
+        /// <param name="inputModel">Input model containing the id of the user to delete</param>
+        /// <returns>A url of the RootRoute or user details page, depending on scenario</returns>
         public async Task<string> ManageDelete(DeleteUserInputModel inputModel)
         {
             if (!ActionContext.ModelState.IsValid)
@@ -418,10 +683,21 @@ namespace CoreIdentityServer.Areas.Administration.Services
 
                 bool userAccessToArchiveRecorded = await RecordUserAccess(user, UserAccessPurposes.Archive);
 
-                if (userAccessToArchiveRecorded)
+                if (!userAccessToArchiveRecorded)
                 {
+                    await transaction.RollbackAsync();
+
+                    TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                    return userDetailsRoute;
+                } else {
                     user.Archive();
 
+                    // passing the method with a changed user object saves this change
+                    // when updating the security stamp of the user
+                    //
+                    // more information:
+                    // https://github.com/dotnet/aspnetcore/blob/main/src/Identity/Extensions.Core/src/UserManager.cs#L844
                     IdentityResult updateUserSecurityStamp = await UserManager.UpdateSecurityStampAsync(user);
 
                     if (!updateUserSecurityStamp.Succeeded)
@@ -438,11 +714,20 @@ namespace CoreIdentityServer.Areas.Administration.Services
                     }
 
                     string userArchivedSavePoint = "userArchived";
+
                     await transaction.CreateSavepointAsync(userArchivedSavePoint);
 
                     bool userAccessToDeleteRecorded = await RecordUserAccess(user, UserAccessPurposes.Delete);
 
-                    if (userAccessToDeleteRecorded)
+                    if (!userAccessToDeleteRecorded)
+                    {
+                        await transaction.RollbackAsync();
+
+                        TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
+
+                        return userDetailsRoute;
+                    }
+                    else
                     {
                         IdentityResult deleteUser = await UserManager.DeleteAsync(user);
 
@@ -497,26 +782,30 @@ namespace CoreIdentityServer.Areas.Administration.Services
                             }
                         }
                     }
-                    else
-                    {
-                        await transaction.RollbackAsync();
-
-                        TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
-
-                        return userDetailsRoute;
-                    }
-                }
-                else
-                {
-                    await transaction.RollbackAsync();
-
-                    TempData[TempDataKeys.ErrorMessage] = "Could not delete user. Please try again.";
-
-                    return userDetailsRoute;
                 }
             }
         }
 
+
+        /// <summary>
+        ///     private async Task<bool> RecordUserAccess(
+        ///         ApplicationUser user, string purpose
+        ///     )
+        ///     
+        ///     Records the action of accessing a user's data.
+        ///     
+        ///     1. Creates a new UserAccessRecord object which holds the
+        ///         accessor's id, the user's (user whose data is being accessed) id,
+        ///             and the purpose of the access.
+        ///             
+        ///     2. Persists this object in the data base using a try-catch block,
+        ///         returning true when successful or returning false when a possible
+        ///             exception happens or throwing an excepting when an unexpected
+        ///                 exception occurs.
+        /// </summary>
+        /// <param name="user">The user whose data is being accessed</param>
+        /// <param name="purpose">The purpose of accessing this data</param>
+        /// <returns>Boolean indicating the result</returns>
         private async Task<bool> RecordUserAccess(ApplicationUser user, string purpose)
         {
             ApplicationUser accessor = await UserManager.GetUserAsync(ActionContext.HttpContext.User);
@@ -547,8 +836,32 @@ namespace CoreIdentityServer.Areas.Administration.Services
             }
         }
 
-        private Expression<Func<ApplicationUser, bool>> GenerateNamesFilter(string firstName, string lastName, bool firstNameEmpty, bool lastNameEmpty)
-        {
+
+        /// <summary>
+        ///     private Expression<Func<ApplicationUser, bool>> GenerateNamesFilter(
+        ///         string firstName, string lastName, bool firstNameEmpty, bool lastNameEmpty
+        ///     )
+        ///     
+        ///     Creates a search filter to query the database with the first and last
+        ///         names of the user.
+        ///         
+        ///     1. If the first and last name are both present in the method params, the
+        ///         filter is created to query with both params.
+        ///         
+        ///     2. If there is only the first or the last name, then the filter is created
+        ///         to query by that name only.
+        ///         
+        ///     3. Finally, the method returns the created filter. In case neither the first
+        ///         nor the last name is available in the method params, the method returns null.
+        /// </summary>
+        /// <param name="firstName">First name search parameter</param>
+        /// <param name="lastName">First name search parameter</param>
+        /// <param name="firstNameEmpty">Boolean indicating if the firstname parameter is empty</param>
+        /// <param name="lastNameEmpty">Boolean indicating if the lastname parameter is empty</param>
+        /// <returns>The created search filter or null</returns>
+        private Expression<Func<ApplicationUser, bool>> GenerateNamesFilter(
+            string firstName, string lastName, bool firstNameEmpty, bool lastNameEmpty
+        ) {
             Expression<Func<ApplicationUser, bool>> filter = null;
 
             string firstNameLowerCase = firstName?.ToLower();
@@ -569,6 +882,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
 
             return filter;
         }
+
 
         public void Dispose()
         {

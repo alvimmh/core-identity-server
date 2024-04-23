@@ -20,6 +20,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             RolesService = rolesService;
         }
 
+
+        /// The HTTP GET action to show the Index page for all roles
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -28,6 +30,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(viewModel);
         }
 
+
+        /// The HTTP GET action to show the role details page
         [HttpGet]
         public async Task<IActionResult> Details([FromRoute] string id)
         {
@@ -41,6 +45,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(result[0]);
         }
 
+
+        /// The HTTP POST action to update the role details
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Details([FromForm] EditRoleInputModel inputModel)
         {
@@ -52,12 +58,16 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        /// The HTTP GET action to show the create role page
         [HttpGet]
         public ActionResult Create()
         {
             return View();
         }
 
+
+        /// The HTTP POST action to create a role
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([FromForm] CreateRoleInputModel inputModel)
         {
@@ -69,6 +79,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        /// The HTTP POST action to delete a role
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete([FromForm] DeleteRoleInputModel inputModel)
         {

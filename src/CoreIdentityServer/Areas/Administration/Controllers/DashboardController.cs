@@ -9,6 +9,7 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
     [Area(AreaNames.Administration), SecurityHeaders, Authorize(Roles = AuthorizedRoles.ProductOwner)]
     public class DashboardController : Controller
     {
+        /// The HTTP GET action to show the Dashboard page
         [HttpGet]
         public IActionResult Index()
         {

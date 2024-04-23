@@ -828,16 +828,30 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await SignInManager.SignOutAsync();
         }
 
-        // send notifications to all clients of CIS to logout the user
-        //
-        // this will trigger back-channel logout notifications to all clients
-        // if the user is persisted in the client, the client will sign out the user
-        // otherwise the client will return a failed HTTP response
-        //
-        // note, different clients may implement different types of user authentication system,
-        // this method only sends the back-channel notification for these clients
-        //
-        // it is the client's responsibility to signout the user from their system
+
+        /// <summary>
+        ///     public async Task SendBackChannelLogoutNotificationsForUserAsync(
+        ///         ApplicationUser user
+        ///     )
+        ///     
+        ///     Sends a back-channel logout notification to all identity server clients
+        ///         to logout a user.
+        ///     
+        ///     1. Lists all the clients and creates a logout context with the user's id.
+        ///     
+        ///     2. Sends this context to all clients using the method
+        ///         DefaultBackChannelLogoutService.SendLogoutNotificationsAsync().
+        ///         
+        ///     3. This will trigger back-channel logout notifications to all clients
+        ///         if the user is persisted in the client, the client will sign out the user
+        ///             otherwise the client will return a failed HTTP response.
+        ///     
+        ///        Note, different clients may implement different types of user authentication
+        ///         system, this method only sends the back-channel notification for these clients.
+        ///             It is the client's responsibility to signout the user from their system.
+        /// </summary>
+        /// <param name="user">The user for whom the notification is being sent</param>
+        /// <returns>void</returns>
         public async Task SendBackChannelLogoutNotificationsForUserAsync(ApplicationUser user)
         {
             List<string> allClients = Config.Clients.Select(client => client.ClientId).ToList();
@@ -853,6 +867,49 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await DefaultBackChannelLogoutService.SendLogoutNotificationsAsync(blockedUserLogoutNotificationContext);
         }
 
+
+        /// <summary>
+        ///     public async Task<IdentityResult> SendBackChannelDeleteNotificationsForUserAsync(
+        ///         ApplicationUser user
+        ///     )
+        ///     
+        ///     Sends a back-channel delete notification to all identity server
+        ///         clients to delete a user.
+        ///         
+        ///     1. Lists all clients and creates an empty list of all outbound notifications.
+        ///     
+        ///     2. For each client, a CreateTokenInputModel object is created providing it
+        ///         with the user id as subject id and the client id.
+        ///         
+        ///        Then using the method OIDCTokenService.CreateTokenAsync() a JWT notification
+        ///         token is created with data from the input model object.
+        ///         
+        ///        The current client's back-channel delete notification is declared in a
+        ///         variable. Now a notification request object is constructed for the current
+        ///             client setting all necessary details for the notification.
+        ///             
+        ///        Finally, the request is added to the notification requests list.
+        ///        
+        ///     3. Now, for each request in the notification requests array, the method
+        ///         SendBackChannelNotificationAsync() is called and the results are stored in
+        ///             an array.
+        ///             
+        ///     4. If any of the results failed, the array is checked if at least one of
+        ///         the result passed to determine if the results succeeded partially. If
+        ///             it succeeded partially, an error message is constructed and is added
+        ///                 to the IdentityResult object with a description of
+        ///                     InternalCustomErrors.UserPartiallyDeleted. The method then
+        ///                         returns the IdentityResult object by marking it failed.
+        ///                     
+        ///     5. If none of the results succeeded in the array, the method returns the
+        ///         IdentityResult object by marking it failed. It does not add any error
+        ///             message in this case.
+        ///             
+        ///     6. If all results mentioned in step 3 succeeded, the method returns an
+        ///         IdentityResult object by marking it successful.
+        /// </summary>
+        /// <param name="user">The user for whom the notifications were sent</param>
+        /// <returns>IdentityResult object of success or failure</returns>
         public async Task<IdentityResult> SendBackChannelDeleteNotificationsForUserAsync(ApplicationUser user)
         {
             List<ClientNotificationViewModel> allClients = Config.Clients
@@ -911,6 +968,22 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return IdentityResult.Success;
         }
 
+
+        /// <summary>
+        ///     private async Task<bool> SendBackChannelNotificationAsync(
+        ///         BackChannelNotificationRequest request
+        ///     )
+        ///     
+        ///     Creates the payload data for a back-channel notification with
+        ///         information in params and posts the notification to a client.
+        /// </summary>
+        /// <param name="request">
+        ///     The BackChannelNotificationRequest object containing
+        ///         the NotificationType, JWTToken, ClientId and the ClientNotificationUri.
+        /// </param>
+        /// <returns>
+        ///     Boolean indicating a successful or failed response from the client
+        /// </returns>
         private async Task<bool> SendBackChannelNotificationAsync(BackChannelNotificationRequest request)
         {
             Dictionary<string, string> data = CreateFormPostPayloadAsync(request);
@@ -918,6 +991,20 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return await PostBackChannelNotificationJwt(request, data);
         }
 
+
+        /// <summary>
+        ///     private Dictionary<string, string> CreateFormPostPayloadAsync(
+        ///         BackChannelNotificationRequest request
+        ///     )
+        ///     
+        ///     Creates the payload for a back-channel notification request.
+        /// </summary>
+        /// <param name="request">
+        ///     BackChannelNotificationRequest object containing data to construct the payload
+        /// </param>
+        /// <returns>
+        ///     A dictionary of strings as the payload for the back-channel notification
+        /// </returns>
         private Dictionary<string, string> CreateFormPostPayloadAsync(BackChannelNotificationRequest request)
         {
             Dictionary<string, string> data = new Dictionary<string, string>
@@ -928,6 +1015,22 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return data;
         }
 
+
+        /// <summary>
+        ///     private Task<bool> PostBackChannelNotificationJwt(
+        ///         BackChannelNotificationRequest request,
+        ///         Dictionary<string, string> data
+        ///     )
+        ///     
+        ///     Posts the back-channel notification by calling the method
+        ///         PostBackChannelNotificationAsync().
+        /// </summary>
+        /// <param name="request">
+        ///     BackChannelNotificationRequest object containing the data
+        ///         about the posting uri and notification type
+        /// </param>
+        /// <param name="data">Payload for the POST request</param>
+        /// <returns>Boolean indicating a success or failed response</returns>
         private Task<bool> PostBackChannelNotificationJwt(
             BackChannelNotificationRequest request,
             Dictionary<string, string> data
@@ -935,8 +1038,35 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             return PostBackChannelNotificationAsync(request.ClientNotificationUri, data, request.NotificationType);
         }
 
-        private async Task<bool> PostBackChannelNotificationAsync(string url, Dictionary<string, string> payload, string notificationType)
-        {
+
+        /// <summary>
+        ///     private async Task<bool> PostBackChannelNotificationAsync(
+        ///         string url, Dictionary<string, string> payload, string notificationType
+        ///     )
+        ///     
+        ///     Posts the back-channel notification to the client.
+        ///     
+        ///     1. Using a try-catch block, the back-channel notification is posted
+        ///         to the client.
+        ///         
+        ///     2. If the client sends a success status code, information about the response
+        ///         is logged to the console. Then the method returns true.
+        ///             
+        ///     3. If the client sends a failed status code, information about the response
+        ///         is logged to the console. Then the method returns false.
+        ///         
+        ///     4. In case there was an exception in the try block, the exception is printed
+        ///         to the console and the method returns false.
+        /// </summary>
+        /// <param name="url">Url to post the back-channel notification</param>
+        /// <param name="payload">Payload for the notification POST request</param>
+        /// <param name="notificationType">Type of the notification, logout or delete</param>
+        /// <returns>Boolean indicating successful or failed response</returns>
+        private async Task<bool> PostBackChannelNotificationAsync(
+            string url,
+            Dictionary<string, string> payload,
+            string notificationType
+        ) {
             try
             {
                 HttpResponseMessage response = await HttpClient.PostAsync(url, new FormUrlEncodedContent(payload));

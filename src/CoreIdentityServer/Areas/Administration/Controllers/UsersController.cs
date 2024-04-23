@@ -20,6 +20,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             UsersService = usersService;
         }
 
+
+        /// The HTTP GET action to show all users for the Index page
         [HttpGet]
         public async Task<IActionResult> Index([FromQuery] string page)
         {
@@ -28,6 +30,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(viewModel);
         }
 
+
+        /// The HTTP POST action to show all users in the search result
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Index([FromForm] SearchUsersInputModel inputModel)
         {
@@ -36,6 +40,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(viewModel);
         }
 
+
+        /// The HTTP GET action to show the Details page for a user
         [HttpGet]
         public async Task<IActionResult> Details([FromRoute] string id)
         {
@@ -49,6 +55,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(result[0]);
         }
 
+
+        /// The HTTP GET action to show the Edit page for a user
         [HttpGet]
         public async Task<IActionResult> Edit([FromRoute] string id)
         {
@@ -62,6 +70,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return View(result[0]);
         }
 
+
+        /// The HTTP POST action from the Edit page to update a user
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([FromForm] EditUserInputModel inputModel)
         {
@@ -73,6 +83,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        /// The HTTP POST action to block a user
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Block([FromForm] BlockUserInputModel inputModel)
         {
@@ -81,6 +93,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        /// The HTTP POST action to unblock a user
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Unblock([FromForm] BlockUserInputModel inputModel)
         {
@@ -89,6 +103,8 @@ namespace CoreIdentityServer.Areas.Administration.Controllers
             return Redirect(redirectRoute);
         }
 
+
+        /// The HTTP POST action to delete a user
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete([FromForm] DeleteUserInputModel inputModel)
         {
