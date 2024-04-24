@@ -10,7 +10,7 @@ using CoreIdentityServer.Internals.Constants.Storage;
 using CoreIdentityServer.Internals.Data;
 using CoreIdentityServer.Internals.Models.DatabaseModels;
 using CoreIdentityServer.Internals.Services;
-using CoreIdentityServer.Internals.Services.Identity.IdentityService;
+using CoreIdentityServer.Internals.Services.BackChannelCommunications;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +26,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
     {
         private readonly ApplicationDbContext DbContext;
         private readonly UserManager<ApplicationUser> UserManager;
-        private IdentityService IdentityService;
+        private BackChannelNotificationService BackChannelNotificationService;
         private ActionContext ActionContext;
         private readonly ITempDataDictionary TempData;
         private IUrlHelper UrlHelper;
@@ -36,14 +36,14 @@ namespace CoreIdentityServer.Areas.Administration.Services
         public UsersService(
             ApplicationDbContext dbContext,
             UserManager<ApplicationUser> userManager,
-            IdentityService identityService,
+            BackChannelNotificationService backChannelNotificationService,
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             IUrlHelperFactory urlHelperFactory
         ) {
             DbContext = dbContext;
             UserManager = userManager;
-            IdentityService = identityService;
+            BackChannelNotificationService = backChannelNotificationService;
             ActionContext = actionContextAccessor.ActionContext;
             TempData = tempDataDictionaryFactory.GetTempData(actionContextAccessor.ActionContext.HttpContext);
             UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
@@ -471,7 +471,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
         ///     8. If the update succeeded, the transaction is committed. A back-channel
         ///         notification to all identity server clients is sent so they can logout
         ///             the user from their end. This is done using the method
-        ///                 IdentityService.SendBackChannelLogoutNotificationsForUserAsync().
+        ///                 BackChannelNotificationService.SendBackChannelLogoutNotificationsForUserAsync().
         ///                     Finally, the method returns a url to the user's details page.
         /// </summary>
         /// <param name="inputModel">
@@ -565,7 +565,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
                         if (blockUser)
                         {
                             // send notifications to all clients of CIS to signout the user
-                            await IdentityService.SendBackChannelLogoutNotificationsForUserAsync(user);
+                            await BackChannelNotificationService.SendBackChannelLogoutNotificationsForUserAsync(user);
                         }
 
                         TempData[TempDataKeys.SuccessMessage] = $"User {blockActionLowerCase}ed.";
@@ -625,7 +625,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
         ///                             
         ///     11. If the deletion is successful, a back-channel delete notification is sent
         ///         to all identity server clients so they delete the user on their ends. The
-        ///             method IdentityService.SendBackChannelDeleteNotificationsForUserAsync()
+        ///             method BackChannelNotificationService.SendBackChannelDeleteNotificationsForUserAsync()
         ///                 is used to send this notification.
         ///                 
         ///     12. If deleting the user from the identity server clients failed, and there
@@ -746,7 +746,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
                         else
                         {
                             // send notifications to all clients of CIS to delete the user
-                            IdentityResult deleteUserFromAllClients = await IdentityService.SendBackChannelDeleteNotificationsForUserAsync(user);
+                            IdentityResult deleteUserFromAllClients = await BackChannelNotificationService.SendBackChannelDeleteNotificationsForUserAsync(user);
 
                             if (!deleteUserFromAllClients.Succeeded)
                             {
@@ -757,7 +757,7 @@ namespace CoreIdentityServer.Areas.Administration.Services
                                     await transaction.CommitAsync();
 
                                     // send notifications to all clients of CIS to signout the user
-                                    await IdentityService.SendBackChannelLogoutNotificationsForUserAsync(user);
+                                    await BackChannelNotificationService.SendBackChannelLogoutNotificationsForUserAsync(user);
 
                                     TempData[TempDataKeys.ErrorMessage] = "Could not delete user properly. User was partially deleted and was archived to restrict access. Please try again.";
 
