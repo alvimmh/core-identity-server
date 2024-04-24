@@ -1,3 +1,11 @@
+// Copyright (c) .NET Foundation and Contributors
+// All rights reserved.
+//
+// For more information visit:
+// https://github.com/dotnet/aspnetcore/blob/main/LICENSE.txt
+//
+// or, alternatively you can view the license in the project's ~/Licenses/ASP.NETCoreLicense.txt file
+
 /// Ref: https://github.com/dotnet/aspnetcore/blob/main/src/Identity/Extensions.Core/src/Rfc6238AuthenticationService.cs
 
 using System;

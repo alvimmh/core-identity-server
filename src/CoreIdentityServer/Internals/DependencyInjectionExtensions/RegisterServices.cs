@@ -6,6 +6,7 @@ using CoreIdentityServer.Areas.General.Services;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.Authorization.Handlers;
 using CoreIdentityServer.Internals.Services;
+using CoreIdentityServer.Internals.Services.BackChannelCommunications;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Services.Identity.IdentityService;
 using Microsoft.AspNetCore.Authorization;
@@ -41,6 +42,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
             services.AddScoped<EmailService>();
             services.AddScoped<OIDCTokenService>();
+            services.AddScoped<BackChannelNotificationService>();
             services.AddScoped<IdentityService>();
             services.AddScoped<SignUpService>();
             services.AddScoped<AuthenticationService>();

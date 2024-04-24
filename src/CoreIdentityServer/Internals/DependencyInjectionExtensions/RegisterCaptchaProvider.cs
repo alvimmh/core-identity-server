@@ -1,3 +1,10 @@
+// Copyright (c) VahidN. All rights reserved.
+//
+// By accessing the https://github.com/VahidN/DNTCaptcha.Core code here, you are agreeing to the following licensing terms:
+// https://github.com/VahidN/DNTCaptcha.Core/blob/master/LICENSE.md
+//
+// or, alternatively you can view the license in the project's ~/Licenses/DNTCaptcha.CoreLicense.md file
+
 using System;
 using DNTCaptcha.Core;
 using Microsoft.Extensions.Configuration;
