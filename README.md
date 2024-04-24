@@ -12,9 +12,9 @@ Add required secrets from protected sources for the keys in appsettings.[environ
 
 ## signing key management
 
-Download the RSA private key from LastPass for the appropirate environment, rename it to remove the .txt extension and place it in src/CoreIdentityServer/keys directory.
+Download the RSA private key from confidential source for the appropirate environment, rename it to remove the .txt extension and place it in src/CoreIdentityServer/keys directory.
 
-The contents of this directory are git ignored. The highest level of security and awareness must be maitained dealing with this key. Information on how to create this key is in the LastPass record.
+The contents of this directory are git ignored. The highest level of security and awareness must be maitained dealing with this key. Information on how to create this key is in the confidential source record.
 
 ## initialize databases
 
