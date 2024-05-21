@@ -1,0 +1,87 @@
+services:
+  cis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+    depends_on:
+      - cis_main_db
+      - cis_auxiliary_db
+    networks:
+      - cis-main-db-network
+      - cis-auxiliary-db-network
+    volumes:
+      - ../..:/workspaces:cached
+
+  cis_main_db:
+    container_name: ${CIS_MAIN_DATABASE_NAME}
+    environment:
+      POSTGRES_DB: ${CIS_MAIN_DATABASE_NAME}
+      POSTGRES_USER: ${CIS_MAIN_DATABASE_USERNAME}
+      POSTGRES_PASSWORD_FILE: /run/secrets/cis_main_db_password
+    image: postgres:14.3
+    networks:
+      - cis-main-db-network
+    restart: unless-stopped
+    secrets:
+      - cis_main_db_password
+    volumes:
+      - cis-main-db-postgres-data:/var/lib/postgresql/data
+
+  cis_auxiliary_db:
+    container_name: ${CIS_AUXILIARY_DATABASE_NAME}
+    environment:
+      POSTGRES_DB: ${CIS_AUXILIARY_DATABASE_NAME}
+      POSTGRES_USER: ${CIS_AUXILIARY_DATABASE_USERNAME}
+      POSTGRES_PASSWORD_FILE: /run/secrets/cis_auxiliary_db_password
+    image: postgres:14.3
+    networks:
+      - cis-auxiliary-db-network
+    restart: unless-stopped
+    secrets:
+      - cis_auxiliary_db_password
+    volumes:
+      - cis-auxiliary-db-postgres-data:/var/lib/postgresql/data
+
+  pgadmin4:
+    depends_on:
+      - cis_main_db
+      - cis_auxiliary_db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN4_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/pgadmin4_default_password
+      PGADMIN_LISTEN_PORT: 5050
+    image: dpage/pgadmin4
+    networks:
+      - cis-main-db-network
+      - cis-auxiliary-db-network
+    ports:
+      - "127.0.0.1:${PGADMIN4_PORT}:5050"
+    restart: unless-stopped
+    secrets:
+      - pgadmin4_default_password
+    volumes:
+      - pgadmin4-data:/var/lib/pgadmin4
+
+      # generate the file first, see .devcontainers/README.md
+      - ./servers.json:/pgadmin4/servers.json
+
+volumes:
+  cis-main-db-postgres-data:
+  cis-auxiliary-db-postgres-data:
+  pgadmin4-data:
+
+networks:
+  cis-main-db-network:
+  cis-auxiliary-db-network:
+
+secrets:
+  cis_main_db_password:
+    file: secrets/CIS_MAIN_DATABASE_PASSWORD.txt
+  cis_auxiliary_db_password:
+    file: secrets/CIS_AUXILIARY_DATABASE_PASSWORD.txt
+  pgadmin4_default_password:
+    file: secrets/PGADMIN4_DEFAULT_PASSWORD.txt

@@ -5,45 +5,53 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Npgsql;
-using Microsoft.AspNetCore.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Auxiliary
 {
     public class SeedPersistedGrantDatabase
     {
         // migrates the persisted grants database portion in the auxiliary database
-        public static void InitializeDatabase(IConfiguration config)
+        public static void InitializeDatabase(IConfiguration configuration)
         {
             ServiceCollection services = new ServiceCollection();
 
             services.AddLogging();
 
-            string auxiliaryDbConnectionStringRoot = config["cis_auxiliary_db_connection_string"];
+            string auxiliaryDbHost = configuration["cis_auxiliary_database:host"];
+            string auxiliaryDbName = configuration["cis_auxiliary_database:name"];
+            int auxiliaryDbPort;
 
-            if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
+            bool isAuxiliaryDbPortValid = int.TryParse(configuration["cis_auxiliary_database:port"], out auxiliaryDbPort);
+
+            if (string.IsNullOrWhiteSpace(auxiliaryDbHost) ||
+                !isAuxiliaryDbPortValid ||
+                string.IsNullOrWhiteSpace(auxiliaryDbName)
+            ) {
                 throw new NullReferenceException("Auxiliary database connection string is missing.");
+            }
 
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                auxiliaryDbConnectionStringRoot
-            );
-
-            string auxiliaryDbUserName = config["cis_auxiliary_db_username"];
-            string auxiliaryDbPassword = config["cis_auxiliary_db_password"];
+            string auxiliaryDbUserName = configuration["cis_auxiliary_database:username"];
+            string auxiliaryDbPassword = configuration["cis_auxiliary_database:password"];
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbUserName) || string.IsNullOrWhiteSpace(auxiliaryDbPassword))
                 throw new NullReferenceException("Auxiliary database credentials are missing.");
 
-            dbConnectionBuilder.Username = auxiliaryDbUserName;
-            dbConnectionBuilder.Password = auxiliaryDbPassword;
+            NpgsqlConnectionStringBuilder auxiliaryDbConnectionBuilder = new NpgsqlConnectionStringBuilder
+            {
+                Host = auxiliaryDbHost,
+                Port = auxiliaryDbPort,
+                Database = auxiliaryDbName,
+                Username = auxiliaryDbUserName,
+                Password = auxiliaryDbPassword
+            };
 
-            string databaseConnectionString = dbConnectionBuilder.ConnectionString;
             string migrationsAssemblyName = typeof(Startup).Assembly.FullName;
 
             services.AddIdentityServer()
                 .AddOperationalStore(options =>
                 {
                     options.ConfigureDbContext = opt => opt.UseNpgsql(
-                        databaseConnectionString,
+                        auxiliaryDbConnectionBuilder.ConnectionString,
                         o => o.MigrationsAssembly(migrationsAssemblyName)
                     );
                 });

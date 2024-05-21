@@ -53,7 +53,7 @@ namespace CoreIdentityServer
                     IWebHostEnvironment environment = host.Services.GetRequiredService<IWebHostEnvironment>();
                     IConfiguration config = host.Services.GetRequiredService<IConfiguration>();
 
-                    SeedMainDatabase.EnsureSeedData(environment, config);
+                    SeedMainDatabase.EnsureSeedData(config);
                     SeedPersistedGrantDatabase.InitializeDatabase(config);
                     SeedConfigurationDatabase.EnsureSeedData(config);
 

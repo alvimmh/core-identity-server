@@ -20,42 +20,51 @@ using Npgsql;
 using CoreIdentityServer.Internals.Constants.Emails;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Administration;
-using Microsoft.AspNetCore.Hosting;
 
 namespace CoreIdentityServer.Internals.Data.Seeds.Main
 {
     public class SeedMainDatabase
     {
         // seeds the main database
-        public static void EnsureSeedData(IWebHostEnvironment environment, IConfiguration config)
+        public static void EnsureSeedData(IConfiguration configuration)
         {
             ServiceCollection services = new ServiceCollection();
+
             services.AddLogging();
 
-            string dbConnectionStringRoot = config["cis_main_db_connection_string"];
+            string mainDbHost = configuration["cis_main_database:host"];
+            string mainDbName = configuration["cis_main_database:name"];
+            int mainDbPort;
 
-            if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
+            bool isMainDbPortValid = int.TryParse(configuration["cis_main_database:port"], out mainDbPort);
+
+            if (string.IsNullOrWhiteSpace(mainDbHost) ||
+                string.IsNullOrWhiteSpace(mainDbName) ||
+                !isMainDbPortValid
+            ) {
                 throw new NullReferenceException("Main database connection string is missing.");
+            }
 
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                dbConnectionStringRoot
-            );
+            string mainDbUserName = configuration["cis_main_database:username"];
+            string mainDbPassword = configuration["cis_main_database:password"];
 
-            string dbUserName = config["cis_main_db_username"];
-            string dbPassword = config["cis_main_db_password"];
-
-            if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
+            if (string.IsNullOrWhiteSpace(mainDbUserName) || string.IsNullOrWhiteSpace(mainDbPassword))
                 throw new NullReferenceException("Main database credentials are missing.");
 
-            dbConnectionBuilder.Username = dbUserName;
-            dbConnectionBuilder.Password = dbPassword;
+            NpgsqlConnectionStringBuilder mainDbConnectionBuilder = new NpgsqlConnectionStringBuilder
+            {
+                Host = mainDbHost,
+                Port = Convert.ToInt32(mainDbPort),
+                Database = mainDbName,
+                Username = mainDbUserName,
+                Password = mainDbPassword
+            };
 
-            string databaseConnectionString = dbConnectionBuilder.ConnectionString;
             string migrationsAssemblyName = typeof(Startup).Assembly.FullName;
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(
-                    databaseConnectionString,
+                    mainDbConnectionBuilder.ConnectionString,
                     o => o.MigrationsAssembly(migrationsAssemblyName)
                 )
             );
@@ -74,7 +83,7 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
 
                     UserManager<ApplicationUser> UserManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-                    string productOwnerEmail = config["product_owner_email"];
+                    string productOwnerEmail = configuration["product_owner_email"];
 
                     if (string.IsNullOrWhiteSpace(productOwnerEmail))
                         throw new NullReferenceException("Product Owner email is missing.");
@@ -109,7 +118,7 @@ namespace CoreIdentityServer.Internals.Data.Seeds.Main
                         if (string.IsNullOrWhiteSpace(productOwnerTOTPAccessRecoveryCode))
                             throw new Exception($"Could not create TOTP Access recovery code for {AuthorizedRoles.ProductOwner.ToLower()}.");
 
-                        SMTPService SMTPService = new SMTPService(config);
+                        SMTPService SMTPService = new SMTPService(configuration);
                         EmailService EmailService = new EmailService(DbContext, SMTPService);
 
                         EmailService.SendProductOwnerTOTPAccessRecoveryCodeEmail(

@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using CoreIdentityServer.Internals.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,29 +15,40 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             this IServiceCollection services,
             IConfiguration configuration
         ) {
-            string dbConnectionStringRoot = configuration["cis_main_db_connection_string"];
+            string mainDbHost = configuration["cis_main_database:host"];
+            string mainDbName = configuration["cis_main_database:name"];
+            int mainDbPort;
 
-            if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
+            bool isMainDbPortValid = int.TryParse(configuration["cis_main_database:port"], out mainDbPort);
+
+            if (string.IsNullOrWhiteSpace(mainDbHost) ||
+                string.IsNullOrWhiteSpace(mainDbName) ||
+                !isMainDbPortValid
+            ) {
                 throw new NullReferenceException("Main database connection string is missing.");
+            }
 
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                dbConnectionStringRoot
-            );
+            string mainDbUserName = configuration["cis_main_database:username"];
+            string mainDbPassword = configuration["cis_main_database:password"];
 
-            string dbUserName = configuration["cis_main_db_username"];
-            string dbPassword = configuration["cis_main_db_password"];
-
-            if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
+            if (string.IsNullOrWhiteSpace(mainDbUserName) || string.IsNullOrWhiteSpace(mainDbPassword))
                 throw new NullReferenceException("Main database credentials are missing.");
 
-            dbConnectionBuilder.Username = dbUserName;
-            dbConnectionBuilder.Password = dbPassword;
-
-            string databaseConnectionString = dbConnectionBuilder.ConnectionString;
+            NpgsqlConnectionStringBuilder mainDbConnectionBuilder = new NpgsqlConnectionStringBuilder
+            {
+                Host = mainDbHost,
+                Port = mainDbPort,
+                Database = mainDbName,
+                Username = mainDbUserName,
+                Password = mainDbPassword
+            };
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(databaseConnectionString, 
-                    o => o.MigrationsAssembly(typeof(Startup).Assembly.FullName)));
+                options.UseNpgsql(
+                    mainDbConnectionBuilder.ConnectionString,
+                    o => o.MigrationsAssembly(typeof(Startup).Assembly.FullName)
+                )
+            );
 
             services.AddDatabaseDeveloperPageExceptionFilter();
 

@@ -456,5 +456,9 @@ AspIdUsers.db
 
 # Signing credentials
 src/CoreIdentityServer/keys/*
-src/CoreIdentityServer/appsettings.Development.json
-src/CoreIdentityServer/appsettings.Production.json
+src/CoreIdentityServer/appsettings.*.json
+
+# Devcontainer
+.devcontainer/*.env
+.devcontainer/servers.json
+.devcontainer/secrets/*

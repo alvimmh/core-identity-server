@@ -13,7 +13,6 @@ namespace CoreIdentityServer.Internals.Services.Email
 {
     public class SMTPService : IDisposable
     {
-        private IConfiguration Config;
         private string SmtpHost;
         private int SmtpPort;
         private string SmtpUsername;
@@ -23,32 +22,30 @@ namespace CoreIdentityServer.Internals.Services.Email
 
 
         /// <summary>
-        ///     public SMTPService(IConfiguration config)
+        ///     public SMTPService(IConfiguration configuration)
         ///     
         ///     Constructs and configures the SMTPService and
         ///         adds event handler for send completed event.
         /// </summary>
-        /// <param name="config">Configuration for this application</param>
+        /// <param name="configuration">Configuration for this application</param>
         /// <exception cref="NullReferenceException">
         ///     Throws this exception when SMTP credentials are missing,
         ///         or, when the database connection and credentials are missing.
         /// </exception>
-        public SMTPService(IConfiguration config) {
-            Config = config;
-
-            bool isSmtpPortValid = false;
+        public SMTPService(IConfiguration configuration) {
 
             // configure SMTP client
-            SmtpHost = Config["smtp_host"];
-            isSmtpPortValid = int.TryParse(Config["smtp_port"], out SmtpPort);
-            SmtpUsername = Config["smtp_username"];
-            SmtpPassword = Config["smtp_password"];
+            SmtpHost = configuration["smtp:host"];
+            SmtpUsername = configuration["smtp:username"];
+            SmtpPassword = configuration["smtp:password"];
+            
+            bool isSmtpPortValid = int.TryParse(configuration["smtp:port"], out SmtpPort);
 
             if (
                 string.IsNullOrWhiteSpace(SmtpHost) ||
-                !isSmtpPortValid ||
                 string.IsNullOrWhiteSpace(SmtpUsername) ||
-                string.IsNullOrWhiteSpace(SmtpPassword)
+                string.IsNullOrWhiteSpace(SmtpPassword) ||
+                !isSmtpPortValid
             ) {
                 throw new NullReferenceException("SMTP credentials are missing");
             }
@@ -61,29 +58,37 @@ namespace CoreIdentityServer.Internals.Services.Email
             // add send completed event handler
             SmtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
 
-            string dbConnectionStringRoot = Config["cis_main_db_connection_string"];
+            string mainDbHost = configuration["cis_main_database:host"];
+            string mainDbName = configuration["cis_main_database:name"];
+            int mainDbPort;
 
-            if (string.IsNullOrWhiteSpace(dbConnectionStringRoot))
-                throw new NullReferenceException("Main database connection string is missing");
+            bool isMainDbPortValid = int.TryParse(configuration["cis_main_database:port"], out mainDbPort);
 
-            // build ApplicationDbContext options for using statement
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                dbConnectionStringRoot
-            );
+            if (string.IsNullOrWhiteSpace(mainDbHost) ||
+                string.IsNullOrWhiteSpace(mainDbName) ||
+                !isMainDbPortValid
+            ) {
+                throw new NullReferenceException("Main database connection string is missing.");
+            }
 
-            string dbUserName = Config["cis_main_db_username"];
-            string dbPassword = Config["cis_main_db_password"];
+            string mainDbUserName = configuration["cis_main_database:username"];
+            string mainDbPassword = configuration["cis_main_database:password"];
 
-            if (string.IsNullOrWhiteSpace(dbUserName) || string.IsNullOrWhiteSpace(dbPassword))
-                throw new NullReferenceException("Main database credentials are missing");
+            if (string.IsNullOrWhiteSpace(mainDbUserName) || string.IsNullOrWhiteSpace(mainDbPassword))
+                throw new NullReferenceException("Main database credentials are missing.");
 
-            dbConnectionBuilder.Username = dbUserName;
-            dbConnectionBuilder.Password = dbPassword;
-
-            string databaseConnectionString = dbConnectionBuilder.ConnectionString;
+            NpgsqlConnectionStringBuilder mainDbConnectionBuilder = new NpgsqlConnectionStringBuilder
+            {
+                Host = mainDbHost,
+                Port = mainDbPort,
+                Database = mainDbName,
+                Username = mainDbUserName,
+                Password = mainDbPassword
+            };
 
             OptionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            OptionsBuilder.UseNpgsql(databaseConnectionString);
+
+            OptionsBuilder.UseNpgsql(mainDbConnectionBuilder.ConnectionString);
         }
 
 

@@ -29,30 +29,39 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
         public static IServiceCollection AddProjectIdentityServer(
             this IServiceCollection services,
             IWebHostEnvironment environment,
-            IConfiguration config
+            IConfiguration configuration
         ) {
-            string auxiliaryDbConnectionStringRoot = config["cis_auxiliary_db_connection_string"];
+            string auxiliaryDbHost = configuration["cis_auxiliary_database:host"];
+            string auxiliaryDbName = configuration["cis_auxiliary_database:name"];
+            int auxiliaryDbPort;
 
-            if (string.IsNullOrWhiteSpace(auxiliaryDbConnectionStringRoot))
+            bool isAuxiliaryDbPortValid = int.TryParse(configuration["cis_auxiliary_database:port"], out auxiliaryDbPort);
+
+            if (string.IsNullOrWhiteSpace(auxiliaryDbHost) ||
+                !isAuxiliaryDbPortValid ||
+                string.IsNullOrWhiteSpace(auxiliaryDbName)
+            ) {
                 throw new NullReferenceException("Auxiliary database connection string is missing.");
+            }
 
-            NpgsqlConnectionStringBuilder dbConnectionBuilder = new NpgsqlConnectionStringBuilder(
-                auxiliaryDbConnectionStringRoot
-            );
-
-            string auxiliaryDbUserName = config["cis_auxiliary_db_username"];
-            string auxiliaryDbPassword = config["cis_auxiliary_db_password"];
+            string auxiliaryDbUserName = configuration["cis_auxiliary_database:username"];
+            string auxiliaryDbPassword = configuration["cis_auxiliary_database:password"];
 
             if (string.IsNullOrWhiteSpace(auxiliaryDbUserName) || string.IsNullOrWhiteSpace(auxiliaryDbPassword))
                 throw new NullReferenceException("Auxiliary database credentials are missing.");
 
-            dbConnectionBuilder.Username = auxiliaryDbUserName;
-            dbConnectionBuilder.Password = auxiliaryDbPassword;
+            NpgsqlConnectionStringBuilder auxiliaryDbConnectionBuilder = new NpgsqlConnectionStringBuilder
+            {
+                Host = auxiliaryDbHost,
+                Port = auxiliaryDbPort,
+                Database = auxiliaryDbName,
+                Username = auxiliaryDbUserName,
+                Password = auxiliaryDbPassword
+            };
 
-            string auxiliaryDbConnectionString = dbConnectionBuilder.ConnectionString;
             string migrationsAssemblyName = typeof(Startup).Assembly.FullName;
 
-            string tokenSigningCredetialPrivateKeyPassphrase = config["cis_token_signing_credential_private_key_passphrase"];
+            string tokenSigningCredetialPrivateKeyPassphrase = configuration["cis_token_signing_credential_private_key_passphrase"];
 
             if (string.IsNullOrWhiteSpace(tokenSigningCredetialPrivateKeyPassphrase))
                 throw new NullReferenceException("Duende Identity Server token signing credential private key passphrase is missing.");
@@ -62,7 +71,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 tokenSigningCredetialPrivateKeyPassphrase
             );
 
-            string duendeIdentityServerLicenseKey = config["duende_identity_server_license_key"];
+            string duendeIdentityServerLicenseKey = configuration["duende_identity_server_license_key"];
 
             if (string.IsNullOrWhiteSpace(duendeIdentityServerLicenseKey) && environment.IsProduction())
                 throw new NullReferenceException("Duende Identity Server license key is missing.");
@@ -127,14 +136,14 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
                 .AddConfigurationStore(options =>
                 {
                     options.ConfigureDbContext = opt => opt.UseNpgsql(
-                        auxiliaryDbConnectionString,
+                        auxiliaryDbConnectionBuilder.ConnectionString,
                         o => o.MigrationsAssembly(migrationsAssemblyName)
                     );
                 })
                 .AddOperationalStore(options =>
                 {
                     options.ConfigureDbContext = opt => opt.UseNpgsql(
-                        auxiliaryDbConnectionString,
+                        auxiliaryDbConnectionBuilder.ConnectionString,
                         o => o.MigrationsAssembly(migrationsAssemblyName)
                     );
                 })
