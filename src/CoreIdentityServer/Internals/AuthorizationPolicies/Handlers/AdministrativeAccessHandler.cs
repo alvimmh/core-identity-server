@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Authorization.Requirements;
+using CoreIdentityServer.Internals.AuthorizationPolicies.Requirements;
 using Duende.IdentityServer.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
-namespace CoreIdentityServer.Internals.Authorization.Handlers
+namespace CoreIdentityServer.Internals.AuthorizationPolicies.Handlers
 {
     public class AdministrativeAccessHandler : AuthorizationHandler<AdministrativeAccessRequirement>
     {

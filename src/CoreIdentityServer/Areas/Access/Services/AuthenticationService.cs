@@ -17,7 +17,7 @@ using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
-using CoreIdentityServer.Internals.Authorization.Handlers;
+using CoreIdentityServer.Internals.AuthorizationPolicies.Handlers;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {

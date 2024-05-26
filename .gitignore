@@ -459,6 +459,12 @@ src/CoreIdentityServer/keys/*
 src/CoreIdentityServer/appsettings.*.json
 
 # Devcontainer
-.devcontainer/*.env
-.devcontainer/servers.json
+.devcontainer/*
+!.devcontainer/secrets
 .devcontainer/secrets/*
+!.devcontainer/scripts
+!.devcontainer/devcontainer.json
+!.devcontainer/docker-compose.yml
+!.devcontainer/Dockerfile
+!.devcontainer/ENVIRONMENT_SETUP.md
+!.devcontainer/README.md

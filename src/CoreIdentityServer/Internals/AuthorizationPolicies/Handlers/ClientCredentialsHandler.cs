@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Authorization.Requirements;
+using CoreIdentityServer.Internals.AuthorizationPolicies.Requirements;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace CoreIdentityServer.Internals.Authorization.Handlers
+namespace CoreIdentityServer.Internals.AuthorizationPolicies.Handlers
 {
     public class ClientCredentialsHandler : AuthorizationHandler<ClientCredentialsRequirement>
     {

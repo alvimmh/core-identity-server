@@ -10,7 +10,12 @@ using CoreIdentityServer.Internals.Constants.Administration;
 
 namespace CoreIdentityServer.Areas.Administration.Controllers
 {
-    [Area(AreaNames.Administration), SecurityHeaders, Authorize(Roles = AuthorizedRoles.ProductOwner), Authorize(Policy = Policies.TOTPChallenge)]
+    [
+        Area(AreaNames.Administration),
+        SecurityHeaders,
+        Authorize(Roles = AuthorizedRoles.ProductOwner),
+        Authorize(Policy = Policies.TOTPChallenge)
+    ]
     public class RolesController : Controller
     {
         private RolesService RolesService;

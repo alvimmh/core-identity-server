@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace CoreIdentityServer.Internals.Authorization.Requirements
+namespace CoreIdentityServer.Internals.AuthorizationPolicies.Requirements
 {
     public class ClientCredentialsRequirement : IAuthorizationRequirement
     {

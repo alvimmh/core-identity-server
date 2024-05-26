@@ -43,7 +43,7 @@ namespace CoreIdentityServer
 
             services.AddProjectIdentityServer(Environment, Configuration);
 
-            services.AddProjectAuthorization();
+            services.AddProjectAuthorizationPolicies();
 
             services.AddProjectServices(Configuration);
 

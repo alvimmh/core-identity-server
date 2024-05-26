@@ -4,7 +4,7 @@ using CoreIdentityServer.Areas.ClientServices.Services;
 using CoreIdentityServer.Areas.Enroll.Services;
 using CoreIdentityServer.Areas.General.Services;
 using CoreIdentityServer.Areas.Vault.Services;
-using CoreIdentityServer.Internals.Authorization.Handlers;
+using CoreIdentityServer.Internals.AuthorizationPolicies.Handlers;
 using CoreIdentityServer.Internals.Services;
 using CoreIdentityServer.Internals.Services.BackChannelCommunications;
 using CoreIdentityServer.Internals.Services.Email;

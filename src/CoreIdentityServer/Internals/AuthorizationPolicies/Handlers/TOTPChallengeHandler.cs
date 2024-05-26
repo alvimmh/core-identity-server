@@ -1,13 +1,13 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using CoreIdentityServer.Internals.Authorization.Requirements;
+using CoreIdentityServer.Internals.AuthorizationPolicies.Requirements;
 using CoreIdentityServer.Internals.Constants.Account;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using IdentityModel;
 using Microsoft.AspNetCore.Authorization;
 
-namespace CoreIdentityServer.Internals.Authorization.Handlers
+namespace CoreIdentityServer.Internals.AuthorizationPolicies.Handlers
 {
     public class TOTPChallengeHandler : AuthorizationHandler<TOTPChallengeRequirement>
     {
