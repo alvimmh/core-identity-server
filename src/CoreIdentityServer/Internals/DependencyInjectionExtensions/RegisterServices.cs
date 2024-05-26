@@ -58,8 +58,6 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
             services.AddSessionStorage();
 
-            services.AddCaptcha(configuration);
-
             return services;
         }
     }
