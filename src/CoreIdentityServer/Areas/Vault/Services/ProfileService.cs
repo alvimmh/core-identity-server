@@ -15,7 +15,6 @@ namespace CoreIdentityServer.Areas.Vault.Services
     {
         private readonly UserManager<ApplicationUser> UserManager;
         private IdentityService IdentityService;
-        private ActionContext ActionContext;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
@@ -23,10 +22,9 @@ namespace CoreIdentityServer.Areas.Vault.Services
             UserManager<ApplicationUser> userManager,
             IdentityService identityService,
             IActionContextAccessor actionContextAccessor
-        ) {
+        ) : base(actionContextAccessor) {
             UserManager = userManager;
             IdentityService = identityService;
-            ActionContext = actionContextAccessor.ActionContext;
             RootRoute = GenerateRouteUrl("Index", "Profile", "Vault");
         }
 

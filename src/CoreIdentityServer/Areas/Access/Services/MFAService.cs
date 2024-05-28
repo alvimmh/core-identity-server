@@ -20,8 +20,6 @@ namespace CoreIdentityServer.Areas.Access.Services
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
         private IdentityService IdentityService;
-        private ActionContext ActionContext;
-        private ITempDataDictionary TempData;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
@@ -31,12 +29,11 @@ namespace CoreIdentityServer.Areas.Access.Services
             IdentityService identityService,
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory 
-        ) {
+        ) : base(actionContextAccessor, tempDataDictionaryFactory)
+        {
             UserManager = userManager;
             EmailService = emailService;
             IdentityService = identityService;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             RootRoute = GenerateRouteUrl("Dashboard", "Pages", "General");
         }
 

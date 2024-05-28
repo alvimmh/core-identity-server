@@ -16,8 +16,6 @@ namespace CoreIdentityServer.Areas.Administration.Services
     public class RolesService : BaseService, IDisposable
     {
         private readonly RoleManager<IdentityRole> RoleManager;
-        private ActionContext ActionContext;
-        private readonly ITempDataDictionary TempData;
         private IUrlHelper UrlHelper;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
@@ -27,10 +25,9 @@ namespace CoreIdentityServer.Areas.Administration.Services
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             IUrlHelperFactory urlHelperFactory
-        ) {
+        ) : base(actionContextAccessor, tempDataDictionaryFactory)
+        {
             RoleManager = roleManager;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
             RootRoute = GenerateRouteUrl("Index", "Roles", "Administration");
         }

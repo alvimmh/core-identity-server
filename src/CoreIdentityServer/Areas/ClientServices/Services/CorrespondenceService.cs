@@ -18,7 +18,6 @@ namespace CoreIdentityServer.Areas.ClientServices.Services
     {
         private readonly ApplicationDbContext DbContext;
         private EmailService EmailService;
-        private ActionContext ActionContext;
         private readonly IIdentityServerInteractionService InteractionService;
         private readonly IWebHostEnvironment Environment;
         private bool ResourcesDisposed;
@@ -29,10 +28,10 @@ namespace CoreIdentityServer.Areas.ClientServices.Services
             IActionContextAccessor actionContextAccessor,
             IIdentityServerInteractionService interactionService,
             IWebHostEnvironment environment
-        ) {
+        ) : base(actionContextAccessor)
+        {
             DbContext = dbContext;
             EmailService = emailService;
-            ActionContext = actionContextAccessor.ActionContext;
             InteractionService = interactionService;
             Environment = environment;
         }

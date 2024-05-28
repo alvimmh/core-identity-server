@@ -19,6 +19,19 @@ namespace CoreIdentityServer.Internals.Services
         public BaseService()
         {}
 
+        public BaseService(IActionContextAccessor actionContextAccessor)
+        {
+            ActionContext = actionContextAccessor.ActionContext;
+        }
+
+        public BaseService(
+            IActionContextAccessor actionContextAccessor,
+            ITempDataDictionaryFactory tempDataDictionaryFactory
+        ) {
+            ActionContext = actionContextAccessor.ActionContext;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
+        }
+
         public BaseService(
             IActionContextAccessor actionContextAccessor,
             IConfiguration configuration,
@@ -66,8 +79,7 @@ namespace CoreIdentityServer.Internals.Services
         ///     Sets a DateTime object in the TempData that acts as the expiry
         ///         date/time for the TempData.
         /// </summary>
-        /// <param name="TempData">The ITempDataDictionary TempData</param>
-        private protected void SetTempDataExpiryDateTime(ITempDataDictionary TempData)
+        private protected void SetTempDataExpiryDateTime()
         {
             DateTime expiryDateTime = DateTime.UtcNow.AddSeconds(AccountOptions.TempDataLifetimeInSeconds);
 

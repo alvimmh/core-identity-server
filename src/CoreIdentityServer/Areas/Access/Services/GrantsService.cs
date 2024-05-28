@@ -35,7 +35,6 @@ namespace CoreIdentityServer.Areas.Access.Services
         private readonly IEventService EventService;
         private readonly IClientStore ClientStore;
         private readonly IResourceStore ResourceStore;
-        private ActionContext ActionContext;
         private bool ResourcesDisposed;
 
         public GrantsService(
@@ -46,14 +45,13 @@ namespace CoreIdentityServer.Areas.Access.Services
             IClientStore clientStore,
             IResourceStore resourceStore,
             IActionContextAccessor actionContextAccessor
-        ) {
+        ) : base(actionContextAccessor) {
             IdentityService = identityService;
             UserManager = userManager;
             InteractionService = interactionService;
             EventService = eventService;
             ClientStore = clientStore;
             ResourceStore = resourceStore;
-            ActionContext = actionContextAccessor.ActionContext;
         }
 
 

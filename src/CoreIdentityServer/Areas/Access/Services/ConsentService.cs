@@ -32,10 +32,8 @@ namespace CoreIdentityServer.Areas.Access.Services
 {
     public class ConsentService : BaseService, IDisposable
     {
-        private ActionContext ActionContext;
         private readonly IIdentityServerInteractionService InteractionService;
         private readonly IEventService EventService;
-        private readonly ITempDataDictionary TempData;
         private readonly ILogger<ConsentService> Logger;
         private bool ResourcesDisposed;
 
@@ -45,11 +43,9 @@ namespace CoreIdentityServer.Areas.Access.Services
             IEventService eventService,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             ILogger<ConsentService> logger
-        ) {
-            ActionContext = actionContextAccessor.ActionContext;
+        ) : base(actionContextAccessor, tempDataDictionaryFactory) {
             InteractionService = interactionService;
             EventService = eventService;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             Logger = logger;
         }
 

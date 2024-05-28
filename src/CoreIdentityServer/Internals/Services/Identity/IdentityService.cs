@@ -25,8 +25,6 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
         private readonly UserManager<ApplicationUser> UserManager;
         private readonly SignInManager<ApplicationUser> SignInManager;
         private EmailService EmailService;
-        private ActionContext ActionContext;
-        private readonly ITempDataDictionary TempData;
         private readonly UrlEncoder UrlEncoder;
         private bool ResourcesDisposed;
 
@@ -37,12 +35,11 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             UrlEncoder urlEncoder
-        ) {
+        ) : base(actionContextAccessor, tempDataDictionaryFactory)
+        {
             UserManager = userManager;
             SignInManager = signInManager;
             EmailService = emailService;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             UrlEncoder = urlEncoder;
         }
 
@@ -462,7 +459,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
                 // await EmailService.SendEmailConfirmedEmail(AutomatedEmails.NoReply, user.Email, user.UserName);
 
                 TempData[TempDataKeys.UserEmail] = user.Email;
-                SetTempDataExpiryDateTime(TempData);
+                SetTempDataExpiryDateTime();
 
                 string redirectRoute = GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");
 
@@ -667,7 +664,7 @@ namespace CoreIdentityServer.Internals.Services.Identity.IdentityService
             await SignOut();
 
             TempData[TempDataKeys.UserEmail] = user.Email;
-            SetTempDataExpiryDateTime(TempData);
+            SetTempDataExpiryDateTime();
 
             // redirect user to Register TOTP Access page
             return GenerateRouteUrl("RegisterTOTPAccess", "SignUp", "Enroll");

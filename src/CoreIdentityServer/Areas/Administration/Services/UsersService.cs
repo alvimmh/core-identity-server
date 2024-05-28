@@ -27,8 +27,6 @@ namespace CoreIdentityServer.Areas.Administration.Services
         private readonly ApplicationDbContext DbContext;
         private readonly UserManager<ApplicationUser> UserManager;
         private BackChannelNotificationService BackChannelNotificationService;
-        private ActionContext ActionContext;
-        private readonly ITempDataDictionary TempData;
         private IUrlHelper UrlHelper;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
@@ -40,12 +38,11 @@ namespace CoreIdentityServer.Areas.Administration.Services
             IActionContextAccessor actionContextAccessor,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
             IUrlHelperFactory urlHelperFactory
-        ) {
+        ) : base(actionContextAccessor, tempDataDictionaryFactory)
+        {
             DbContext = dbContext;
             UserManager = userManager;
             BackChannelNotificationService = backChannelNotificationService;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(actionContextAccessor.ActionContext.HttpContext);
             UrlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
             RootRoute = GenerateRouteUrl("Index", "Users", "Administration");
         }
