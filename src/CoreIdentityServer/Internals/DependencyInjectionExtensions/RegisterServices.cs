@@ -5,6 +5,8 @@ using CoreIdentityServer.Areas.Enroll.Services;
 using CoreIdentityServer.Areas.General.Services;
 using CoreIdentityServer.Areas.Vault.Services;
 using CoreIdentityServer.Internals.AuthorizationPolicies.Handlers;
+using CoreIdentityServer.Internals.Captcha;
+using CoreIdentityServer.Internals.Captcha.Filters;
 using CoreIdentityServer.Internals.Services;
 using CoreIdentityServer.Internals.Services.BackChannelCommunications;
 using CoreIdentityServer.Internals.Services.Email;
@@ -21,8 +23,7 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
     {
         // registers project services to the DI
         public static IServiceCollection AddProjectServices(
-            this IServiceCollection services,
-            IConfiguration configuration
+            this IServiceCollection services
         ) {
             // the HttpContextAccessor to gain access to the current HttpContext
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -30,8 +31,13 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
             // the ActionContextAccessor to gain access to the current action context
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 
-            // project's email service
+            // project captcha provider and captcha validator filter
+            services.AddSingleton<CloudflareCaptchaProvider>();
+            services.AddSingleton<ValidateCaptchaFilter>();
+
+            // project smtp service
             services.AddSingleton<SMTPService>();
+            services.AddScoped<EmailService>();
 
             // add authorization policy handlers
             services.AddSingleton<IAuthorizationHandler, TOTPChallengeHandler>();
@@ -40,7 +46,6 @@ namespace CoreIdentityServer.Internals.DependencyInjectionExtensions
 
             services.AddSingleton<RouteEndpointService>();
 
-            services.AddScoped<EmailService>();
             services.AddScoped<OIDCTokenService>();
             services.AddScoped<BackChannelNotificationService>();
             services.AddScoped<IdentityService>();

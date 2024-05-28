@@ -1,7 +1,10 @@
 @model InitiateTOTPAccessRecoveryChallengeInputModel
-
 @{
     ViewData["Title"] = "Reset TOTP Access";
+}
+
+@section TurnstileWidget {
+    <partial name="_TurnstileWidget" />
 }
 
 <p>Reset TOTP access</p>

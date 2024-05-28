@@ -45,7 +45,7 @@ namespace CoreIdentityServer
 
             services.AddProjectAuthorizationPolicies();
 
-            services.AddProjectServices(Configuration);
+            services.AddProjectServices();
 
             services.AddForwardedHeadersMiddleware(Environment);
         }

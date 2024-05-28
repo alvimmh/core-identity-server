@@ -6,8 +6,8 @@ using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Models.InputModels;
 using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Authorization;
-using CoreIdentityServer.Internals.Filters.ActionFilters;
 using CoreIdentityServer.Internals.Filters.ResultFilters;
+using CoreIdentityServer.Internals.Filters.ServiceFilters;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -37,6 +37,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         [HttpGet]
         public IActionResult InitiateUnauthenticatedRecovery()
         {
+            ResetTOTPAccessService.AddCaptchaSiteKeyToTempData();
+
             return View();
         }
 

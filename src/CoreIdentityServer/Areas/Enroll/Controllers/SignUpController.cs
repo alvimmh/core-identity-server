@@ -8,6 +8,7 @@ using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Filters.ActionFilters;
 using CoreIdentityServer.Internals.Constants.Authorization;
 using CoreIdentityServer.Internals.Filters.ResultFilters;
+using CoreIdentityServer.Internals.Filters.ServiceFilters;
 
 namespace CoreIdentityServer.Areas.Enroll.Controllers
 {
@@ -26,6 +27,8 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
         [HttpGet, RedirectAuthenticatedUser]
         public IActionResult RegisterProspectiveUser()
         {
+            SignUpService.AddCaptchaSiteKeyToTempData();
+
             return View();
         }
 
@@ -37,7 +40,11 @@ namespace CoreIdentityServer.Areas.Enroll.Controllers
             string redirectRoute = await SignUpService.RegisterProspectiveUser(inputModel);
 
             if (redirectRoute == null)
+            {
+                SignUpService.AddCaptchaSiteKeyToTempData();
+
                 return View(inputModel);
+            }
 
             return Redirect(redirectRoute);
         }

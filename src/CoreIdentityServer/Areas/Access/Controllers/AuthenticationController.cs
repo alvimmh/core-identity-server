@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Filters.ActionFilters;
 using CoreIdentityServer.Internals.Filters.ResultFilters;
+using CoreIdentityServer.Internals.Filters.ServiceFilters;
 
 namespace CoreIdentityServer.Areas.Access.Controllers
 {
@@ -68,6 +69,8 @@ namespace CoreIdentityServer.Areas.Access.Controllers
         {
             SignInInputModel viewModel = AuthenticationService.ManageSignIn(returnUrl);
 
+            AuthenticationService.AddCaptchaSiteKeyToTempData();
+
             return View(viewModel);
         }
 
@@ -79,7 +82,11 @@ namespace CoreIdentityServer.Areas.Access.Controllers
             string redirectRoute = await AuthenticationService.SignIn(inputModel);
 
             if (redirectRoute == null)
+            {
+                AuthenticationService.AddCaptchaSiteKeyToTempData();
+
                 return View(inputModel);
+            }
 
             return Redirect(redirectRoute);
         }

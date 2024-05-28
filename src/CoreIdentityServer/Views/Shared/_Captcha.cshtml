@@ -1,1 +1,15 @@
-<p>Insert captcha markup here. Work in progress.</p>
+@{
+    string captchaSiteKey = null;
+
+    bool captchaSiteKeyExists = TempData.TryGetValue(
+        TempDataKeys.CloudflareCaptchaSiteKey,
+        out object captchaSiteKeyTempData
+    );
+
+    if (captchaSiteKeyExists)
+    {
+        captchaSiteKey = (string)captchaSiteKeyTempData;
+    }
+}
+
+<div class="cf-turnstile" data-sitekey="@captchaSiteKey" data-callback="javascriptCallback"></div>

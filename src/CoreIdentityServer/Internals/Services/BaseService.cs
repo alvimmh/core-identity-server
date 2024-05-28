@@ -3,12 +3,65 @@ using System.Collections.Generic;
 using CoreIdentityServer.Internals.Constants.Account;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Duende.IdentityServer.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Internals.Services
 {
     public abstract class BaseService
     {
+        private protected ActionContext ActionContext;
+        private protected IConfiguration Configuration;
+        private protected ITempDataDictionary TempData;
+
+        public BaseService()
+        {}
+
+        public BaseService(
+            IActionContextAccessor actionContextAccessor,
+            IConfiguration configuration,
+            ITempDataDictionaryFactory tempDataDictionaryFactory
+        ) {
+            ActionContext = actionContextAccessor.ActionContext;
+            Configuration = configuration;
+            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
+        }
+
+        /// <summary>
+        ///     private protected void AddCaptchaSiteKeyToTempData()
+        ///     
+        ///     Calls the base method AddOrRetainTempData() to add the captcha site key
+        ///         to the TempData so it can be accessed in the view.
+        /// </summary>
+        public void AddCaptchaSiteKeyToTempData()
+        {
+            AddOrRetainTempData(
+                TempDataKeys.CloudflareCaptchaSiteKey,
+                Configuration["cloudflare_captcha:site_key"]
+            );
+        }
+
+        /// <summary>
+        ///     private protected AddOrRetainTempData()
+        ///     
+        ///     Adds a TempData so it can be accessed in the view.
+        ///     
+        ///     If the TempData already exists, then this method retains it.
+        /// </summary>
+        private protected void AddOrRetainTempData(string key, object value)
+        {
+            if (TempData.ContainsKey(key))
+            {
+                TempData.Keep(key);
+            }
+            else
+            {
+                TempData[key] = value;
+            }
+        }
+
         /// <summary>
         ///     Sets a DateTime object in the TempData that acts as the expiry
         ///         date/time for the TempData.

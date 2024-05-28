@@ -6,6 +6,10 @@
     string termsOfServiceUrl = Url.Action("termsofservice", "correspondence", new { Area = "clientservices" });
 }
 
+@section TurnstileWidget {
+    <partial name="_TurnstileWidget" />
+}
+
 <div class="row justify-content-center">
     <div class="col-xs-12 col-md-8 col-lg-6 col-xl-4">
         <h1>Welcome</h1>

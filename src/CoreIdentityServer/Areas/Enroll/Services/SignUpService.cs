@@ -15,37 +15,33 @@ using CoreIdentityServer.Internals.Constants.Routing;
 using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Areas.Enroll.Services
 {
     public class SignUpService : BaseService, IDisposable
     {
         private readonly UserManager<ApplicationUser> UserManager;
-        private readonly SignInManager<ApplicationUser> SignInManager;
         private EmailService EmailService;
         private IdentityService IdentityService;
-        private ActionContext ActionContext;
-        private readonly ITempDataDictionary TempData;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public SignUpService(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
+            IActionContextAccessor actionContextAccessor,
+            IConfiguration configuration,
             EmailService emailService,
             IdentityService identityService,
-            IActionContextAccessor actionContextAccessor,
-            ITempDataDictionaryFactory tempDataDictionaryFactory
-        ) {
-            UserManager = userManager;
-            SignInManager = signInManager;
+            ITempDataDictionaryFactory tempDataDictionaryFactory,
+            UserManager<ApplicationUser> userManager
+        ) : base(actionContextAccessor, configuration, tempDataDictionaryFactory)
+        {
             EmailService = emailService;
             IdentityService = identityService;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
+            UserManager = userManager;
+
             RootRoute = GenerateRouteUrl("RegisterProspectiveUser", "SignUp", "Enroll");
         }
-
 
         /// <summary>
         ///     public async Task<string> RegisterProspectiveUser(ProspectiveUserInputModel inputModel)

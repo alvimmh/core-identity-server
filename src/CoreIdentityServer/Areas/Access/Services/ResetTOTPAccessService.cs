@@ -14,6 +14,7 @@ using CoreIdentityServer.Internals.Services.Email;
 using CoreIdentityServer.Internals.Constants.Storage;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
@@ -22,23 +23,22 @@ namespace CoreIdentityServer.Areas.Access.Services
         private readonly UserManager<ApplicationUser> UserManager;
         private EmailService EmailService;
         private IdentityService IdentityService;
-        private ActionContext ActionContext;
-        private ITempDataDictionary TempData;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public ResetTOTPAccessService(
-            UserManager<ApplicationUser> userManager,
+            IActionContextAccessor actionContextAccessor,
+            IConfiguration configuration,
             EmailService emailService,
             IdentityService identityService,
-            IActionContextAccessor actionContextAccessor,
-            ITempDataDictionaryFactory tempDataDictionaryFactory 
-        ) {
-            UserManager = userManager;
+            ITempDataDictionaryFactory tempDataDictionaryFactory,
+            UserManager<ApplicationUser> userManager
+        ) : base(actionContextAccessor, configuration, tempDataDictionaryFactory)
+        {
             EmailService = emailService;
             IdentityService = identityService;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
+            UserManager = userManager;
+
             RootRoute = GenerateRouteUrl("ManageAuthenticator", "ResetTOTPAccess", "Access");
         }
 
@@ -337,6 +337,7 @@ namespace CoreIdentityServer.Areas.Access.Services
 
             return RootRoute;
         }
+
 
         // clean up to be done by DI
         public void Dispose()

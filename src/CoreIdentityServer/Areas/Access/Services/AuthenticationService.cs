@@ -18,33 +18,32 @@ using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
 using CoreIdentityServer.Internals.AuthorizationPolicies.Handlers;
+using Microsoft.Extensions.Configuration;
 
 namespace CoreIdentityServer.Areas.Access.Services
 {
     public class AuthenticationService : BaseService, IDisposable
     {
-        private readonly UserManager<ApplicationUser> UserManager;
         private IdentityService IdentityService;
         private readonly IIdentityServerInteractionService InteractionService;
-        private ActionContext ActionContext;
-        private readonly ITempDataDictionary TempData;
         private readonly RouteEndpointService RouteEndpointService;
+        private readonly UserManager<ApplicationUser> UserManager;
         public readonly string RootRoute;
         private bool ResourcesDisposed;
 
         public AuthenticationService(
-            UserManager<ApplicationUser> userManager,
+            IActionContextAccessor actionContextAccessor,
+            IConfiguration configuration,
             IdentityService identityService,
             IIdentityServerInteractionService interactionService,
-            IActionContextAccessor actionContextAccessor,
+            RouteEndpointService routeEndpointService,
             ITempDataDictionaryFactory tempDataDictionaryFactory,
-            RouteEndpointService routeEndpointService
-        ) {
+            UserManager<ApplicationUser> userManager
+        ) : base(actionContextAccessor, configuration, tempDataDictionaryFactory)
+        {
             UserManager = userManager;
             IdentityService = identityService;
             InteractionService = interactionService;
-            ActionContext = actionContextAccessor.ActionContext;
-            TempData = tempDataDictionaryFactory.GetTempData(ActionContext.HttpContext);
             RouteEndpointService = routeEndpointService;
             RootRoute = GenerateRouteUrl("SignIn", "Authentication", "Access");
         }
@@ -572,6 +571,7 @@ namespace CoreIdentityServer.Areas.Access.Services
                 }
             }
         }
+
 
         // clean up to be done by DI
         public void Dispose()
